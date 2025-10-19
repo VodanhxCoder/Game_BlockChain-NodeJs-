@@ -1,0 +1,14 @@
+const path = require('path');
+
+module.exports = {
+  // Đường dẫn đến file config JSON cho CLI
+  'config': path.resolve('src', 'config', 'config.js'),
+  // Đường dẫn đến thư mục models 
+  'models-path': path.resolve('src', 'models'),
+
+  // Đường dẫn đến thư mục migrations 
+  'migrations-path': path.resolve('src', 'migrations'),
+
+  // Đường dẫn đến thư mục seeders 
+  'seeders-path': path.resolve('src', 'seeders')
+};

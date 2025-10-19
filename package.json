@@ -1,0 +1,39 @@
+{
+  "name": "game_blockchain",
+  "version": "1.0.0",
+  "description": "Game Blockchain",
+  "keywords": [
+    "Minh",
+    "Khue"
+  ],
+  "license": "ISC",
+  "author": "MinhKhue",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon --exec node -r @babel/register src/server.js"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.28.4",
+    "bcrypt": "^6.0.0",
+    "body-parser": "^2.2.0",
+    "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "mysql2": "^3.15.2",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/node": "^7.28.0",
+    "@babel/plugin-transform-runtime": "^7.28.3",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/register": "^7.28.3",
+    "babel": "^5.8.38",
+    "nodemon": "^3.1.10",
+    "sequelize-cli": "^6.6.3"
+  }
+}
