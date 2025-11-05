@@ -12,7 +12,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"No tests specified\"",
-    "start": "nodemon --exec node -r @babel/register src/server.js"
+    "start": "nodemon --exec node -r @babel/register src/server.js",
+    "dev": "nodemon --exec node -r @babel/register src/server.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
