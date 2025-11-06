@@ -1,0 +1,568 @@
+/* A tasteful, original UI inspired by chess portals — not a copy of any site. */
+:root{
+  --bg:#0e1724;
+  --card:#111826;
+  --muted:#9aa7bf;
+  --accent:#f4c542;
+  --white:#ffffff;
+  --glass: rgba(255,255,255,0.03);
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#07101a 0%, #0e1724 100%); color:var(--white); -webkit-font-smoothing:antialiased;}
+
+.ch-container{max-width:1100px;margin:0 auto;padding:20px;}
+
+.ch-header{display:flex;justify-content:space-between;align-items:center;padding:14px 0;}
+.ch-brand{font-weight:700;font-size:1.05rem;color:var(--accent);}
+.ch-nav{display:flex;gap:12px;align-items:center;}
+.ch-nav-link{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:6px;}
+.ch-nav-link:hover{color:var(--white);background:var(--glass);}
+.ch-cta{background:var(--accent);color:#111;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:600}
+
+.ch-hero{display:flex;gap:24px;align-items:center;padding:36px 0;}
+.ch-hero-left{flex:1;min-width:320px;}
+.ch-title{font-size:2.1rem;margin:0 0 12px 0;line-height:1.05}
+.ch-sub{color:var(--muted);margin:0 0 18px 0;}
+.ch-hero-actions{display:flex;gap:12px;margin-bottom:18px;}
+.ch-btn{display:inline-block;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600}
+.ch-btn.primary{background:var(--accent);color:#111}
+.ch-btn.outline{border:1px solid rgba(255,255,255,0.06);color:var(--white);background:transparent}
+
+.ch-stats{display:flex;gap:18px;margin:18px 0 0 0;padding:0;list-style:none}
+.ch-stats li{color:var(--muted);font-size:0.9rem}
+
+.ch-hero-right{width:360px;display:flex;justify-content:center}
+.ch-board{width:320px;height:320px;background:linear-gradient(180deg,#f8f8f8,#efefef);border-radius:12px;padding:8px;position:relative;box-shadow:0 8px 30px rgba(2,6,23,0.6);overflow:hidden}
+.ch-row{display:flex;flex:1}
+.ch-square{width:calc(100%/8);height:40px}
+.ch-square.light{background:#f0d9b5}
+.ch-square.dark{background:#b58863}
+
+.ch-board-overlay{position:absolute;inset:8px;display:flex;flex-direction:column;justify-content:flex-end;pointer-events:none}
+.ch-mini-controls{display:flex;gap:8px;justify-content:center;padding:8px;pointer-events:auto}
+.ch-mini-btn{background:rgba(0,0,0,0.6);color:var(--white);border:0;padding:6px 10px;border-radius:6px;font-size:0.85rem}
+
+.ch-features{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:28px 0}
+.feature-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.feature-card h3{margin:0 0 6px 0}
+.feature-card p{margin:0;color:var(--muted);font-size:0.95rem}
+
+.ch-news{display:flex;gap:20px;margin:28px 0;align-items:flex-start}
+.ch-news-left{flex:1;background:var(--card);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.ch-news-left h2{margin-top:0}
+.ch-news-left ul{padding-left:18px;margin:10px 0}
+.ch-news-left a{color:var(--accent);text-decoration:none}
+.ch-news-right{width:260px}
+
+.ch-cta-block{background:linear-gradient(180deg,#102333,#0b1a26);padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+.ch-cta-block h4{margin:0 0 6px 0}
+.ch-cta-block p{color:var(--muted);margin:0 0 12px 0}
+
+.ch-footer{display:flex;justify-content:space-between;align-items:center;padding:20px 0;color:var(--muted);border-top:1px solid rgba(255,255,255,0.03);margin-top:36px}
+.ch-footer-links a{color:var(--muted);text-decoration:none;margin-left:12px}
+
+@media (max-width:900px){
+  .ch-hero{flex-direction:column-reverse}
+  .ch-hero-right{width:100%}
+  .ch-features{grid-template-columns:repeat(2,1fr)}
+  .ch-news{flex-direction:column}
+}
+
+/* A tasteful, original UI inspired by chess portals — not a copy of any site. */
+:root{
+  --bg:#070816;
+  --panel:#0f1724;
+  --accent:#ffde59;
+  --muted:#9aa7bf;
+  --white:#e6eef8;
+  --glass: rgba(255,255,255,0.02);
+  --btn:#1f6feb;
+}
+
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto; background:linear-gradient(180deg,#02040a 0%, #07101a 100%); color:var(--white);}
+
+.game-homepage{max-width:1100px;margin:24px auto;padding:16px;}
+.game-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0}
+.game-title{font-weight:700;font-size:1.25rem;color:var(--accent)}
+.game-controls{display:flex;gap:10px;align-items:center}
+
+.btn{background:transparent;color:var(--white);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;cursor:pointer}
+.btn.primary{background:var(--accent);color:#04121b;border:0;font-weight:700}
+.btn:active{transform:translateY(1px)}
+
+.game-area{display:flex;gap:18px;align-items:flex-start;justify-content:center; /* center the play area when canvas is large */}
+.game-canvas{
+  background:#041226;
+  border-radius:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.6);
+  display:block;
+
+  /* prefer large canvas but stay responsive */
+  width: min(1600px, calc(100vw - 240px));
+  max-width: 100%;
+  aspect-ratio: 16 / 9; /* matches 1600x900 */
+  height: auto;
+}
+
+/* intermediate breakpoint to keep good proportions on medium screens */
+@media (max-width:1200px){
+  .game-canvas{
+    width: min(820px, calc(100vw - 260px));
+    aspect-ratio: 16 / 10;
+  }
+}
+
+/* small screens: stack and use full width with smaller max */
+@media (max-width:900px){
+  .game-area{
+    flex-direction:column;
+    align-items:center;
+  }
+  .game-canvas{
+    width:calc(100vw - 32px);
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+.panel h4{margin:0 0 8px 0}
+.panel p{margin:6px 0;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;color:var(--muted)}
+
+/* Tips panel translucent style and hide state */
+.panel--transparent {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 12px;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  margin-top: 10px;
+}
+
+.panel--hidden {
+  display: none;
+}
+
+/* small tweak to panel-content spacing */
+.panel-content p { margin: 0; }
+
+/* ensure sidebar layout still looks good with larger canvas */
+@media (max-width: 1100px) {
+  .game-canvas {
+    width: calc(100vw - 300px);
+  }
+}
+@media (max-width: 900px) {
+  .game-area { flex-direction: column; align-items: center; }
+  .game-canvas { width: 100%; max-width: 760px; aspect-ratio: 4/3; }
+}
+
+/* Side menu (new) */
+.layout{display:flex;gap:16px;align-items:flex-start}
+.side-menu{
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 220px;            /* menu width */
+  padding: 20px 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-right: 1px solid rgba(255,255,255,0.03);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+/* Menu list visual tweaks */
+.side-menu .menu-list{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.side-menu .menu-list li a,
+.side-menu .menu-list li .menu-label{
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+
+  /* smooth hover scale */
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms ease, background-color 160ms ease, color 160ms ease;
+  transform-origin: left center;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* slightly enlarge and lift the option on hover (and keep style for active) */
+.side-menu .menu-list li a:hover,
+.side-menu .menu-list li a.active{
+  transform: scale(1.06);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.35);
+  background: linear-gradient(90deg, rgba(244,197,66,0.12), rgba(244,197,66,0.06));
+  color: var(--accent);
+}
+
+/* Keep footer at the bottom of the fixed menu */
+.side-menu .menu-footer{
+  margin-top: auto;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Push page content to the right of the fixed menu */
+.content-area{
+  margin-left: 220px; /* must match side-menu width */
+  padding: 24px;
+  min-height: 100vh;
+}
+
+/* Ensure full-layout container spans viewport when using fixed menu */
+.layout{
+  min-height: 100vh;
+}
+
+/* Responsive: make menu non-fixed on small screens */
+@media (max-width:900px){
+  .side-menu{
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-radius: 8px;
+    padding: 8px;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+  }
+  .side-menu .menu-list{flex-direction:row;gap:8px}
+  .content-area{margin-left:0;padding:12px}
+}
+
+/* inline auth buttons in menu */
+.menu-auth {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 6px;
+  align-items: center;
+}
+
+/* shared button base */
+.auth-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 12px;
+  border-radius:8px;
+  font-weight:700;
+  text-decoration:none;
+  font-size:0.95rem;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease, color 120ms ease;
+  border:1px solid rgba(255,255,255,0.06);
+  color:var(--muted);
+  background:transparent;
+}
+
+/* primary filled */
+.auth-btn.primary{
+  background:var(--accent);
+  color:#04121b;
+  border:0;
+  box-shadow:0 8px 20px rgba(244,197,66,0.12);
+}
+
+/* outline / ghost variants */
+.auth-btn.outline{
+  background:transparent;
+  color:var(--muted);
+  border:1px solid rgba(255,255,255,0.06);
+}
+.auth-btn.ghost{
+  background:transparent;
+  color:var(--white);
+  border:1px solid rgba(255,255,255,0.02);
+}
+
+/* hover/focus */
+.auth-btn:hover,
+.auth-btn:focus{
+  transform: translateY(-3px);
+  box-shadow:0 14px 40px rgba(2,6,23,0.35);
+  color:var(--white);
+}
+
+/* keep layout responsive */
+@media (max-width:900px){
+  .menu-auth{ gap:6px; }
+  .auth-btn{ padding:8px 10px; font-size:0.9rem; }
+}
+
+/* add / update these rules (append to the file) */
+
+/* ensure game-area can host absolute overlay */
+.game-area { position: relative; display: flex; justify-content: center; align-items: center; gap: 18px; }
+
+/* game canvas: larger default size (responsive) */
+.game-canvas{
+  width: min(1600px, calc(100vw - 240px));
+  max-width: 100%;
+  aspect-ratio: 16 / 9; /* matches 1600x900 */
+  height: auto;
+}
+
+/* Override: make canvas much wider so it nearly fills the window (keeps sidebar space) */
+.game-canvas{
+  /* allow up to 1920px but otherwise fill the viewport minus menu/padding */
+  width: min(1920px, calc(100vw - 260px));
+  max-width: calc(100vw - 260px);
+  aspect-ratio: 16 / 9; /* keep ratio */
+  height: auto;
+}
+
+/* responsive: on narrower viewports keep a comfortable gap from edges */
+@media (max-width:1400px){
+  .game-canvas{
+    width: calc(100vw - 120px);
+    max-width: calc(100vw - 120px);
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* small screens: full width minus small padding */
+@media (max-width:900px){
+  .game-canvas{
+    width: calc(100vw - 32px);
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* overlay UI placed above canvas */
+.game-overlay{
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 320px;
+  max-width: calc(100% - 40px);
+  background: rgba(6,10,18,0.68);
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--white);
+  padding: 12px;
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+  z-index: 30;
+}
+
+/* compact layout inside overlay */
+.game-overlay .overlay-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.game-overlay .overlay-body p{ margin:6px 0; color:var(--muted); font-size:13px; }
+.game-overlay .overlay-footer{ margin-top:8px; color:var(--muted); font-size:12px; text-align:right; }
+
+/* hide class */
+.game-overlay.hidden{ display: none; }
+
+/* make sure on small screens overlay floats to top-center */
+@media (max-width:900px){
+  .game-overlay{ left: 50%; right: auto; transform: translateX(-50%); top: 12px; width: calc(100% - 36px); }
+  .game-canvas{ width: calc(100vw - 32px); aspect-ratio: 4 / 3; }
+}
+
+/* Make page and layout fill viewport and avoid scrolling */
+html, body {
+  height: 100%;
+}
+.layout {
+  min-height: 100vh; /* already present; keep */
+}
+
+/* Layout: header assumed 64px, side-menu width assumed 220px.
+   Content area and canvas will fill remaining viewport so the game canvas is much larger and avoids scrolling. */
+.content-area {
+  margin-left: 220px; /* adjust if your side menu width differs */
+  padding: 8px;
+  height: calc(100vh - 64px); /* full viewport less header */
+  box-sizing: border-box;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.game-area {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Make the canvas fill available space while keeping aspect */
+.game-canvas {
+  width: calc(100vw - 260px);       /* account for side menu + small padding */
+  max-width: calc(100vw - 260px);
+  height: calc(100vh - 120px);      /* leave some vertical padding */
+  max-height: calc(100vh - 120px);
+  border-radius: 10px;
+  display: block;
+  object-fit: contain;
+}
+
+/* If canvas should never exceed its internal resolution set in JS, use 100% to scale to container */
+.game-canvas[width][height] {
+  width: 100%;
+  height: 100%;
+}
+
+/* Smaller screens: remove side-menu offset and keep spacing */
+@media (max-width: 900px) {
+  .content-area { margin-left: 0; padding: 8px; flex-direction: column; }
+  .game-canvas {
+    width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px);
+    height: calc(100vh - 160px);
+    max-height: calc(100vh - 160px);
+  }
+}
+
+/* Ensure layout fills the viewport */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+/* variables for easy adjustments */
+:root {
+  --sidebar-width: 220px; /* adjust if your side menu is different */
+  --header-height: 0px;   /* header removed, use full height */
+  --page-padding: 10px;
+}
+
+/* content area occupies full height beside the sidebar */
+.content-area {
+  margin-left: var(--sidebar-width);
+  padding: var(--page-padding);
+  height: 100vh; /* fill entire viewport now header is removed */
+  box-sizing: border-box;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+/* game-area uses all available vertical space */
+.game-area {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* make canvas fill the available area without causing page scroll */
+.game-canvas {
+  /* width: calc(100vw - var(--sidebar-width) - (var(--page-padding) * 2));
+  height: calc(100vh - (var(--page-padding) * 2)); use full height of viewport */
+  max-width: none;
+  max-height: none;
+  display: block;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* If your canvas uses intrinsic width/height attributes, ensure it scales to container */
+.game-canvas[width][height] {
+  width: 100%;
+  height: 100%;
+}
+
+/* overlay stays within viewport */
+.game-overlay {
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+/* Responsive: remove sidebar offset on narrow screens */
+@media (max-width: 900px) {
+  :root { --sidebar-width: 0px; --header-height: 84px; }
+  .content-area {
+    margin-left: 0;
+    padding: 12px;
+    flex-direction: column;
+    height: calc(100vh - var(--header-height));
+  }
+  .game-canvas {
+    width: calc(100vw - 24px);
+    height: calc(100vh - var(--header-height) - 160px);
+  }
+}
+
+/* Strong final overrides so canvas fills the content/game area */
+.content-area {
+  /* keep sidebar offset but ensure full viewport height */
+  margin-left: var(--sidebar-width);
+  padding: var(--page-padding);
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.game-area {
+  /* use full available space; overlay is absolute so it won't affect sizing */
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Make the canvas occupy all available space inside .game-area */
+.game-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1 1 auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+/* Keep overlay on top but constrained inside viewport */
+.game-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  max-width: 36%;
+  width: 320px;
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  z-index: 40;
+}
+
+/* Responsive fallback: small screens use vertical layout */
+@media (max-width: 900px) {
+  .content-area { margin-left: 0; padding: 12px; flex-direction: column; height: 100vh; }
+  .game-area { height: calc(100vh - 24px); }
+  .game-canvas { width: 100% !important; height: 100% !important; }
+}
