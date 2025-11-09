@@ -1,0 +1,170 @@
+/* Based on codebucks sliding sign-in/signup style, simplified */
+:root{
+  --bg-1:#031426; --muted:#9bb7cf; --accent-1:#3fb0ff; --accent-2:#1d7fe6; --glass: rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;color:#eaf6ff;margin:0;padding:0}
+body{background:linear-gradient(180deg,var(--bg-1),#041226);min-height:100vh}
+
+/* wrapper + card */
+.as-root{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+.as-card{
+  position:relative; width:920px; max-width:96%; height:520px;
+  background:linear-gradient(180deg,var(--glass), rgba(0,0,0,0.06));
+  border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(2,6,18,0.7);
+  display:grid; grid-template-columns:1fr 1fr;
+}
+
+/* panels */
+.as-panel{padding:40px;display:flex;flex-direction:column;gap:12px;z-index:1}
+.as-panel h2{margin:0;font-size:22px}
+.as-sub{color:var(--muted);font-size:13px;margin-top:2px}
+.as-panel--left{padding-left:48px}
+.as-panel--right{padding-right:48px}
+
+/* forms */
+.as-form{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.as-input{padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit;outline:none}
+.as-input:focus{box-shadow:0 8px 30px rgba(27,120,210,0.06);border-color:rgba(30,130,220,0.12)}
+.as-actions{display:flex;gap:10px;margin-top:6px}
+.btn{padding:10px 14px;border-radius:10px;cursor:pointer;border:none}
+.btn--primary{background:linear-gradient(90deg,var(--accent-1),var(--accent-2));color:#fff}
+.btn--ghost{background:transparent;color:#dff;border:1px solid rgba(255,255,255,0.04)}
+.btn--outline{background:transparent;color:#dff;border:1px solid rgba(255,255,255,0.06);padding:8px 12px}
+
+/* error + mock */
+.as-error{background:rgba(255,80,80,0.06);color:#ffc9cc;padding:8px;border-radius:8px}
+.as-mock{margin-top:6px;color:var(--muted);font-size:13px}
+.as-mock-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.btn-link{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px 8px;border-radius:8px}
+
+/* overlay sliding animation improvements */
+
+/* overlay that covers one side (left or right) depending on mode */
+.as-overlay{
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 48%;
+  max-width: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  color: #eaf6ff;
+  background: linear-gradient(135deg, rgba(8,16,34,0.98), rgba(6,12,22,0.96));
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  transition: opacity .32s ease, visibility .32s;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  /* default anchored to right side of the card */
+  right: 0;
+  left: auto;
+  transform: none; /* do not translate across the card */
+}
+
+/* When showing on right (covers signup) — fade in */
+.as--signin .as-overlay{
+  right: 0;
+  left: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* When showing on left (covers signin) — anchor to left side and fade in */
+.as--signup .as-overlay{
+  left: 0;
+  right: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Dim only the panel being covered; keep overlay fade behavior smooth */
+.as--signin .as-panel--right,
+.as--signup .as-panel--left{
+  filter: blur(6px) saturate(.95);
+  opacity: .88;
+  pointer-events: none;
+  transition: filter .25s ease, opacity .25s ease;
+}
+
+/* Keep the subtle card shift; overlay will move with the card since it's inside .as-card */
+.as--signin .as-card{ transform: translateX(-6%); transition: transform .45s cubic-bezier(.2,.9,.2,1) }
+.as--signup .as-card{ transform: translateX(6%); transition: transform .45s cubic-bezier(.2,.9,.2,1) }
+
+/* responsive: overlay becomes full-width stacked box */
+@media (max-width:880px){
+  .as-overlay{ position: static; width: 100%; transform: none; opacity: 1; visibility: visible; pointer-events: auto; box-shadow: none; }
+  .as--signin .as-panel--right,
+  .as--signup .as-panel--left{ filter: none; opacity: 1; pointer-events: auto; }
+  .as--signin .as-card,
+  .as--signup .as-card{ transform: none; }
+  .as-panel{ padding: 20px; }
+}
+
+/* circle toggle button that sits on the inner edge of the overlay and slides with it */
+.as-toggle{
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  color: #eaf6ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(4,12,28,0.6);
+  cursor: pointer;
+  transition: transform .36s cubic-bezier(.2,.9,.2,1), background .2s ease, box-shadow .2s ease;
+  z-index: 20;
+}
+
+/* position toggle on left edge of overlay when overlay is anchored right (covering signup) */
+.as--signin .as-overlay .as-toggle{
+  left: -22px;
+  right: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+/* position toggle on right edge of overlay when overlay is anchored left (covering signin) */
+.as--signup .as-overlay .as-toggle{
+  right: -22px;
+  left: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+/* simple hover/active feedback */
+.as-toggle:hover{ transform: translateY(-50%) scale(1.06); box-shadow: 0 10px 26px rgba(4,12,28,0.7); }
+.as-toggle:active{ transform: translateY(-50%) scale(.98); }
+
+/* icon style (use a single chevron and rotate it on mode change) */
+.as-toggle-icon{
+  display:block;
+  font-weight:800;
+  font-size:18px;
+  line-height:1;
+  transition: transform .32s cubic-bezier(.2,.9,.2,1), color .2s ease;
+  transform-origin: center;
+  transform: rotate(0deg);
+}
+
+/* when signup mode is active, flip the chevron to point left */
+.as--signup .as-overlay .as-toggle-icon{
+  transform: rotate(180deg);
+}
+
+/* small color/emphasis change when hovered (keeps rotation intact) */
+.as-toggle:hover .as-toggle-icon{ color: #fff; }
+
+/* responsive adjustments */
+@media (max-width:880px){
+  .as-toggle{ position: static; margin-top:12px; transform:none; width:auto; height:auto; border-radius:8px; padding:8px 12px }
+  .as--signin .as-overlay .as-toggle, .as--signup .as-overlay .as-toggle { left:auto; right:auto }
+  .as-toggle-icon{ transform:none; font-size:14px }
+}
