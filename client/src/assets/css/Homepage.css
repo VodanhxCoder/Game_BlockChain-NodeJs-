@@ -566,3 +566,189 @@ html, body, #root {
   .game-area { height: calc(100vh - 24px); }
   .game-canvas { width: 100% !important; height: 100% !important; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Modern dashboard layout for Space Raiders                          */
+/* ------------------------------------------------------------------ */
+.space-game {
+  width: 100%;
+}
+
+.game-dashboard {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) 1fr;
+  gap: clamp(18px, 3vw, 32px);
+  min-height: calc(100vh - 32px);
+}
+
+.game-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.game-hud__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.game-hud__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.game-hud__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.game-hud__card {
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-soft);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.game-hud__card strong {
+  font-size: 1.4rem;
+}
+
+.game-hud__missions ul,
+.game-hud__boosts ul {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.game-hud__missions li,
+.game-hud__boosts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.game-hud__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-frame {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-panel);
+  box-shadow: var(--shadow-hard);
+  padding: clamp(16px, 3vw, 28px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.game-frame__header .chip {
+  margin-bottom: 12px;
+}
+
+.game-frame__header h2 {
+  margin: 0;
+}
+
+.game-frame__header p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.game-frame__canvas {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(circle at 20% 20%, rgba(124, 93, 255, 0.25), rgba(2, 6, 23, 0.9));
+  padding: clamp(12px, 2vw, 24px);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  aspect-ratio: 16 / 9;
+}
+
+.game-frame__surface {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--radius-lg) - 10px);
+  background: #020b1c;
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.55);
+}
+
+.game-overlay-panel {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: min(320px, 45%);
+  background: rgba(2, 6, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-overlay-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.game-overlay-panel small {
+  color: var(--text-muted);
+}
+
+.game-overlay-panel .overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .game-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .game-overlay-panel {
+    position: static;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .game-frame__canvas {
+    aspect-ratio: auto;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .game-hud__metrics {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}

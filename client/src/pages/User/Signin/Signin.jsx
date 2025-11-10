@@ -1,21 +1,28 @@
+// Handles credential-based sign-in, mock autofill, and redirect logic for authenticated users.
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
+import { useTheme } from "../../../context/ThemeContext";
 import "../../../assets/css/auth.css";
 
+const TRANSITION_MS = 420;
+
 export default function SignIn() {
-  const auth = useAuth();
+  const { login } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const returnTo = location.state?.from?.pathname || "/H"; // redirect target
+  const returnTo = location.state?.from?.pathname || "/H";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSwapping, setIsSwapping] = useState(false);
 
-  const submit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     if (!email.trim() || !password) {
       setError("Please enter email and password.");
@@ -23,87 +30,167 @@ export default function SignIn() {
     }
     setLoading(true);
     try {
-      await auth.login(email.trim(), password);
-      // after successful sign-in, navigate to homepage
+      await login(email.trim(), password);
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign in failed");
+      setError(err?.message || "Sign in failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fillMock = (u) => {
-    setEmail(u.email);
-    setPassword(u.password);
-    setError("");
+  const swapToSignup = () => {
+    if (isSwapping) return;
+    setIsSwapping(true);
+    setTimeout(() => navigate("/signup"), TRANSITION_MS);
+  };
+
+  const socialProviders = [
+    {
+      id: "google",
+      label: "Continue with Google",
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="#EA4335"
+            d="M12 10.2v3.8h5.3c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.8-4.2 2.8-7.1 0-.7-.1-1.4-.2-2H12z"
+          />
+          <path
+            fill="#34A853"
+            d="M5.3 14.3l-.8.6-2.5 1.9C3.3 19.6 7.3 22 12 22c2.9 0 5.4-1 7.2-2.8l-3.1-2.4c-.9.6-2 .9-3.2.9-2.5 0-4.7-1.7-5.5-4.1z"
+          />
+          <path
+            fill="#4A90E2"
+            d="M2 6.2C.9 8.4.9 10.8 2 13l3.3-2.6C4.9 9.5 4.9 8.5 5.3 7.6L2 6.2z"
+          />
+          <path
+            fill="#FBBC05"
+            d="M12 4.5c1.5 0 2.8.5 3.8 1.4l2.8-2.8C16.1 1.2 14.2 0.5 12 0.5 7.3 0.5 3.3 2.9 2 6.2l3.3 1.4C6.2 5.2 8.4 4.5 12 4.5z"
+          />
+        </svg>
+      ),
+    },
+    {
+      id: "github",
+      label: "Continue with GitHub",
+      icon: (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill="currentColor"
+            d="M12 .5C5.4.5 0 6 0 12.7c0 5.4 3.4 10 8.2 11.6.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.5-1.3-1.2-1.6-1.2-1.6-1-.7.1-.7.1-.7 1.1.1 1.7 1.1 1.7 1.1 1 .1 1.7-.8 1.9-1.2.1-.6.4-1 .7-1.2-2.6-.3-5.3-1.3-5.3-5.9 0-1.3.4-2.3 1.1-3.1-.1-.3-.5-1.5.1-3.2 0 0 .9-.3 3 1.2.8-.2 1.7-.3 2.6-.3s1.8.1 2.6.3c2.1-1.4 3-1.2 3-1.2.6 1.7.2 2.9.1 3.2.7.8 1.1 1.8 1.1 3.1 0 4.6-2.7 5.6-5.3 5.9.4.4.7 1 .7 2v2.9c0 .3.2.7.8.6 4.8-1.6 8.2-6.2 8.2-11.6C24 6 18.6.5 12 .5z"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const handleProvider = (provider) => {
+    setError(`${provider.label} is not available yet.`);
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card auth-card--centered" role="main" aria-labelledby="signin-title">
-        <h2 id="signin-title">Sign in</h2>
-
-        <form className="auth-form" onSubmit={submit} noValidate>
-          {error && <div className="auth-error" role="alert">{error}</div>}
-
-          <label className="auth-field">
-            <span className="field-label">Email</span>
-            <input
-              className="field-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              required
-            />
-          </label>
-
-          <label className="auth-field">
-            <span className="field-label">Password</span>
-            <input
-              className="field-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="current-password"
-              required
-            />
-          </label>
-
-          <div className="auth-row">
-            <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+    <div className={`auth-page auth-split ${isSwapping ? "is-exiting" : ""}`}>
+      <div className="auth-shell is-signin" role="main" aria-labelledby="signin-title">
+        <section className="auth-panel auth-panel--form">
+          <div className="auth-panel__header">
+            <div className="auth-brand">
+              <div className="auth-logo" aria-hidden>BLK</div>
+              <div className="auth-title">
+                <h2 id="signin-title">Welcome back, Raider</h2>
+                <div className="auth-sub">Plug in and resume your on-chain run.</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="auth-theme-toggle"
+              onClick={toggleTheme}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              data-mode={isDark ? "dark" : "light"}
+            >
+              <span className="auth-theme-toggle__icon" aria-hidden="true">
+                {isDark ? "🌙" : "☀️"}
+              </span>
+              <span className="sr-only">{isDark ? "Dark mode" : "Light mode"}</span>
             </button>
-            <Link to="/signup" className="btn btn-ghost">Sign up</Link>
           </div>
-        </form>
 
-        {auth?.mockUsers?.length > 0 && (
-          <div className="auth-mock" style={{ marginTop: 12, color: "#9ab" }}>
-            <div style={{ fontSize: 13, marginBottom: 6 }}>Mock accounts (click to autofill):</div>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {auth.mockUsers.map((u) => (
-                <li key={u.email} style={{ marginBottom: 6 }}>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => fillMock(u)}
-                    style={{ fontSize: 13 }}
-                  >
-                    {u.email} / {u.password}
-                  </button>
-                </li>
+          <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            {error && <div className="auth-error" role="alert">{error}</div>}
+
+            <label className="auth-field">
+              <span className="field-label">Email</span>
+              <input
+                className="field-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                required
+              />
+            </label>
+
+            <label className="auth-field">
+              <span className="field-label">Password</span>
+              <input
+                className="field-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="********"
+                autoComplete="current-password"
+                required
+              />
+            </label>
+
+            <div className="auth-row">
+              <label className="auth-remember">
+                <input type="checkbox" defaultChecked /> Remember device
+              </label>
+              <Link to="/forgot" className="auth-link">Forgot password?</Link>
+            </div>
+
+            <div className="auth-actions">
+              <button type="submit" className="btn primary" disabled={loading}>
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+              <button type="button" className="btn btn-outline" onClick={swapToSignup} disabled={isSwapping}>
+                Create account
+              </button>
+            </div>
+          </form>
+
+          <div className="auth-social-block">
+            <small>Prefer social login?</small>
+            <div className="auth-social-buttons">
+              {socialProviders.map((provider) => (
+                <button
+                  key={provider.id}
+                  type="button"
+                  className="auth-social-btn"
+                  onClick={() => handleProvider(provider)}
+                  disabled={isSwapping}
+                >
+                  <span className={`auth-social-icon auth-social-icon--${provider.id}`}>{provider.icon}</span>
+                  <span>{provider.label}</span>
+                </button>
               ))}
-            </ul>
+            </div>
           </div>
-        )}
+        </section>
 
-        <div style={{ marginTop: 10 }}>
-          <Link to="/forgot" className="auth-link">Forgot password?</Link>
-        </div>
+        <aside className="auth-panel auth-panel--preview">
+          <p className="auth-eyebrow">New pilot?</p>
+          <h3>Forge a new identity in seconds.</h3>
+          <ul className="auth-preview-list">
+            <li>Receive a starter NFT hangar and cosmetics.</li>
+            <li>Secure wallet linkage & biometric prompts.</li>
+            <li>Cross-device cloud saves backed by chain data.</li>
+          </ul>
+          <button type="button" className="auth-preview-btn" onClick={swapToSignup} disabled={isSwapping}>
+            Slide to sign up
+          </button>
+        </aside>
       </div>
     </div>
   );

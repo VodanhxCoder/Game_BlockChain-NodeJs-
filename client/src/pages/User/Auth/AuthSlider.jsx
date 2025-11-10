@@ -1,10 +1,12 @@
+// Combines sign-in/sign-up flows with theme toggling inside a single slider-styled portal.
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import "../../../assets/css/AuthSlider.css";
+import { useTheme } from "../../../context/ThemeContext";
 
 export default function AuthSlider() {
   const auth = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const initial = location.pathname.includes("signup") ? "signup" : "signin";
@@ -13,11 +15,11 @@ export default function AuthSlider() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // signin state
+  // signin fields
   const [siEmail, setSiEmail] = useState("");
   const [siPass, setSiPass] = useState("");
 
-  // signup state
+  // signup fields
   const [suName, setSuName] = useState("");
   const [suEmail, setSuEmail] = useState("");
   const [suPass, setSuPass] = useState("");
@@ -29,93 +31,171 @@ export default function AuthSlider() {
 
   const submitSignIn = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError("");
+    setLoading(true);
     try {
       await auth.login(siEmail.trim(), siPass);
       navigate("/H", { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign in failed");
-    } finally { setLoading(false); }
+      setError(err?.message || "Đăng nhập thất bại");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submitSignUp = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError("");
+    setLoading(true);
     try {
       await auth.register({ name: suName.trim(), email: suEmail.trim(), password: suPass });
       navigate("/H", { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign up failed");
-    } finally { setLoading(false); }
+      setError(err?.message || "Tạo tài khoản thất bại");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const autofill = (u) => {
-    setSiEmail(u.email); setSiPass(u.password); setSuEmail(u.email);
+  const autofill = (user) => {
+    setSiEmail(user.email);
+    setSiPass(user.password);
+    setSuEmail(user.email);
   };
 
-  const toggleMode = () => setMode((m) => (m === "signup" ? "signin" : "signup"));
+  const toggleMode = () => setMode((prev) => (prev === "signup" ? "signin" : "signup"));
 
   return (
-    <div className={`as-root ${mode === "signup" ? "as--signup" : "as--signin"}`} role="main">
-      <div className="as-card" aria-hidden={false}>
-        <section className="as-panel as-panel--left" aria-labelledby="signin-title">
-          <h2 id="signin-title">Welcome back</h2>
-          <p className="as-sub">Sign in to continue</p>
-
-          <form className="as-form" onSubmit={submitSignIn} noValidate>
-            {error && <div className="as-error" role="alert">{error}</div>}
-            <input className="as-input" value={siEmail} onChange={(e) => setSiEmail(e.target.value)} type="email" placeholder="Email" required />
-            <input className="as-input" value={siPass} onChange={(e) => setSiPass(e.target.value)} type="password" placeholder="Password" required />
-            <div className="as-actions">
-              <button className="btn btn--primary" type="submit" disabled={loading}>{loading ? "Signing…" : "Sign in"}</button>
-              <button type="button" className="btn btn--ghost" onClick={() => setMode("signup")}>Create account</button>
+    <div className={`as-portal ${mode === "signup" ? "is-signup" : "is-signin"}`} role="main">
+      <div className="as-portal__glow" aria-hidden="true" />
+      <div className="as-card">
+        <header className="as-card__header">
+          <div className="as-brand">
+            <div className="as-logo">BLK</div>
+            <div>
+              <h1>BlockVerse</h1>
+              <p>Blockchain arcade platform</p>
             </div>
-          </form>
+          </div>
+          <button
+            type="button"
+            className="as-theme-toggle"
+            aria-label={isDark ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+            onClick={toggleTheme}
+          >
+            {isDark ? "☾" : "☀"}
+          </button>
+        </header>
 
-          {auth?.mockUsers?.length > 0 && (
-            <div className="as-mock">
-              <small>Mock accounts</small>
-              <div className="as-mock-list">
-                {auth.mockUsers.map((u) => (
-                  <button key={u.email} className="btn-link" onClick={() => autofill(u)}>{u.email}</button>
-                ))}
+        <div className="as-columns">
+          <section className="as-panel" aria-labelledby="signin-title">
+            <div>
+              <p className="as-eyebrow">Đã có tài khoản</p>
+              <h2 id="signin-title">Đăng nhập để tiếp tục</h2>
+            </div>
+            <form className="as-form" onSubmit={submitSignIn} noValidate>
+              {error && <div className="as-error" role="alert">{error}</div>}
+              <input
+                className="as-input"
+                value={siEmail}
+                onChange={(e) => setSiEmail(e.target.value)}
+                type="email"
+                placeholder="Email"
+                required
+              />
+              <input
+                className="as-input"
+                value={siPass}
+                onChange={(e) => setSiPass(e.target.value)}
+                type="password"
+                placeholder="Mật khẩu"
+                required
+              />
+              <div className="as-actions">
+                <button className="as-btn as-btn--primary" type="submit" disabled={loading}>
+                  {loading ? "Đang xử lý..." : "Đăng nhập"}
+                </button>
+                <button type="button" className="as-btn as-btn--ghost" onClick={() => setMode("signup")}>
+                  Tạo tài khoản
+                </button>
               </div>
+            </form>
+
+            {auth?.mockUsers?.length ? (
+              <div className="as-mock">
+                <small>Tài khoản mẫu</small>
+                <div className="as-mock-list">
+                  {auth.mockUsers.map((u) => (
+                    <button key={u.email} className="as-chip" type="button" onClick={() => autofill(u)}>
+                      {u.email}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="as-panel" aria-labelledby="signup-title">
+            <div>
+              <p className="as-eyebrow">Người chơi mới</p>
+              <h2 id="signup-title">Tạo tài khoản 10 giây</h2>
             </div>
-          )}
-        </section>
+            <form className="as-form" onSubmit={submitSignUp} noValidate>
+              <input
+                className="as-input"
+                value={suName}
+                onChange={(e) => setSuName(e.target.value)}
+                type="text"
+                placeholder="Họ tên"
+                required
+              />
+              <input
+                className="as-input"
+                value={suEmail}
+                onChange={(e) => setSuEmail(e.target.value)}
+                type="email"
+                placeholder="Email"
+                required
+              />
+              <input
+                className="as-input"
+                value={suPass}
+                onChange={(e) => setSuPass(e.target.value)}
+                type="password"
+                placeholder="Mật khẩu"
+                required
+              />
+              <div className="as-actions">
+                <button className="as-btn as-btn--primary" type="submit" disabled={loading}>
+                  {loading ? "Đang xử lý..." : "Tạo tài khoản"}
+                </button>
+                <button type="button" className="as-btn as-btn--ghost" onClick={() => setMode("signin")}>
+                  Đã có tài khoản
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
 
-        <section className="as-panel as-panel--right" aria-labelledby="signup-title">
-          <h2 id="signup-title">Create account</h2>
-          <p className="as-sub">Quick — get playing in seconds</p>
-
-          <form className="as-form" onSubmit={submitSignUp} noValidate>
-            <input className="as-input" value={suName} onChange={(e) => setSuName(e.target.value)} type="text" placeholder="Full name" required />
-            <input className="as-input" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} type="email" placeholder="Email" required />
-            <input className="as-input" value={suPass} onChange={(e) => setSuPass(e.target.value)} type="password" placeholder="Password" required />
-            <div className="as-actions">
-              <button className="btn btn--primary" type="submit" disabled={loading}>{loading ? "Creating…" : "Create account"}</button>
-              <button type="button" className="btn btn--ghost" onClick={() => setMode("signin")}>Have an account?</button>
-            </div>
-          </form>
-        </section>
-
-        <div className="as-overlay" aria-hidden={false}>
-          <div className="as-overlay-inner">
-            <h3>{mode === "signup" ? "Join the game" : "Welcome back"}</h3>
-            <p className="as-sub">{mode === "signup" ? "Create an account and start collecting items." : "Sign in to access your inventory and play."}</p>
-            {/* Circle toggle button replaces the two overlay action buttons */}
+        <aside className="as-visual" aria-hidden="true">
+          <div className="as-visual__content">
+            <p className="as-eyebrow">{mode === "signup" ? "Gia nhập phi đội" : "Chào mừng trở lại"}</p>
+            <h3>{mode === "signup" ? "Nhận NFT starter pack ngay" : "Sẵn sàng chiến đấu"}</h3>
+            <p>
+              {mode === "signup"
+                ? "Kết nối ví, nhận skin khởi đầu và mở kho đồ đa chuỗi."
+                : "Đồng bộ kho đồ, tiếp tục hành trình săn boss và leo rank."}
+            </p>
             <button
-              className="as-toggle"
+              type="button"
+              className="as-visual__toggle"
               aria-pressed={mode === "signup"}
-              aria-label={mode === "signup" ? "Switch to sign in" : "Switch to sign up"}
               onClick={toggleMode}
-              title={mode === "signup" ? "Switch to Sign in" : "Switch to Sign up"}
             >
-              {/* single chevron icon — CSS handles rotation */}
-              <span className="as-toggle-icon">›</span>
+              {mode === "signup" ? "Chuyển sang đăng nhập" : "Chuyển sang đăng ký"}
             </button>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

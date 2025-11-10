@@ -1,40 +1,90 @@
+// Lists competitive divisions and top player rankings pulled from mock leaderboard data.
 import React from "react";
-import { Link } from "react-router-dom";
+
+const topPlayers = [
+  { rank: 1, name: "Lilium", score: 18240, streak: 9 },
+  { rank: 2, name: "Atlas", score: 17310, streak: 4 },
+  { rank: 3, name: "Nyx", score: 16002, streak: 6 },
+  { rank: 4, name: "Riven", score: 14980, streak: 2 },
+  { rank: 5, name: "Mika", score: 14130, streak: 3 },
+];
+
+const divisions = [
+  { title: "Mythic", players: 124, color: "#fef3c7" },
+  { title: "Nova", players: 884, color: "#e0f2fe" },
+  { title: "Vanguard", players: 2120, color: "#ede9fe" },
+];
 
 export default function Leaderboard() {
-  const sample = [
-    { rank: 1, name: "PlayerOne", score: 12450 },
-    { rank: 2, name: "PlayerTwo", score: 11320 },
-    { rank: 3, name: "PlayerThree", score: 9800 },
-  ];
-
   return (
-    <div className="page leaderboard" style={{ padding: 24 }}>
-      <h1>Leaderboards</h1>
-      <p>Top players (placeholder)</p>
+    <div className="page-shell">
+      <section className="page-hero fade-in-up">
+        <span className="page-hero__badge">
+          <span role="img" aria-hidden="true">
+            🚀
+          </span>
+          Leaderboards
+        </span>
+        <h1 className="gradient-title">Các phi công đứng đầu chuỗi.</h1>
+        <p className="page-hero__text">
+          Theo dõi realtime điểm Space Raiders, streak và phân chia hạng đa server. Bảng xếp hạng được cập nhật sau mỗi trận
+          đấu on-chain.
+        </p>
+        <div className="page-hero__actions">
+          <button type="button" className="ui-btn ui-btn--primary">
+            Thách đấu top 10
+          </button>
+          <button type="button" className="ui-btn ui-btn--ghost">
+            Xem phần thưởng mùa
+          </button>
+        </div>
+      </section>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: "left", padding: 8 }}>Rank</th>
-            <th style={{ textAlign: "left", padding: 8 }}>Player</th>
-            <th style={{ textAlign: "left", padding: 8 }}>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sample.map((r) => (
-            <tr key={r.rank}>
-              <td style={{ padding: 8 }}>{r.rank}</td>
-              <td style={{ padding: 8 }}>{r.name}</td>
-              <td style={{ padding: 8 }}>{r.score}</td>
+      <section className="page-grid">
+        {divisions.map((division) => (
+          <article key={division.title} className="page-card" style={{ background: `linear-gradient(135deg, ${division.color}, transparent)` }}>
+            <h3>{division.title}</h3>
+            <div className="metric-value">{division.players}</div>
+            <div className="metric-label">Phi công đang cạnh tranh</div>
+            <div className="ui-progress">
+              <div className="ui-progress__bar" style={{ width: `${Math.min(100, (division.players / 2500) * 100)}%` }} />
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <section className="list-card fade-in-up">
+        <table>
+          <thead>
+            <tr>
+              <th>Hạng</th>
+              <th>Người chơi</th>
+              <th>Điểm</th>
+              <th>Chuỗi thắng</th>
+              <th>Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <p style={{ marginTop: 18 }}>
-        <Link to="/H">← Back to Home</Link>
-      </p>
+          </thead>
+          <tbody>
+            {topPlayers.map((player) => (
+              <tr key={player.rank}>
+                <td>
+                  <span className="chip chip--accent">#{player.rank}</span>
+                </td>
+                <td>{player.name}</td>
+                <td>{player.score.toLocaleString()}</td>
+                <td>
+                  <span className="chip">{player.streak} trận</span>
+                </td>
+                <td>
+                  <button type="button" className="ui-btn ui-btn--text">
+                    Xem hồ sơ
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

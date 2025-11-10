@@ -4,18 +4,23 @@ import { useAuth } from "../context/AuthContext";
 import Menu from "../components/Menu";
 
 export default function AppLayout() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="splash-screen">Đang tải giao diện...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/signin" replace />;
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <aside style={{ width: 260 }}>
+    <div className="app-shell">
+      <aside className="app-shell__sidebar">
         <Menu />
       </aside>
-      <main style={{ flex: 1 }}>
+      <main className="app-shell__content">
+        <div className="app-shell__backdrop" aria-hidden="true" />
         <Outlet />
       </main>
     </div>
