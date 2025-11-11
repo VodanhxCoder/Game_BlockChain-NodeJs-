@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import "../../../assets/css/auth.css";
 
 const TRANSITION_MS = 420;
@@ -24,14 +25,17 @@ export default function SignUp() {
     e.preventDefault();
     if (loading) return;
     setError("");
-    if (!name.trim()) return setError("Please enter your name.");
-    if (!email.trim()) return setError("Please enter your email.");
-    if (password.length < 6) return setError("Password must be at least 6 characters.");
-    if (password !== confirm) return setError("Passwords do not match.");
-
+    const sanitizedName = sanitizeInput(name);
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedPassword = sanitizeInput(password);
+    const sanitizedConfirm = sanitizeInput(confirm);
+    if (!sanitizedName || !sanitizedEmail || sanitizedPassword.length < 6 || sanitizedPassword !== sanitizedConfirm) {
+      setError("Please enter valid details.");
+      return;
+    }
     setLoading(true);
     try {
-      await register({ name: name.trim(), email: email.trim(), password });
+      await register({ name: sanitizedName, email: sanitizedEmail, password: sanitizedPassword });
       navigate("/H", { replace: true });
     } catch (err) {
       setError(err?.message || "Could not create account.");

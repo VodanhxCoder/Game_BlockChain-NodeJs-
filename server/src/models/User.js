@@ -1,115 +1,89 @@
 // models/User.js
 
-// Import các thư viện cần thiết
 const { DataTypes, Model } = require('sequelize');
-const bcrypt = require('bcrypt'); 
 
 module.exports = (sequelize) => {
-  
-
+  /**
+   * User model aligned with the provided SQL dump `users` table.
+   * - `username` is the PK (varchar(50))
+   * - password stored in `password_hash` (mapped to passwordHash attr)
+   * - created_at timestamp is mapped to createdAt; updatedAt disabled
+   */
   class User extends Model {
     /**
-     * @param {string} password 
+     * Compare an incoming (already client-hashed) password against stored hash.
+     * For this project the frontend sends a SHA-256 hex digest and we store it
+     * directly in the DB (no additional bcrypt round). So compare by equality.
+     * @param {string} candidatePassword - value sent from client (e.g. SHA-256 hex)
      * @returns {boolean}
      */
-    validPassword(password) {
-      return bcrypt.compareSync(password, this.passwordHash);
+    validPassword(candidatePassword) {
+      return candidatePassword === this.passwordHash;
     }
   }
 
-
-  User.init({
-    // --- CÁC THUỘC TÍNH (Attributes) ---
-    userId: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,    
-      autoIncrement: true  
-    },
-    username: {
-      type: DataTypes.STRING,
-      allowNull: false, 
-      unique: { msg: "Tên đăng nhập này đã được sử dụng." },
-      validate: {
-        notEmpty: { msg: "Tên đăng nhập không được để trống." },
-        len: {
-          args: [3, 50],
-          msg: "Tên đăng nhập phải từ 3 đến 50 ký tự."
-        }
-      }
-    },
-    passwordHash: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        notEmpty: { msg: "Mật khẩu là bắt buộc." }
-        // Logic validate mật khẩu gốc ở Controller
-      }
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: { msg: "Email này đã được sử dụng." },
-      validate: {
-        isEmail: { msg: "Email không đúng định dạng." }
-      }
-    },
-    walletAddress: {
-      type: DataTypes.STRING,
-      unique: { msg: "Địa chỉ ví này đã được sử dụng." },
-      allowNull: true, // Cho phép rỗng ban đầu
-      validate: {
-        is: {
-          args: [/^0x[a-fA-F0-9]{40}$/],
-          msg: "Địa chỉ ví không hợp lệ."
-        }
-      }
-    },
-    balance: {
-      type: DataTypes.DECIMAL(19, 4), 
-      defaultValue: 0.0,
-      validate: {
-        isDecimal: { msg: "Số dư phải là một con số." },
-        min: {
-          args: [0],
-          msg: "Số dư không được là số âm."
-        }
-      }
-    },
-    role: {
-      type: DataTypes.STRING,
-      defaultValue: 'USER',
-      allowNull: false,
-      validate: {
-        isIn: {
-          args: [['USER', 'ADMIN']],
-          msg: "Quyền không hợp lệ (chỉ được là USER hoặc ADMIN)."
-        }
-      }
-    }
-  }, {
-    // --- CÁC TÙY CHỌN (Options) ---
-    sequelize,            
-    modelName: 'User',
-    timestamps: true,     
-    
-    // --- HOOKS (Tự động chạy khi có sự kiện) ---
-    hooks: {
-      // Tự động băm mật khẩu trước khi TẠO user
-      beforeCreate: async (user) => {
-        if (user.passwordHash) {
-          const salt = await bcrypt.genSalt(10);
-          user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
-        }
+  User.init(
+    {
+      username: {
+        type: DataTypes.STRING(50),
+        allowNull: false,
+        primaryKey: true,
+        validate: {
+          notEmpty: { msg: 'Tên đăng nhập không được để trống.' },
+          len: { args: [1, 50], msg: 'Tên đăng nhập tối đa 50 ký tự.' },
+        },
       },
-      // Tự động băm mật khẩu trước khi CẬP NHẬT user
-      beforeUpdate: async (user) => {
-        if (user.changed('passwordHash')) {
-          const salt = await bcrypt.genSalt(10);
-          user.passwordHash = await bcrypt.hash(user.passwordHash, salt);
-        }
-      }
+      email: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: { msg: 'Email này đã được sử dụng.' },
+        validate: { isEmail: { msg: 'Email không đúng định dạng.' } },
+      },
+      passwordHash: {
+        // map JS attr passwordHash to DB column `password_hash`
+        type: DataTypes.STRING(1024),
+        allowNull: false,
+        field: 'password_hash',
+        validate: {
+          notEmpty: { msg: 'Mật khẩu là bắt buộc.' },
+        },
+      },
+      playername: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      userImage: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: 'user_image',
+      },
+      role: {
+        type: DataTypes.ENUM('player', 'admin'),
+        allowNull: false,
+        defaultValue: 'player',
+      },
+      status: {
+        type: DataTypes.ENUM('active', 'banned', 'inactive'),
+        allowNull: false,
+        defaultValue: 'active',
+      },
+      highScore: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        field: 'high_score',
+      },
+    },
+    {
+      sequelize,
+      modelName: 'User',
+      tableName: 'users',
+      timestamps: true,
+      createdAt: 'created_at',
+      updatedAt: false,
+      // No hooks: the frontend sends a SHA-256 password and we store/compare it directly.
     }
-  });
+  );
 
   return User;
 };

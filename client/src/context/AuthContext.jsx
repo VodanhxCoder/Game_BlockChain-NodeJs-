@@ -6,10 +6,6 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [mockUsers, setMockUsers] = useState([
-    { id: 1, name: "Alice", email: "alice@example.com", password: "password123" },
-    { id: 2, name: "Bob", email: "bob@example.com", password: "hunter2" },
-  ]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,28 +25,101 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   const login = async (email, password) => {
-    const found = mockUsers.find((u) => u.email === email && u.password === password);
-    if (!found) throw new Error("Invalid email or password");
-    const u = { id: found.id, name: found.name, email: found.email };
-    setUser(u);
-    return u;
+    try {
+  const response = await fetch('http://localhost:3000/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, passwordHash: password }),
+      });
+
+      // If Fail2Ban or middleware reports a ban, surface a clear message to the UI
+      if (response.status === 429) {
+        let data = {};
+        try { data = await response.json(); } catch (e) { /* ignore parse errors */ }
+        const remaining = Number(data.remaining || 0);
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        const human = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        const msg = data && data.error
+          ? `${data.error} (${human} remaining)`
+          : `Too many failed attempts. Your IP is temporarily banned (${human}).`;
+        const err = new Error(msg);
+        // attach metadata so callers can react programmatically if they want
+        err.isBanned = true;
+        err.remaining = remaining;
+        err.ip = data.ip;
+        throw err;
+      }
+
+      if (!response.ok) {
+        let errData = {};
+        try { errData = await response.json(); } catch (e) {}
+        throw new Error(errData.error || 'Invalid email or password');
+      }
+
+      const data = await response.json();
+      const user = {
+        username: data.user.username,
+        name: data.user.playername,
+        email: data.user.email,
+        role: data.user.role,
+        status: data.user.status,
+        highScore: data.user.highScore,
+      };
+      setUser(user);
+      return user;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   const logout = () => setUser(null);
 
   const register = async ({ name, email, password }) => {
-    if (!email || !password || !name) throw new Error("Missing fields");
-    if (mockUsers.some((u) => u.email === email)) throw new Error("Email already taken");
-    const id = (mockUsers[ mockUsers.length - 1 ]?.id || 0) + 1;
-    const newUser = { id, name, email, password };
-    setMockUsers((s) => [...s, newUser]);
-    const publicUser = { id, name, email };
-    setUser(publicUser);
-    return publicUser;
+    try {
+      // Hash the password using SHA-256 (same as login)
+      const encoder = new TextEncoder();
+      const passwordData = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const response = await fetch('http://localhost:3000/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: email, 
+          email: email,
+          passwordHash: hashed,
+          playername: name 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      const responseData = await response.json();
+      const user = {
+        username: responseData.user.username,
+        name: responseData.user.playername,
+        email: responseData.user.email,
+        role: responseData.user.role,
+        status: responseData.user.status,
+        highScore: responseData.user.highScore,
+      };
+      setUser(user);
+      return user;
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, logout, register, mockUsers }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

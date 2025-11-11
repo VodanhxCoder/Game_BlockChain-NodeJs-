@@ -1,8 +1,10 @@
 // models/index.js
 const { Sequelize } = require('sequelize');
 
-
-const sequelize = require('../config/sequelize'); 
+// `src/config/sequelize.js` may export the Sequelize instance directly or an object
+// { sequelize, testConnection }. Accept both shapes.
+const sequelizeModule = require('../config/sequelize');
+const sequelize = sequelizeModule && sequelizeModule.sequelize ? sequelizeModule.sequelize : sequelizeModule;
 
 // 2. Nạp các file model
 const setupUserModel = require('./User');
