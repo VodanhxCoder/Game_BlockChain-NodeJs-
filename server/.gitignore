@@ -4,3 +4,4 @@
 .idea/
 .env
 fail2ban_service/node_modules/
+.sequelizerc/
