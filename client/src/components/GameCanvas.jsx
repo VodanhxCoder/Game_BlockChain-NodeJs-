@@ -1,52 +1,41 @@
 import React, { useRef, useEffect, useState } from "react";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
-const lootTable = [
-  { name: "Nebula Core", rarity: "Legendary" },
-  { name: "Photon Shield", rarity: "Epic" },
-  { name: "Stellar Prism", rarity: "Rare" },
-  { name: "Plasma Charge", rarity: "Uncommon" },
-  { name: "Ion Fragment", rarity: "Common" },
-];
-
-const rarityWeights = {
-  Legendary: 0.02,
-  Epic: 0.08,
-  Rare: 0.18,
-  Uncommon: 0.32,
-  Common: 0.4,
-};
-
-function rollForLoot(level) {
-  const roll = Math.random();
-  let cumulative = 0;
-  let rarity = "Common";
-  for (const [key, weight] of Object.entries(rarityWeights)) {
-    cumulative += weight;
-    if (roll <= cumulative) {
-      rarity = key;
-      break;
-    }
-  }
-  const pool = lootTable.filter((item) => item.rarity === rarity) || lootTable;
-  const chosen = pool[Math.floor(Math.random() * pool.length)];
-  return {
-    ...chosen,
-    rarity,
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    level,
-    timestamp: new Date().toISOString(),
-    timeLabel: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-  };
-}
-
-async function fetchLootFromBackend(level) {
+// Fetch loot from backend - uses drop_pool table exclusively
+async function fetchLootFromBackend(level, username) {
   try {
-    const response = await axios.post("/api/drop", { level });
-    return response.data;
+    console.log(`🎲 Requesting drop for user: ${username}, level: ${level}`);
+    const response = await axios.post("/api/drop", { level, username });
+    console.log("📦 Backend response:", response.data);
+    
+    if (response.data && response.data.dropped) {
+      // Transform backend response to match expected format and include hash
+      const item = response.data.item || {};
+      console.log("✅ Item dropped:", item.itemName || item.name || response.data);
+      return {
+        itemId: item.itemId || item.id,
+        // keep backwards-compatible 'name' keys for older UI code and add canonical keys
+        name: item.itemName || item.name,
+        itemName: item.itemName || item.name,
+        rarity: item.itemTier || item.rarity,
+        itemTier: item.itemTier || item.rarity,
+        itemImage: item.itemImage || item.image,
+        itemHash: response.data.itemHash || item.itemHash || item.hash || null,
+        quantity: item.quantity || 1,
+        id: response.data.userItemId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        level,
+        timestamp: response.data.timestamp || new Date().toISOString(),
+        timeLabel: new Date(response.data.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        dropped: true,
+      };
+    }
+    console.log("❌ No drop this time");
+    return null;
   } catch (error) {
-    console.error("Failed to fetch loot from backend:", error);
-    return rollForLoot(level);
+    console.error("❌ Failed to fetch loot from backend:", error);
+    console.error("Error details:", error.response?.data || error.message);
+    return null;
   }
 }
 
@@ -55,8 +44,8 @@ function generateBlockadesForLevel(lvl, g) {
   if (lvl >= 5) return blocks;
 
   const clusterCount = 3;
-  const cellW = 18;
-  const cellH = 12;
+  const cellW = 27;
+  const cellH = 18;
   const cols = 5;
   const rows = 3;
   const clusterWidth = cols * cellW;
@@ -104,6 +93,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
   const runningRef = useRef(running);
+  const { user } = useAuth();
 
   // Callback helpers to notify parent of state changes
   const updateScore = (newScore) => {
@@ -145,15 +135,16 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
     state.current = {
       w,
       h,
-      player: { x: w / 2, y: h - 40, w: 40, h: 10, speed: 5, reload: 0 },
+      player: { x: w / 2, y: h - 40, w: 60, h: 15, speed: 5, reload: 0 },
       bullets: [],
       enemyBullets: [],
       invaders: [],
+      droppedItems: [], // Falling items from defeated enemies
       invaderRows: 4,
       invaderCols: 8,
-      invaderW: 36,
-      invaderH: 20,
-      invaderPadding: 12,
+      invaderW: 54,
+      invaderH: 30,
+      invaderPadding: 18,
       invaderOffsetY: 40,
       invaderDir: 1,
       invaderSpeed: 0.3 + lvl * 0.1,
@@ -283,13 +274,32 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
             s.bullets.splice(i, 1);
             updateScore((p) => p + 10);
             
-            if (Math.random() < 0.25) {
-              fetchLootFromBackend(s.level).then((loot) => {
-                if (loot && onLootDrop) {
-                  onLootDrop(loot);
-                }
-              });
-            }
+            // Request item drop from backend (backend controls drop chance via drop pool)
+            const username = user?.username || 'guest';
+            const enemyX = inv.x + s.invaderW / 2;
+            const enemyY = inv.y + s.invaderH / 2;
+            
+            console.log("💥 Enemy killed! Requesting drop...");
+            fetchLootFromBackend(s.level, username).then((loot) => {
+              if (loot && loot.dropped) {
+                console.log("🎁 Creating falling item:", loot.itemName);
+                // Create falling item
+                s.droppedItems.push({
+                  ...loot,
+                  x: enemyX,
+                  y: enemyY,
+                  velocityY: 0,
+                  gravity: 0.06, // slower fall
+                  maxFallSpeed: 2,
+                  collected: false,
+                  size: 28,
+                });
+              } else {
+                console.log("🚫 No drop received from backend");
+              }
+            }).catch(err => {
+              console.error("❌ Drop request failed:", err);
+            });
             break;
           }
         }
@@ -358,6 +368,53 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         }
       }
 
+      // Update falling items
+      for (let i = s.droppedItems.length - 1; i >= 0; i--) {
+        const item = s.droppedItems[i];
+        if (item.collected) continue;
+
+  // Apply gravity with max fall speed to slow drops
+  item.velocityY = Math.min((item.velocityY || 0) + (item.gravity || 0.06), item.maxFallSpeed || 2);
+  item.y += item.velocityY;
+
+        // Check collision with player
+        const playerLeft = s.player.x - s.player.w / 2;
+        const playerRight = s.player.x + s.player.w / 2;
+        const playerTop = s.player.y - 12;
+        const playerBottom = s.player.y + 10;
+
+        const itemLeft = item.x - item.size / 2;
+        const itemRight = item.x + item.size / 2;
+        const itemTop = item.y - item.size / 2;
+        const itemBottom = item.y + item.size / 2;
+
+        if (
+          itemLeft < playerRight &&
+          itemRight > playerLeft &&
+          itemTop < playerBottom &&
+          itemBottom > playerTop
+        ) {
+          // Player collected the item!
+          item.collected = true;
+          s.droppedItems.splice(i, 1);
+          
+          // Notify parent component
+          if (onLootDrop) {
+            onLootDrop({
+              ...item,
+              timestamp: item.timestamp || new Date().toISOString(),
+              timeLabel: item.timeLabel || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            });
+          }
+          continue;
+        }
+
+        // Remove items that fall off screen
+        if (item.y > s.h + 50) {
+          s.droppedItems.splice(i, 1);
+        }
+      }
+
       const now = Date.now();
       if (now - s.lastEnemyShot > s.enemyShotInterval && s.invaders.some((i) => i.alive)) {
         const byCol = {};
@@ -396,20 +453,62 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
       }
 
       ctx.fillStyle = "#ffd166";
-      for (const b of s.bullets) ctx.fillRect(b.x - 2, b.y - 8, 4, 8);
+      for (const b of s.bullets) ctx.fillRect(b.x - 3, b.y - 12, 6, 12);
 
       ctx.fillStyle = "#ff8b8b";
-      for (const eb of s.enemyBullets) ctx.fillRect(eb.x - 2, eb.y - 6, 4, 8);
+      for (const eb of s.enemyBullets) ctx.fillRect(eb.x - 3, eb.y - 9, 6, 12);
 
       ctx.fillStyle = "#4ad994";
       const px = s.player.x;
       const py = s.player.y;
       ctx.beginPath();
-      ctx.moveTo(px, py - 12);
-      ctx.lineTo(px - s.player.w / 2, py + 10);
-      ctx.lineTo(px + s.player.w / 2, py + 10);
+      ctx.moveTo(px, py - 18);
+      ctx.lineTo(px - s.player.w / 2, py + 15);
+      ctx.lineTo(px + s.player.w / 2, py + 15);
       ctx.closePath();
       ctx.fill();
+
+      // Draw falling items
+      for (const item of s.droppedItems) {
+        if (item.collected) continue;
+
+        // Rarity colors - check both rarity and itemTier fields
+        let itemColor = "#9CA3AF"; // Common - gray
+        let glowColor = "rgba(156, 163, 175, 0.5)";
+        
+        const tier = item.itemTier || item.rarity;
+        if (tier === "Rare") {
+          itemColor = "#3B82F6"; // Rare - blue
+          glowColor = "rgba(59, 130, 246, 0.6)";
+        } else if (tier === "Legendary") {
+          itemColor = "#FFD700"; // Legendary - gold
+          glowColor = "rgba(255, 215, 0, 0.7)";
+        }
+
+        // Draw glow effect
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = glowColor;
+        
+        // Draw item as a glowing gem/crystal
+        ctx.fillStyle = itemColor;
+        ctx.beginPath();
+        ctx.arc(item.x, item.y, item.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw sparkle effect
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(item.x, item.y - item.size / 2 - 2);
+        ctx.lineTo(item.x, item.y + item.size / 2 + 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(item.x - item.size / 2 - 2, item.y);
+        ctx.lineTo(item.x + item.size / 2 + 2, item.y);
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+      }
 
       ctx.fillStyle = "#ffffff";
       ctx.font = "16px Inter, sans-serif";
@@ -472,6 +571,32 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
       rafRef.current = requestAnimationFrame(loop);
     } else {
       cancelAnimationFrame(rafRef.current);
+
+      // Draw a one-time pause overlay so the user sees the paused state even
+      // though the RAF loop is stopped. We only draw when the game has been
+      // started and is not game over.
+      try {
+        const canvas = canvasRef.current;
+        const s = state.current;
+        if (canvas && s && s.started && !s.gameOver) {
+          const ctx = canvas.getContext("2d");
+          // semi-opaque dark overlay
+          ctx.fillStyle = "rgba(0,0,0,0.45)";
+          ctx.fillRect(0, 0, s.w, s.h);
+
+          // Paused text
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "48px Inter, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("PAUSED", s.w / 2, s.h / 2 - 10);
+          ctx.font = "18px Inter, sans-serif";
+          ctx.fillText("Press P to continue", s.w / 2, s.h / 2 + 26);
+          ctx.textAlign = "start";
+        }
+      } catch (e) {
+        // Drawing overlay is non-critical — swallow errors
+        // console.warn('Pause overlay draw failed', e);
+      }
     }
 
     return () => cancelAnimationFrame(rafRef.current);

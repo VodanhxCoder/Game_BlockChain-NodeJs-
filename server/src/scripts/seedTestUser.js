@@ -1,7 +1,7 @@
 // scripts/seedTestUser.js
 
 const { User } = require('../models');
-const sequelize = require('../config/sequelize');
+const { sequelize } = require('../config/sequelize');
 
 (async () => {
   try {
@@ -9,7 +9,7 @@ const sequelize = require('../config/sequelize');
     await sequelize.authenticate();
     console.log('Database connection established.');
 
-    // Create a test user
+    // Create (or find) a test user
     const testUser = {
       username: 'testuser',
       email: 'testuser@example.com',
@@ -20,8 +20,9 @@ const sequelize = require('../config/sequelize');
       highScore: 0,
     };
 
-    const user = await User.create(testUser);
-    console.log('Test user created:', user.toJSON());
+    const [user, created] = await User.findOrCreate({ where: { username: testUser.username }, defaults: testUser });
+    if (created) console.log('Test user created:', user.toJSON());
+    else console.log('Test user already exists:', user.username);
   } catch (error) {
     console.error('Error creating test user:', error);
   } finally {

@@ -74,7 +74,7 @@ viewEngine(app);
 testConnection();
 
 
-let port = process.env.PORT || 6969;
+let port = process.env.PORT || 3;
 app.listen(port, () => {
     console.log("Backend nodejs is running on the port: " + port);
 });

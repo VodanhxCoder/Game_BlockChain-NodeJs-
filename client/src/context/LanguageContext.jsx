@@ -145,15 +145,30 @@ export function LanguageProvider({ children }) {
     }
   }, [lang]);
 
+  const availableLanguages = useMemo(() => [
+    { code: 'en', label: 'English' },
+    { code: 'vi', label: 'Tiếng Việt' }
+  ], []);
+
   const value = useMemo(
     () => ({
       lang,
-      setLanguage: setLang,
+      // safe setter (only valid codes)
+      setLanguage: (code) => { if (dictionaries[code]) setLang(code); },
       toggleLanguage: () => setLang((prev) => (prev === "vi" ? "en" : "vi")),
-      t: (path) => getByPath(dictionaries[lang], path) ?? path,
+      // translation helper with fallback to English
+      t: (path) => {
+        const found = getByPath(dictionaries[lang], path);
+        if (found !== undefined) return found;
+        // fallback to English if missing in current language
+        const fallback = getByPath(dictionaries['en'], path);
+        return fallback !== undefined ? fallback : path;
+      },
       dictionary: dictionaries[lang],
+      availableLanguages,
+      getAvailableLanguages: () => availableLanguages,
     }),
-    [lang]
+    [lang, availableLanguages]
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

@@ -1,5 +1,5 @@
 // Renders the interactive Space Raiders canvas shooter and its surrounding HUD panels.
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../../assets/css/Homepage.css";
 import { useLanguage } from "../../../context/LanguageContext";
 import GameCanvas from "../../../components/GameCanvas";
@@ -10,11 +10,15 @@ export default function Homepage() {
   const [level, setLevel] = useState(1);
   const [showOverlay, setShowOverlay] = useState(true);
   const [lootDrops, setLootDrops] = useState([]);
+  const [totalDropsThisRun, setTotalDropsThisRun] = useState(0);
   const { t, lang } = useLanguage();
 
   const handleLootDrop = (loot) => {
     console.log("Loot dropped:", loot);
-    setLootDrops(prev => [loot, ...prev].slice(0, 5)); // Keep last 5 drops
+    // increment total tally for this session/run
+    setTotalDropsThisRun((n) => n + 1);
+    // Keep last 3 drops (newest first)
+    setLootDrops(prev => [loot, ...prev].slice(0, 3));
   };
 
   const handleScoreChange = (newScore) => {
@@ -33,6 +37,21 @@ export default function Homepage() {
   const overlayControls = t("game.controls");
   const missions = t("game.missions") || [];
   const boosts = t("game.boosts") || [];
+
+  // Allow toggling the HUD overlay with the 'T' key. Ignore keypresses when
+  // the user is typing into an input/textarea or editable element.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.code !== "KeyT") return;
+      const target = e.target;
+      const tag = target && target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
+      e.preventDefault();
+      setShowOverlay((s) => !s);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const statCards = [
     { id: "score", label: t("game.score"), value: formatter.format(score) },
@@ -64,33 +83,33 @@ export default function Homepage() {
             ))}
           </div>
 
-          <div className="game-hud__card game-hud__missions">
+          <div className="game-hud__card">
             <div className="game-hud__card-header">
-              <strong>{t("game.missionsTitle")}</strong>
-              <span className="chip chip--accent">{missions.length}</span>
-            </div>
-            <ul>
-              {missions.map((mission) => (
-                <li key={mission.label}>
-                  <span>{mission.label}</span>
-                  <small>{mission.reward}</small>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="game-hud__card game-hud__boosts">
-            <div className="game-hud__card-header">
-              <strong>{t("game.boostsTitle")}</strong>
-            </div>
-            <ul>
-              {boosts.map((boost) => (
-                <li key={boost.label}>
-                  <span>{boost.label}</span>
-                  <span className="chip">{boost.status}</span>
-                </li>
-              ))}
-            </ul>
+                <strong>Recent Drops</strong>
+                <span className="chip chip--accent">{totalDropsThisRun}</span>
+              </div>
+            {lootDrops.length === 0 ? (
+              <p className="metric-label" style={{ padding: 12, textAlign: 'center' }}>
+                No drops yet. Destroy enemies to get loot!
+              </p>
+            ) : (
+              <ul style={{ maxHeight: 240 }}>
+                {lootDrops.map((drop, idx) => (
+                  <li key={drop.id || idx} style={{ marginBottom: 8, padding: 8, borderRadius: 4, backgroundColor: 'rgba(120,192,255,0.05)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{drop.itemName || drop.name}</span>
+                      <span className="chip" style={{ fontSize: 11 }}>{drop.itemTier || drop.rarity}</span>
+                    </div>
+                    <small style={{ fontSize: 11, color: '#888', display: 'block' }}>
+                      {drop.timeLabel || new Date(drop.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </small>
+                    <small style={{ fontSize: 11, color: '#666', display: 'block', marginTop: 4 }}>
+                      Hash: {drop.itemHash ? `${drop.itemHash.substring(0, 16)}...` : (drop.id || '')}
+                    </small>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
