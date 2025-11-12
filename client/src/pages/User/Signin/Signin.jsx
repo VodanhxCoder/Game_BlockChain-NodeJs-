@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
+import { hashTextSHA256 } from "../../../utils/Passwordhasher";
+import { sanitizeInput } from "../../../utils/sanitizer";
 import "../../../assets/css/auth.css";
 
 const TRANSITION_MS = 420;
@@ -24,13 +26,18 @@ export default function SignIn() {
     e.preventDefault();
     if (loading) return;
     setError("");
-    if (!email.trim() || !password) {
-      setError("Please enter email and password.");
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedPassword = sanitizeInput(password);
+    if (!sanitizedEmail || !sanitizedPassword) {
+      setError("Please enter valid email and password.");
       return;
     }
     setLoading(true);
     try {
-      await login(email.trim(), password);
+      // Hash the password on the client before sending to the login handler.
+      // NOTE: Ensure your backend expects the hashed password; otherwise adapt accordingly.
+      const hashed = await hashTextSHA256(sanitizedPassword);
+      await login(sanitizedEmail, hashed);
       navigate(returnTo, { replace: true });
     } catch (err) {
       setError(err?.message || "Sign in failed.");

@@ -1,91 +1,313 @@
-// Shows the player's gear stats, loadout, and achievement progress at a glance.
-import React from "react";
+// Shows the player's inventory items fetched from database
+import React, { useState, useEffect, useMemo } from "react";
+import "../../../assets/css/Homepage.css";
+import { useAuth } from "../../../context/AuthContext";
+import { useLanguage } from "../../../context/LanguageContext";
+import axios from "axios";
 
-const stats = [
-  { id: "power", label: "Sức mạnh tàu", value: "1.280", progress: 72, note: "+120 tuần này" },
-  { id: "rarity", label: "Skin hiếm", value: "8", progress: 40, note: "3 Legendary" },
-  { id: "materials", label: "Vật liệu nâng cấp", value: "42", progress: 54, note: "Chuẩn bị nâng level" },
-];
+const rarityColors = {
+  Legendary: "#FFD700",
+  Rare: "#3B82F6",
+  Common: "#6B7280"
+};
 
-const loadout = [
-  { slot: "Primary", name: "Nova Railgun", tier: "Mythic", stats: "+34% dmg" },
-  { slot: "Secondary", name: "Pulse Swarm", tier: "Epic", stats: "5 drones auto-lock" },
-  { slot: "Utility", name: "Gravity Well", tier: "Rare", stats: "Giảm tốc 2s" },
-];
-
-const achievements = [
-  { title: "Collector IV", desc: "Sở hữu 25 vật phẩm on-chain", progress: 76 },
-  { title: "No-Death Run", desc: "Thắng 10 trận không mất mạng", progress: 52 },
-  { title: "Speed Runner", desc: "Phá kỷ lục 3 map campaign", progress: 31 },
-];
+const rarityLabels = {
+  Legendary: "Legendary",
+  Rare: "Rare",
+  Common: "Common"
+};
 
 export default function Inventory() {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    byRarity: {},
+    totalValue: 0
+  });
+  const [sortOption, setSortOption] = useState('time-desc');
+
+  // Compute sorted inventory based on user selection
+  const sortedInventory = useMemo(() => {
+    if (!Array.isArray(inventory)) return [];
+    const arr = [...inventory];
+    const tierRank = (tier) => {
+      if (!tier) return 0;
+      const t = String(tier);
+      if (t === 'Legendary') return 3;
+      if (t === 'Rare') return 2;
+      if (t === 'Common') return 1;
+      return 0;
+    };
+
+    switch (sortOption) {
+      case 'time-asc':
+        arr.sort((a, b) => new Date(a.obtainedAt) - new Date(b.obtainedAt));
+        break;
+      case 'time-desc':
+        arr.sort((a, b) => new Date(b.obtainedAt) - new Date(a.obtainedAt));
+        break;
+      case 'tier-asc':
+        arr.sort((a, b) => tierRank(a.item?.itemTier) - tierRank(b.item?.itemTier));
+        break;
+      case 'tier-desc':
+        arr.sort((a, b) => tierRank(b.item?.itemTier) - tierRank(a.item?.itemTier));
+        break;
+      default:
+        break;
+    }
+    return arr;
+  }, [inventory, sortOption]);
+
+  useEffect(() => {
+    if (user?.username) {
+      fetchInventory();
+    } else {
+      setLoading(false);
+      setError("Please log in to view your inventory");
+    }
+  }, [user]);
+
+  const fetchInventory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(`/api/inventory/${user.username}`);
+      const inventoryData = response.data.inventory || [];
+      setInventory(inventoryData);
+
+      // Calculate stats
+      const byRarity = {};
+      let totalValue = 0;
+      inventoryData.forEach(item => {
+        if (item.item) {
+          const rarity = item.item.itemTier || item.item.rarity;
+          byRarity[rarity] = (byRarity[rarity] || 0) + 1;
+        }
+      });
+
+      setStats({
+        totalItems: response.data.totalItems || 0,
+        byRarity,
+        totalValue
+      });
+    } catch (err) {
+      console.error("Failed to fetch inventory:", err);
+      setError(err.response?.data?.error || "Failed to load inventory");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="page-shell">
+        <section className="page-hero fade-in-up">
+          <h1 className="gradient-title">Loading Inventory...</h1>
+        </section>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="page-shell">
+        <section className="page-hero fade-in-up">
+          <h1 className="gradient-title">Inventory</h1>
+          <div className="page-card" style={{ marginTop: 20, padding: 20, textAlign: 'center' }}>
+            <p style={{ color: '#ff6b6b' }}>{error}</p>
+            {!user && (
+              <button 
+                type="button" 
+                className="ui-btn ui-btn--primary" 
+                onClick={() => window.location.href = '/signin'}
+                style={{ marginTop: 16 }}
+              >
+                Go to Login
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell">
       <section className="page-hero fade-in-up">
         <span className="page-hero__badge">
-          <span role="img" aria-hidden="true">
-            🎒
-          </span>
+          <span role="img" aria-hidden="true">🎒</span>
           Inventory
         </span>
-        <h1 className="gradient-title">Loadout đa chuỗi của bạn.</h1>
+        <h1 className="gradient-title">Your Galactic Loot</h1>
         <p className="page-hero__text">
-          Kéo thả NFT từ ví hoặc craft vật phẩm trực tiếp. Hệ thống đồng bộ mọi thứ vào trận chiến trong vài giây với hiệu
-          ứng chuyển đổi mượt mà.
+          Items collected from battles across the cosmos. Each item is stored on-chain and can be traded or equipped.
         </p>
       </section>
 
-      <section className="page-grid">
-        {stats.map((stat) => (
-          <article key={stat.id} className="page-card">
-            <h3>{stat.label}</h3>
-            <div className="metric-value">{stat.value}</div>
-            <div className="metric-label">{stat.note}</div>
-            <div className="ui-progress">
-              <div className="ui-progress__bar" style={{ width: `${stat.progress}%` }} />
-            </div>
-          </article>
-        ))}
-      </section>
-
+      {/* Stats Overview */}
       <section className="page-grid">
         <article className="page-card">
-          <h3>Tải trang</h3>
-          <div className="stagger">
-            {loadout.map((slot) => (
-              <div key={slot.slot} className="settings-item">
-                <div>
-                  <strong>{slot.slot}</strong>
-                  <p>{slot.name}</p>
-                </div>
-                <div>
-                  <span className="chip chip--accent">{slot.tier}</span>
-                  <p className="metric-label">{slot.stats}</p>
-                </div>
-              </div>
-            ))}
+          <h3>Total Items</h3>
+          <div className="metric-value">{stats.totalItems}</div>
+          <div className="metric-label">Collected from drops</div>
+        </article>
+
+        <article className="page-card">
+          <h3>Total Value</h3>
+          <div className="metric-value">{stats.totalItems} Items</div>
+          <div className="metric-label">In your collection</div>
+        </article>
+
+        <article className="page-card">
+          <h3>Rarest Item</h3>
+          <div className="metric-value">
+            {stats.byRarity.Legendary ? `${stats.byRarity.Legendary} Legendary` :
+             stats.byRarity.Rare ? `${stats.byRarity.Rare} Rare` : 
+             stats.byRarity.Common ? `${stats.byRarity.Common} Common` : 'None yet'}
           </div>
-          <button type="button" className="ui-btn ui-btn--primary" style={{ marginTop: 18 }}>
-            Chỉnh sửa loadout
+          <div className="metric-label">Keep collecting!</div>
+        </article>
+      </section>
+
+      {/* Inventory Grid */}
+      <section className="page-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>Your Items ({inventory.length})</h3>
+            <select className="sort-select" value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+              <option value="time-desc">Newest first</option>
+              <option value="time-asc">Oldest first</option>
+              <option value="tier-desc">Tier: High → Low</option>
+              <option value="tier-asc">Tier: Low → High</option>
+            </select>
+          </div>
+          <button 
+            type="button" 
+            className="ui-btn ui-btn--ghost"
+            onClick={fetchInventory}
+          >
+            🔄 Refresh
           </button>
-        </article>
+        </div>
 
-        <article className="page-card">
-          <h3>Huy hiệu & mục tiêu</h3>
-          <div className="stagger">
-            {achievements.map((ach) => (
-              <div key={ach.title}>
-                <strong>{ach.title}</strong>
-                <p className="metric-label">{ach.desc}</p>
-                <div className="ui-progress">
-                  <div className="ui-progress__bar" style={{ width: `${ach.progress}%` }} />
+        {inventory.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <p style={{ fontSize: 18, marginBottom: 12 }}>No items yet!</p>
+            <p className="metric-label">Play Space Raiders to collect loot drops</p>
+            <button 
+              type="button" 
+              className="ui-btn ui-btn--primary"
+              onClick={() => window.location.href = '/H'}
+              style={{ marginTop: 16 }}
+            >
+              Start Playing
+            </button>
+          </div>
+        ) : (
+          <div className="inventory-scroll" style={{
+            maxHeight: '60vh',
+            boxSizing: 'border-box',
+            paddingRight: 8
+          }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
+              gap: 16 
+            }}>
+            {sortedInventory.map((inventoryItem) => {
+              const item = inventoryItem.item;
+              if (!item) return null;
+              
+              return (
+                <div 
+                  key={inventoryItem.inventoryItemId} 
+                  className="page-card"
+                  style={{ 
+                    padding: 16,
+                    borderLeft: `3px solid ${rarityColors[item.itemTier] || '#6B7280'}`
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+                    <span 
+                      className="chip chip--accent"
+                      style={{ backgroundColor: rarityColors[item.itemTier] + '20', color: rarityColors[item.itemTier] }}
+                    >
+                      {rarityLabels[item.itemTier]}
+                    </span>
+                  </div>
+                  
+                  <h4 style={{ marginBottom: 8, fontSize: 16 }}>{item.itemName}</h4>
+                  <p className="metric-label" style={{ fontSize: 13, marginBottom: 12 }}>
+                    {item.itemTier} tier item
+                  </p>
+                  
+                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
+                    <div>📅 Acquired: {formatDate(inventoryItem.obtainedAt)}</div>
+                    {inventoryItem.itemHash && (
+                      <div style={{ fontSize: 10, marginTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
+                        🔐 {inventoryItem.itemHash.substring(0, 16)}...
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    type="button" 
+                    className="ui-btn ui-btn--ghost"
+                    style={{ width: '100%', marginTop: 8, fontSize: 12 }}
+                  >
+                    View Details
+                  </button>
                 </div>
+              );
+            })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Rarity Breakdown */}
+      {Object.keys(stats.byRarity).length > 0 && (
+        <section className="page-card">
+          <h3 style={{ marginBottom: 16 }}>Collection by Rarity</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+            {Object.entries(stats.byRarity).map(([rarity, count]) => (
+              <div 
+                key={rarity}
+                style={{ 
+                  textAlign: 'center', 
+                  padding: 12, 
+                  borderRadius: 8,
+                  backgroundColor: rarityColors[rarity] + '10',
+                  border: `1px solid ${rarityColors[rarity]}30`
+                }}
+              >
+                <div style={{ fontSize: 24, fontWeight: 700, color: rarityColors[rarity] }}>{count}</div>
+                <div style={{ fontSize: 12, color: rarityColors[rarity] }}>{rarityLabels[rarity]}</div>
               </div>
             ))}
           </div>
-        </article>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
