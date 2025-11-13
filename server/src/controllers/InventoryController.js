@@ -140,7 +140,8 @@ const simulateItemDrop = async (req, res) => {
     // Delegate the inventory insertion to the DropController implementation
     // which now uses inventories and inventory_items tables with item_hash generation
     try {
-      const createdInventoryItem = await DropController.simulateDrop(user.username);
+      // Persist the exact selected item to inventory and get its stored record
+      const createdInventoryItem = await DropController.simulateDrop(user.username, droppedEntry.Item.itemId);
 
       // createdInventoryItem may be null if DropController's internal roll decided
       // not to create an item (defensive check). But we already selected one above,

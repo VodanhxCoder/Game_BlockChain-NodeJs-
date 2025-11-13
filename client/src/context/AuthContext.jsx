@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "app.mock.auth";
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || "http://localhost:8080";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -26,7 +25,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
+  const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email, passwordHash: password }),
@@ -76,7 +75,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => setUser(null);
 
-  const register = async ({ name, email, password }) => {
+  const register = async ({ name, email, password, username }) => {
     try {
       // Hash the password using SHA-256 (same as login)
       const encoder = new TextEncoder();
@@ -89,7 +88,7 @@ export function AuthProvider({ children }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          username: email, 
+          username: username || email, 
           email: email,
           passwordHash: hashed,
           playername: name 
