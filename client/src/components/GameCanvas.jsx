@@ -148,7 +148,7 @@ function generateInvaderPattern(rows, cols, lvl) {
   return pattern;
 }
 
-const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange }) => {
+const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, onKillsChange }) => {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const keys = useRef({});
