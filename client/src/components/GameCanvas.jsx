@@ -148,7 +148,7 @@ function generateInvaderPattern(rows, cols, lvl) {
   return pattern;
 }
 
-const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange }) => {
+const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, onKillsChange }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const rafRef = useRef(null);
@@ -766,16 +766,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
   };
 
   return (
-    <div ref={containerRef} className={`game-frame game-frame--container ${isFullscreen ? "is-fullscreen" : ""}`}>
-      <div className="game-toolbar" style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <button className="btn ghost" type="button" onClick={toggleFullscreen} aria-pressed={isFullscreen}>
-          {isFullscreen ? "Exit Full" : "Fullscreen"}
-        </button>
-        <div style={{ marginLeft: "auto", color: "#9aa7bf", fontWeight: 700 }}>
-          Score: {score} • Lives: {lives} • Lvl: {level}
-        </div>
-      </div>
-
+    <div ref={containerRef} className="game-frame game-frame--container">
       <canvas ref={canvasRef} className="game-frame__surface" />
     </div>
   );
