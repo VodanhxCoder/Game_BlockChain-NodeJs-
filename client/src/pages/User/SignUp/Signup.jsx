@@ -1,6 +1,7 @@
 // Captures new user details, validates input, and animates the transition between auth pages.
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { sanitizeInput } from "../../../utils/sanitizer";
@@ -20,11 +21,27 @@ export default function SignUp() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
+
+  // Reset reCAPTCHA when theme changes
+  useEffect(() => {
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+      setCaptchaToken(null);
+    }
+  }, [isDark]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
+    
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA verification.");
+      return;
+    }
+    
     const sanitizedName = sanitizeInput(name);
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedPassword = sanitizeInput(password);
@@ -130,6 +147,17 @@ export default function SignUp() {
                 autoComplete="new-password"
               />
             </label>
+
+            <div className="recaptcha-container">
+              <ReCAPTCHA
+                key={isDark ? "dark" : "light"}
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+                onExpired={() => setCaptchaToken(null)}
+                theme={isDark ? "dark" : "light"}
+              />
+            </div>
 
             <div className="auth-actions">
               <button type="submit" className="btn primary" disabled={loading}>

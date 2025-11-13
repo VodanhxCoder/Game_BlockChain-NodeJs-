@@ -99,10 +99,10 @@ body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe
   box-shadow:0 8px 30px rgba(0,0,0,0.6);
   display:block;
 
-  /* prefer large canvas but stay responsive */
-  width: min(1600px, calc(100vw - 240px));
+  /* maximize canvas size */
+  width: min(calc(100vw - 280px), 1920px);
   max-width: 100%;
-  aspect-ratio: 16 / 9; /* matches 1600x900 */
+  aspect-ratio: 16 / 9;
   height: auto;
 }
 
@@ -363,26 +363,17 @@ body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe
 
 /* game canvas: larger default size (responsive) */
 .game-canvas{
-  width: min(1600px, calc(100vw - 240px));
+  width: min(calc(100vw - 280px), 1920px);
   max-width: 100%;
-  aspect-ratio: 16 / 9; /* matches 1600x900 */
-  height: auto;
-}
-
-/* Override: make canvas much wider so it nearly fills the window (keeps sidebar space) */
-.game-canvas{
-  /* allow up to 1920px but otherwise fill the viewport minus menu/padding */
-  width: min(1920px, calc(100vw - 260px));
-  max-width: calc(100vw - 260px);
-  aspect-ratio: 16 / 9; /* keep ratio */
+  aspect-ratio: 16 / 9;
   height: auto;
 }
 
 /* responsive: on narrower viewports keep a comfortable gap from edges */
 @media (max-width:1400px){
   .game-canvas{
-    width: calc(100vw - 120px);
-    max-width: calc(100vw - 120px);
+    width: calc(100vw - 100px);
+    max-width: calc(100vw - 100px);
     aspect-ratio: 16 / 9;
   }
 }
@@ -390,8 +381,8 @@ body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe
 /* small screens: full width minus small padding */
 @media (max-width:900px){
   .game-canvas{
-    width: calc(100vw - 32px);
-    aspect-ratio: 4 / 3;
+    width: calc(100vw - 24px);
+    aspect-ratio: 16 / 9;
   }
 }
 
@@ -423,7 +414,7 @@ body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe
 /* make sure on small screens overlay floats to top-center */
 @media (max-width:900px){
   .game-overlay{ left: 50%; right: auto; transform: translateX(-50%); top: 12px; width: calc(100% - 36px); }
-  .game-canvas{ width: calc(100vw - 32px); aspect-ratio: 4 / 3; }
+  .game-canvas{ width: calc(100vw - 24px); aspect-ratio: 16 / 9; }
 }
 
 /* Make page and layout fill viewport and avoid scrolling */
@@ -521,10 +512,10 @@ html, body {
 
 /* Make the canvas fill available space while keeping aspect */
 .game-canvas {
-  width: calc(100vw - 260px);       /* account for side menu + small padding */
-  max-width: calc(100vw - 260px);
-  height: calc(100vh - 120px);      /* leave some vertical padding */
-  max-height: calc(100vh - 120px);
+  width: calc(100vw - 280px);
+  max-width: calc(100vw - 280px);
+  height: calc(100vh - 100px);
+  max-height: calc(100vh - 100px);
   border-radius: 10px;
   display: block;
   object-fit: contain;
@@ -540,10 +531,10 @@ html, body {
 @media (max-width: 900px) {
   .content-area { margin-left: 0; padding: 8px; flex-direction: column; }
   .game-canvas {
-    width: calc(100vw - 32px);
-    max-width: calc(100vw - 32px);
-    height: calc(100vh - 160px);
-    max-height: calc(100vh - 160px);
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    height: calc(100vh - 140px);
+    max-height: calc(100vh - 140px);
   }
 }
 
@@ -688,8 +679,8 @@ html, body, #root {
 .game-dashboard {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(260px, 360px) 1fr;
-  gap: clamp(18px, 3vw, 32px);
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: clamp(12px, 2vw, 24px);
   min-height: calc(100vh - 32px);
 }
 

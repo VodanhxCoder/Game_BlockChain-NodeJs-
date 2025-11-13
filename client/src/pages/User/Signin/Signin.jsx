@@ -1,6 +1,7 @@
 // Handles credential-based sign-in, mock autofill, and redirect logic for authenticated users.
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
@@ -21,11 +22,27 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
+
+  // Reset reCAPTCHA when theme changes
+  useEffect(() => {
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+      setCaptchaToken(null);
+    }
+  }, [isDark]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
+    
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA verification.");
+      return;
+    }
+    
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedPassword = sanitizeInput(password);
     if (!sanitizedEmail || !sanitizedPassword) {
@@ -155,6 +172,17 @@ export default function SignIn() {
                 <input type="checkbox" defaultChecked /> Remember device
               </label>
               <Link to="/forgot" className="auth-link">Forgot password?</Link>
+            </div>
+
+            <div className="recaptcha-container">
+              <ReCAPTCHA
+                key={isDark ? "dark" : "light"}
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+                onExpired={() => setCaptchaToken(null)}
+                theme={isDark ? "dark" : "light"}
+              />
             </div>
 
             <div className="auth-actions">
