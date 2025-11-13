@@ -82,6 +82,72 @@ function generateBlockadesForLevel(lvl, g) {
   return blocks;
 }
 
+// Return invader configuration (rows, cols, base speed) for a given level.
+function getInvaderConfig(lvl) {
+  // Keep gentle growth for early levels, but from level 3 onward
+  // increase enemy counts more aggressively to ramp difficulty.
+  if (lvl < 3) {
+    // rows grow slowly with level, cols also increase; cap to keep layout reasonable
+    const rows = Math.min(8, 3 + Math.floor((lvl - 1) / 2));
+    const cols = Math.min(12, 8 + Math.floor((lvl - 1) / 2));
+    // base speed increases with level but in a controlled way
+    const speed = 0.25 + lvl * 0.08;
+    return { rows, cols, speed };
+  }
+
+  // Level 3+ will add more rows/cols to increase challenge.
+  // We cap to avoid layout overflow but make levels feel more packed.
+  const rows = Math.min(10, 4 + (lvl - 3));
+  const cols = Math.min(14, 8 + (lvl - 3));
+  const speed = 0.25 + lvl * 0.09;
+  return { rows, cols, speed };
+}
+
+// Generate a boolean pattern matrix [rows][cols] that controls which invader slots are occupied.
+// We vary patterns by level to produce more interesting formations.
+function generateInvaderPattern(rows, cols, lvl) {
+  const pattern = Array.from({ length: rows }, () => Array(cols).fill(true));
+
+  // For level 2 and onwards we pick a random formation mode so games feel varied.
+  // For level 1 keep deterministic behavior (based on level) so tutorial feels stable.
+  let mode;
+  if (lvl >= 2) {
+    mode = Math.floor(Math.random() * 4); // 0..3 random
+  } else {
+    mode = lvl % 4;
+  }
+  const center = (cols - 1) / 2;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      switch (mode) {
+        case 0:
+          // Full block on easy/standard levels
+          pattern[r][c] = true;
+          break;
+        case 1:
+          // Reduced edges: leave outermost columns empty on top rows
+          if (r < Math.floor(rows / 3) && (c === 0 || c === cols - 1)) pattern[r][c] = false;
+          else pattern[r][c] = true;
+          break;
+        case 2:
+          // Checkerboard for mid difficulty
+          pattern[r][c] = (r + c) % 2 === 0;
+          break;
+        case 3:
+          // Centered V / mountain shape that widens toward the bottom
+          const span = Math.max(0, Math.floor((r / Math.max(1, rows - 1)) * (cols / 2)));
+          pattern[r][c] = Math.abs(c - center) <= span;
+          break;
+        default:
+          pattern[r][c] = true;
+      }
+    }
+  }
+
+  return pattern;
+}
+
 const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange }) => {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
@@ -162,8 +228,15 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
     setGameOver(false);
 
     const s = state.current;
+    // configure invaders based on level
+    const cfg = getInvaderConfig(lvl);
+    s.invaderRows = cfg.rows;
+    s.invaderCols = cfg.cols;
+    s.invaderSpeed = cfg.speed;
+    const pattern = generateInvaderPattern(s.invaderRows, s.invaderCols, lvl);
     for (let r = 0; r < s.invaderRows; r++) {
       for (let c = 0; c < s.invaderCols; c++) {
+        if (!pattern[r][c]) continue;
         const x =
           c * (s.invaderW + s.invaderPadding) +
           (s.w - (s.invaderCols * (s.invaderW + s.invaderPadding) - s.invaderPadding)) / 2;
@@ -520,6 +593,20 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         if (!gameOver) {
           setGameOver(true);
           setRunning(false);
+
+          // Report high score to server when the game ends (only once)
+          // Only submit for authenticated users (avoid creating guest users)
+          if (user && user.username) {
+            (async () => {
+              try {
+                console.log(`🏁 Game over - submitting highscore for ${user.username}: ${score}`);
+                const r = await axios.post('/api/user/highscore', { username: user.username, score });
+                console.log('📤 Highscore submission result:', r.data);
+              } catch (err) {
+                console.error('❌ Failed to submit highscore:', err.response?.data || err.message);
+              }
+            })();
+          }
         }
 
         ctx.fillStyle = "rgba(0,0,0,0.6)";
@@ -540,11 +627,16 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         const next = Math.min(10, level + 1);
         updateLevel(next);
         s.level = next;
-        s.invaderSpeed += 0.3;
-        s.invaderRows = Math.min(6, s.invaderRows + 1);
+        // reconfigure invaders for new level
+        const cfgNext = getInvaderConfig(next);
+        s.invaderRows = cfgNext.rows;
+        s.invaderCols = cfgNext.cols;
+        s.invaderSpeed = cfgNext.speed;
         s.invaders = [];
+        const patternNext = generateInvaderPattern(s.invaderRows, s.invaderCols, next);
         for (let r = 0; r < s.invaderRows; r++) {
           for (let c = 0; c < s.invaderCols; c++) {
+            if (!patternNext[r][c]) continue;
             const x =
               c * (s.invaderW + s.invaderPadding) +
               (s.w - (s.invaderCols * (s.invaderW + s.invaderPadding) - s.invaderPadding)) / 2;

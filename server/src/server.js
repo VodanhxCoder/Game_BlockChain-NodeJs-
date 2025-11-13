@@ -74,9 +74,10 @@ viewEngine(app);
 testConnection();
 
 
-let port = process.env.PORT || 3;
+// Default to port 3000 when PORT not set (was incorrectly defaulting to 3)
+let port = parseInt(process.env.PORT, 10) || 3000;
 app.listen(port, () => {
-    console.log("Backend nodejs is running on the port: " + port);
+    console.log(`Backend nodejs is running on port: ${port}`);
 });
 
 

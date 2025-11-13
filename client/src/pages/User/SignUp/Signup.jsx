@@ -35,7 +35,8 @@ export default function SignUp() {
     }
     setLoading(true);
     try {
-      await register({ name: sanitizedName, email: sanitizedEmail, password: sanitizedPassword });
+      // Use the display name as both playername and username per requirement
+      await register({ name: sanitizedName, email: sanitizedEmail, password: sanitizedPassword, username: sanitizedName });
       navigate("/H", { replace: true });
     } catch (err) {
       setError(err?.message || "Could not create account.");

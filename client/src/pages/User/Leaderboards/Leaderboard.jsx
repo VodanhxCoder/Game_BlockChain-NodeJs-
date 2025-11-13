@@ -1,13 +1,6 @@
-// Lists competitive divisions and top player rankings pulled from mock leaderboard data.
-import React from "react";
-
-const topPlayers = [
-  { rank: 1, name: "Lilium", score: 18240, streak: 9 },
-  { rank: 2, name: "Atlas", score: 17310, streak: 4 },
-  { rank: 3, name: "Nyx", score: 16002, streak: 6 },
-  { rank: 4, name: "Riven", score: 14980, streak: 2 },
-  { rank: 5, name: "Mika", score: 14130, streak: 3 },
-];
+// Leaderboards page - fetches real data from server (users.high_score > 0)
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const divisions = [
   { title: "Mythic", players: 124, color: "#fef3c7" },
@@ -16,28 +9,36 @@ const divisions = [
 ];
 
 export default function Leaderboard() {
+  const [loading, setLoading] = useState(true);
+  const [entries, setEntries] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const r = await axios.get('/api/user/leaderboard?limit=50');
+        if (!mounted) return;
+        setEntries(r.data.leaderboard || []);
+      } catch (err) {
+        console.error('Failed to load leaderboard:', err.response?.data || err.message);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="page-shell">
       <section className="page-hero fade-in-up">
         <span className="page-hero__badge">
-          <span role="img" aria-hidden="true">
-            🚀
-          </span>
-          Leaderboards
+          <span role="img" aria-hidden="true">🚀</span> Leaderboards
         </span>
         <h1 className="gradient-title">Các phi công đứng đầu chuỗi.</h1>
         <p className="page-hero__text">
-          Theo dõi realtime điểm Space Raiders, streak và phân chia hạng đa server. Bảng xếp hạng được cập nhật sau mỗi trận
-          đấu on-chain.
+          Theo dõi realtime điểm Space Raiders. Bảng xếp hạng được cập nhật sau mỗi trận đấu.
         </p>
-        <div className="page-hero__actions">
-          <button type="button" className="ui-btn ui-btn--primary">
-            Thách đấu top 10
-          </button>
-          <button type="button" className="ui-btn ui-btn--ghost">
-            Xem phần thưởng mùa
-          </button>
-        </div>
       </section>
 
       <section className="page-grid">
@@ -60,25 +61,21 @@ export default function Leaderboard() {
               <th>Hạng</th>
               <th>Người chơi</th>
               <th>Điểm</th>
-              <th>Chuỗi thắng</th>
-              <th>Thao tác</th>
+              <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {topPlayers.map((player) => (
-              <tr key={player.rank}>
+            {loading ? (
+              <tr><td colSpan={4}>Đang tải...</td></tr>
+            ) : entries.length === 0 ? (
+              <tr><td colSpan={4}>Chưa có điểm cao nào.</td></tr>
+            ) : entries.map((u, idx) => (
+              <tr key={u.username}>
+                <td><span className="chip chip--accent">#{idx + 1}</span></td>
+                <td>{u.playername || u.username}</td>
+                <td>{(u.highScore || 0).toLocaleString()}</td>
                 <td>
-                  <span className="chip chip--accent">#{player.rank}</span>
-                </td>
-                <td>{player.name}</td>
-                <td>{player.score.toLocaleString()}</td>
-                <td>
-                  <span className="chip">{player.streak} trận</span>
-                </td>
-                <td>
-                  <button type="button" className="ui-btn ui-btn--text">
-                    Xem hồ sơ
-                  </button>
+                  <button type="button" className="ui-btn ui-btn--text">Xem hồ sơ</button>
                 </td>
               </tr>
             ))}

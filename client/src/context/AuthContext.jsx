@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "app.mock.auth";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-  const response = await fetch('http://localhost:3000/api/login', {
+  const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: email, passwordHash: password }),
@@ -76,7 +76,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => setUser(null);
 
-  const register = async ({ name, email, password }) => {
+  const register = async ({ name, email, password, username }) => {
     try {
       // Hash the password using SHA-256 (same as login)
       const encoder = new TextEncoder();
@@ -85,11 +85,11 @@ export function AuthProvider({ children }) {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-  const response = await fetch('http://localhost:3000/api/signup', {
+      const response = await fetch(`${API_BASE_URL}/api/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          username: email, 
+          username: username || email, 
           email: email,
           passwordHash: hashed,
           playername: name 
