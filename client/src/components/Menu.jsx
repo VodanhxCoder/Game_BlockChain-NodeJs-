@@ -67,6 +67,8 @@ export default function Menu() {
   const { lang, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState(null);
+  const displayName = user?.name?.trim() || user?.username || user?.email || "";
+  const displayEmail = user?.email || user?.username || "";
 
   const handleLogout = () => {
     logout();
@@ -84,12 +86,18 @@ export default function Menu() {
     <>
       <nav className="menu-panel" aria-label="Main navigation">
         <div className="menu-panel__top">
-          <div className="menu-brand">
-            <div className="menu-logo">BLK</div>
-            <div>
-              <h2>BlockVerse</h2>
-              <small>{t("brand.tagline")}</small>
-            </div>
+          <div className="menu-user" aria-live="polite">
+            {isAuthenticated ? (
+              <>
+                <strong>{displayName}</strong>
+                <small>{displayEmail}</small>
+              </>
+            ) : (
+              <>
+                <strong>{t("menu.guest")}</strong>
+                <small>{t("menu.locked")}</small>
+              </>
+            )}
           </div>
           <div className="menu-action-bar">
             <button
@@ -140,26 +148,13 @@ export default function Menu() {
 
         <div className="menu-footer">
           {isAuthenticated ? (
-            <div className="menu-card">
-              <div>
-                <small>{t("menu.signedInAs")}</small>
-                <strong>{user.name}</strong>
-                <small>{user.email}</small>
-              </div>
-              <div className="menu-card__actions">
-                <button type="button" className="ui-btn ui-btn--primary" onClick={handleLogout}>
-                  {t("menu.signOut")}
-                </button>
-                <button type="button" className="ui-btn ui-btn--ghost" onClick={() => navigate("/H")}>
-                  {t("menu.backHome")}
-                </button>
-              </div>
-            </div>
+            <button type="button" className="ui-btn ui-btn--primary menu-footer__cta" onClick={handleLogout}>
+              {t("menu.signOut")}
+            </button>
           ) : (
-            <div className="menu-card">
-              <strong>{t("menu.guest")}</strong>
+            <div className="menu-footer__guest">
               <small>{t("menu.locked")}</small>
-              <div className="menu-card__actions">
+              <div className="menu-footer__actions">
                 <button type="button" className="ui-btn ui-btn--primary" onClick={() => navigate("/signin")}>
                   {t("menu.signIn")}
                 </button>

@@ -8,6 +8,7 @@ export default function Homepage() {
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
+  const [kills, setKills] = useState(0);
   const [showOverlay, setShowOverlay] = useState(true);
   const [lootDrops, setLootDrops] = useState([]);
   const [totalDropsThisRun, setTotalDropsThisRun] = useState(0);
@@ -31,6 +32,10 @@ export default function Homepage() {
 
   const handleLevelChange = (newLevel) => {
     setLevel(newLevel);
+  };
+
+  const handleKillsChange = (newKills) => {
+    setKills(newKills);
   };
 
   const formatter = new Intl.NumberFormat(lang === "vi" ? "vi-VN" : "en-US");
@@ -57,7 +62,7 @@ export default function Homepage() {
     { id: "score", label: t("game.score"), value: formatter.format(score) },
     { id: "level", label: t("game.level"), value: level },
     { id: "lives", label: t("game.lives"), value: lives },
-    { id: "combo", label: t("game.combo"), value: `x${Math.max(1, Math.floor(score / 450) + 1)}` },
+    { id: "combo", label: t("game.combo"), value: formatter.format(kills) },
   ];
 
   return (
@@ -128,6 +133,7 @@ export default function Homepage() {
               onScoreChange={handleScoreChange}
               onLivesChange={handleLivesChange}
               onLevelChange={handleLevelChange}
+              onKillsChange={handleKillsChange}
             />
             {showOverlay && (
               <div className="game-overlay-panel" role="dialog" aria-label={t("game.overlayTitle")}>

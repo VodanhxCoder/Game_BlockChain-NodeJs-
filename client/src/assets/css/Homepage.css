@@ -211,14 +211,6 @@ body{margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe
   color: var(--accent);
 }
 
-/* Keep footer at the bottom of the fixed menu */
-.side-menu .menu-footer{
-  margin-top: auto;
-  text-align: center;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 /* Push page content to the right of the fixed menu */
 .content-area{
   margin-left: 220px; /* must match side-menu width */
