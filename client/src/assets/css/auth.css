@@ -511,3 +511,82 @@
     transform: scale(0.77);
   }
 }
+
+/* Password Input Container */
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container .field-input {
+  padding-right: 50px; /* Make space for the icon inside */
+  width: 100%;
+}
+
+/* Password Toggle Button */
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 2;
+  height: 32px;
+  width: 32px;
+}
+
+.password-toggle:hover {
+  background-color: rgba(107, 114, 128, 0.08);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.password-toggle:focus {
+  outline: none;
+  background-color: rgba(107, 114, 128, 0.08);
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* Theme-specific colors for password toggle */
+.password-toggle.light {
+  color: #6b7280; /* Gray for light theme */
+}
+
+.password-toggle.light:hover {
+  color: #374151; /* Darker gray on hover */
+  background-color: rgba(107, 114, 128, 0.12);
+}
+
+.password-toggle.dark {
+  color: #9ca3af; /* Light gray for dark theme */
+}
+
+.password-toggle.dark:hover {
+  color: #d1d5db; /* Lighter gray on hover */
+  background-color: rgba(156, 163, 175, 0.12);
+}
+
+/* SVG icon styling */
+.password-toggle svg {
+  transition: all 0.2s ease;
+  width: 18px;
+  height: 18px;
+}
+
+/* Ensure the input field has proper styling when focused */
+.password-input-container .field-input:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "app.mock.auth";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -185,7 +185,6 @@ export function AuthProvider({ children }) {
         throw new Error(errorData.error || 'Registration failed');
       }
 
-      const responseData = await response.json();
       const user = {
         username: responseData.user.username,
         name: responseData.user.playername,
@@ -193,6 +192,7 @@ export function AuthProvider({ children }) {
         role: responseData.user.role,
         status: responseData.user.status,
         highScore: responseData.user.highScore,
+        emailVerified: responseData.user.emailVerified,
       };
       setUser(user);
       return user;
@@ -203,7 +203,17 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isAuthenticated: !!user, 
+      login, 
+      logout, 
+      register,
+      sendVerificationEmail,
+      verifyEmail,
+      resendVerificationEmail
+    }}>
       {children}
     </AuthContext.Provider>
   );
