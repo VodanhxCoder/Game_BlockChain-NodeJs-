@@ -1,7 +1,7 @@
 // models/InventoryItem.js
-const { DataTypes, Model } = require('sequelize');
+import { DataTypes, Model } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   class InventoryItem extends Model {}
 
   InventoryItem.init({
@@ -30,10 +30,17 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.NOW,
       field: 'obtained_at'
     },
+    
     itemHash: {
       type: DataTypes.CHAR(64),
       unique: true,
       field: 'item_hash'
+    },
+    inMarket: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'in_market'
     }
   }, {
     sequelize,

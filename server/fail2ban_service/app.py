@@ -90,4 +90,6 @@ def status():
     return jsonify(summary)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000)
+    print('Starting Fail2Ban service on http://127.0.0.1:5000')
+    print(f'Configuration: FAILURE_WINDOW={FAILURE_WINDOW}s, THRESHOLD={FAILURE_THRESHOLD}, BAN_TIME={BAN_TIME}s')
+    app.run(host='127.0.0.1', port=5000, threaded=True, use_reloader=False)

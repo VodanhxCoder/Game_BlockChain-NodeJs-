@@ -1,6 +1,8 @@
-const express = require('express');
+import express from 'express';
+import UserController from '../controllers/UserController.js';
+import WalletController from '../controllers/WalletController.js';
+
 const router = express.Router();
-const UserController = require('../controllers/UserController');
 
 /**
  * @route POST /api/user/highscore
@@ -15,4 +17,10 @@ router.post('/user/highscore', UserController.updateHighScore);
  */
 router.get('/user/leaderboard', UserController.getLeaderboard);
 
-module.exports = router;
+/**
+ * Wallet linking: create challenge and verify signature
+ */
+router.post('/user/wallet/challenge', WalletController.createChallenge);
+router.post('/user/wallet/verify', WalletController.verifySignatureAndSave);
+
+export default router;

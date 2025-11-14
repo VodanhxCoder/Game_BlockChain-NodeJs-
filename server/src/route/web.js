@@ -3,6 +3,7 @@ import HomeController  from "../controllers/HomeController";
 import authRoutes from "../routes/auth";
 import userRoutes from "../routes/user";
 import inventoryRoutes from "../routes/inventory";
+import marketRoutes from "../routes/market.js";
 import fail2ban from "../middleware/fail2ban";
 const RecaptchaController = require("../controllers/RecaptchaController");
 
@@ -23,7 +24,11 @@ let initWebRoutes = (app) => {
     // Inventory and drop routes (no fail2ban needed for game mechanics)
     app.use("/api", inventoryRoutes);
 
+    // Marketplace routes
+    app.use("/api", marketRoutes);
+
     return app.use("/", router);
 }
 
-module.exports = initWebRoutes;
+export default initWebRoutes;
+

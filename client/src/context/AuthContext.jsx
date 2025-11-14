@@ -123,6 +123,7 @@ export function AuthProvider({ children }) {
         role: data.user.role,
         status: data.user.status,
         highScore: data.user.highScore,
+        walletAddress: data.user.walletAddress || null,
       };
       setUser(user);
       return user;
@@ -187,7 +188,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ user, setUser, loading, isAuthenticated: !!user, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
