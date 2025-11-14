@@ -25,8 +25,25 @@ class EmailVerificationStore {
       code,
       username,
       expiresAt,
-      attempts: 0
+      attempts: 0,
+      verified: false
     });
+  }
+
+  // Mark email as verified
+  markAsVerified(email) {
+    const verification = this.verifications.get(email);
+    if (verification) {
+      verification.verified = true;
+      // Extend expiration after verification (30 minutes to complete signup)
+      verification.expiresAt = Date.now() + (30 * 60 * 1000);
+    }
+  }
+
+  // Check if email is verified
+  isVerified(email) {
+    const verification = this.verifications.get(email);
+    return verification && verification.verified && Date.now() <= verification.expiresAt;
   }
 
   // Verify code
@@ -34,27 +51,27 @@ class EmailVerificationStore {
     const verification = this.verifications.get(email);
     
     if (!verification) {
-      return { success: false, error: 'Mã xác nhận không tồn tại hoặc đã hết hạn.' };
+      return { success: false, error: 'Verification code does not exist or has expired.' };
     }
 
     if (Date.now() > verification.expiresAt) {
       this.verifications.delete(email);
-      return { success: false, error: 'Mã xác nhận đã hết hạn.' };
+      return { success: false, error: 'Verification code has expired.' };
     }
 
     if (verification.attempts >= 5) {
       this.verifications.delete(email);
-      return { success: false, error: 'Đã vượt quá số lần thử. Vui lòng yêu cầu mã mới.' };
+      return { success: false, error: 'Too many attempts. Please request a new code.' };
     }
 
     verification.attempts++;
 
     if (verification.code !== code) {
-      return { success: false, error: 'Mã xác nhận không đúng.' };
+      return { success: false, error: 'Incorrect verification code.' };
     }
 
-    // Success - remove verification
-    this.verifications.delete(email);
+    // Success - mark as verified (don't delete yet, need for signup)
+    this.markAsVerified(email);
     return { success: true, username: verification.username };
   }
 
@@ -105,7 +122,7 @@ const emailVerificationMiddleware = {
 
       if (!email || !username) {
         return res.status(400).json({ 
-          error: 'Email và username là bắt buộc.' 
+          error: 'Email and username are required.' 
         });
       }
 
@@ -118,34 +135,34 @@ const emailVerificationMiddleware = {
       // Send email
       await sendEmail(
         email,
-        'Xác nhận email đăng ký tài khoản',
+        'Email Verification Code',
         `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Xác nhận email đăng ký</h2>
-          <p>Chào <strong>${username}</strong>,</p>
-          <p>Mã xác nhận email của bạn là:</p>
+          <h2 style="color: #333;">Email Verification</h2>
+          <p>Hello <strong>${username}</strong>,</p>
+          <p>Your email verification code is:</p>
           <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
             <h1 style="color: #007bff; margin: 0; letter-spacing: 5px;">${code}</h1>
           </div>
-          <p>Mã này sẽ hết hạn sau <strong>10 phút</strong>.</p>
-          <p>Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email này.</p>
+          <p>This code will expire in <strong>10 minutes</strong>.</p>
+          <p>If you did not request this, please ignore this email.</p>
           <hr style="margin: 30px 0;">
           <p style="color: #666; font-size: 12px;">
-            Email này được gửi tự động, vui lòng không trả lời.
+            This is an automated email, please do not reply.
           </p>
         </div>
         `
       );
 
       res.json({ 
-        message: 'Mã xác nhận đã được gửi đến email của bạn.',
+        message: 'Verification code has been sent to your email.',
         expiresIn: 600 // 10 minutes
       });
 
     } catch (error) {
       console.error('Error sending verification email:', error);
       res.status(500).json({ 
-        error: 'Không thể gửi email xác nhận. Vui lòng thử lại sau.' 
+        error: 'Could not send verification email. Please try again later.' 
       });
     }
   },
@@ -157,7 +174,7 @@ const emailVerificationMiddleware = {
 
       if (!email || !code) {
         return res.status(400).json({ 
-          error: 'Email và mã xác nhận là bắt buộc.' 
+          error: 'Email and verification code are required.' 
         });
       }
 
@@ -168,14 +185,14 @@ const emailVerificationMiddleware = {
       }
 
       res.json({ 
-        message: 'Xác nhận email thành công!',
+        message: 'Email verified successfully!',
         username: result.username 
       });
 
     } catch (error) {
       console.error('Error verifying email code:', error);
       res.status(500).json({ 
-        error: 'Lỗi hệ thống. Vui lòng thử lại sau.' 
+        error: 'System error. Please try again later.' 
       });
     }
   },
@@ -187,7 +204,7 @@ const emailVerificationMiddleware = {
 
       if (!email) {
         return res.status(400).json({ 
-          error: 'Email là bắt buộc.' 
+          error: 'Email is required.' 
         });
       }
 
@@ -195,7 +212,7 @@ const emailVerificationMiddleware = {
       
       if (!existingVerification) {
         return res.status(400).json({ 
-          error: 'Không tìm thấy yêu cầu xác nhận cho email này.' 
+          error: 'No verification request found for this email.' 
         });
       }
 
@@ -208,29 +225,29 @@ const emailVerificationMiddleware = {
       // Send email
       await sendEmail(
         email,
-        'Mã xác nhận email mới',
+        'New Email Verification Code',
         `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Mã xác nhận email mới</h2>
-          <p>Chào <strong>${existingVerification.username}</strong>,</p>
-          <p>Mã xác nhận email mới của bạn là:</p>
+          <h2 style="color: #333;">New Email Verification Code</h2>
+          <p>Hello <strong>${existingVerification.username}</strong>,</p>
+          <p>Your new email verification code is:</p>
           <div style="background: #f5f5f5; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
             <h1 style="color: #007bff; margin: 0; letter-spacing: 5px;">${code}</h1>
           </div>
-          <p>Mã này sẽ hết hạn sau <strong>10 phút</strong>.</p>
+          <p>This code will expire in <strong>10 minutes</strong>.</p>
         </div>
         `
       );
 
       res.json({ 
-        message: 'Mã xác nhận mới đã được gửi đến email của bạn.',
+        message: 'New verification code has been sent to your email.',
         expiresIn: 600 
       });
 
     } catch (error) {
       console.error('Error resending verification email:', error);
       res.status(500).json({ 
-        error: 'Không thể gửi lại email xác nhận. Vui lòng thử lại sau.' 
+        error: 'Could not resend verification email. Please try again later.' 
       });
     }
   },
@@ -249,6 +266,16 @@ const emailVerificationMiddleware = {
     } else {
       res.status(400).json({ error: 'Email is required' });
     }
+  },
+
+  // Helper method to check if email is verified (for signup route)
+  isEmailVerified(email) {
+    return emailVerificationStore.isVerified(email);
+  },
+
+  // Helper method to clear email verification after successful signup
+  clearEmailVerification(email) {
+    return emailVerificationStore.removeVerification(email);
   }
 };
 

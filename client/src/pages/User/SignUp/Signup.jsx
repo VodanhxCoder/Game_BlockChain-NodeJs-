@@ -12,7 +12,7 @@ import "../../../assets/css/EmailVerification.css";
 const TRANSITION_MS = 420;
 
 export default function SignUp() {
-  const { register, sendVerificationEmail, verifyEmail, resendVerificationEmail } = useAuth();
+  const { register, sendVerificationEmail, verifyEmail, resendVerificationEmail, checkAvailability } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -47,7 +47,13 @@ export default function SignUp() {
     if (loading) {
       return;
     }
+    
+    // Reset all states at the beginning
     setError("");
+    setShowEmailVerification(false);
+    setPendingUserData(null);
+    setVerificationEmail("");
+    setVerificationUsername("");
     
     if (!captchaToken) {
       setError("Please complete the reCAPTCHA verification.");
@@ -66,12 +72,15 @@ export default function SignUp() {
     
     setLoading(true);
     try {
-      // Store email and username for verification popup
+      // Check if email and username are available first
+      await checkAvailability(sanitizedEmail, sanitizedName);
+
+      // Send verification email before showing popup
+      await sendVerificationEmail(sanitizedEmail, sanitizedName);
+      
+      // Only if available and email sent, proceed with verification popup
       setVerificationEmail(sanitizedEmail);
       setVerificationUsername(sanitizedName);
-      
-      // First, send verification email
-      const result = await sendVerificationEmail(sanitizedEmail, sanitizedName);
       
       // Store user data for later registration
       setPendingUserData({
@@ -81,12 +90,11 @@ export default function SignUp() {
         username: sanitizedName
       });
       
-      // Show email verification popup
       setShowEmailVerification(true);
       
     } catch (err) {
-      console.error('Send verification error:', err);
-      setError(err?.message || "Could not send verification email.");
+      // Don't show popup if any pre-check fails
+      setError(err?.message || "Could not proceed with registration.");
     } finally {
       setLoading(false);
     }
@@ -116,9 +124,11 @@ export default function SignUp() {
   };
 
   const handleResendVerification = async () => {
-    if (!verificationEmail) throw new Error("No verification email");
+    if (!verificationEmail) {
+      throw new Error("No verification email");
+    }
     
-    await resendVerificationEmail(verificationEmail);
+    return resendVerificationEmail(verificationEmail);
   };
 
   const handleCloseVerification = () => {

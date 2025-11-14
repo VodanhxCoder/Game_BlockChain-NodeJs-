@@ -3,6 +3,10 @@ import axios from 'axios';
 import db from '../models/index.js';
 import { Op } from 'sequelize';
 import passport from '../config/passport.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const emailVerificationMiddleware = require('../middleware/emailVerification.js');
 
 const User = db.User;
 const router = express.Router();
@@ -193,6 +197,14 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Username, email, and password are required.' });
     }
 
+    // Check if email has been verified
+    if (!emailVerificationMiddleware.isEmailVerified(email)) {
+      return res.status(403).json({ 
+        error: 'Email verification required. Please verify your email before signing up.',
+        code: 'EMAIL_NOT_VERIFIED'
+      });
+    }
+
     // Check if user already exists
     const existingUser = await User.findOne({
       where: {
@@ -212,7 +224,7 @@ router.post('/signup', async (req, res) => {
       }
     }
 
-    // Create new user (email verification handled by middleware)
+    // Create new user
     const newUser = await User.create({
       username: username.trim(),
       email: email.trim(),
@@ -222,6 +234,9 @@ router.post('/signup', async (req, res) => {
       status: 'active',
       highScore: 0
     });
+
+    // Clear verification after successful signup
+    emailVerificationMiddleware.clearEmailVerification(email);
 
     // Return success with user data
     return res.status(201).json({
@@ -253,10 +268,90 @@ router.post('/signup', async (req, res) => {
 });
 
 /**
- * POST /api/auth/send-verification
- * Gửi mã xác nhận email
+ * POST /api/auth/check-availability
+ * Kiểm tra email và username có sẵn sàng chưa
  */
-router.post('/send-verification', emailVerificationMiddleware.sendVerificationCode);
+router.post('/check-availability', async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username) {
+      return res.status(400).json({ error: 'Email and username are required.' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(409).json({ 
+          available: false,
+          error: 'Username already taken.' 
+        });
+      }
+      if (existingUser.email === email) {
+        return res.status(409).json({ 
+          available: false,
+          error: 'Email already registered.' 
+        });
+      }
+    }
+
+    return res.json({ 
+      available: true,
+      message: 'Email and username are available.' 
+    });
+  } catch (error) {
+    console.error('Check availability error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /api/auth/send-verification
+ * Gửi mã xác nhận email (sau khi check availability)
+ */
+router.post('/send-verification', async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username) {
+      return res.status(400).json({ error: 'Email and username are required.' });
+    }
+
+    // Check if user already exists before sending email
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(409).json({ error: 'Username already taken.' });
+      }
+      if (existingUser.email === email) {
+        return res.status(409).json({ error: 'Email already registered.' });
+      }
+    }
+
+    // If available, send verification email
+    return emailVerificationMiddleware.sendVerificationCode(req, res);
+  } catch (error) {
+    console.error('Send verification error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
 
 /**
  * POST /api/auth/verify-email

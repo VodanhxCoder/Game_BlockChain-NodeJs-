@@ -185,6 +185,7 @@ export function AuthProvider({ children }) {
         throw new Error(errorData.error || 'Registration failed');
       }
 
+      const responseData = await response.json();
       const user = {
         username: responseData.user.username,
         name: responseData.user.playername,
@@ -192,7 +193,6 @@ export function AuthProvider({ children }) {
         role: responseData.user.role,
         status: responseData.user.status,
         highScore: responseData.user.highScore,
-        emailVerified: responseData.user.emailVerified,
       };
       setUser(user);
       return user;
@@ -202,9 +202,87 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const sendVerificationEmail = async (email, username) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send verification email');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const verifyEmail = async (email, code) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Email verification failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const resendVerificationEmail = async (email) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resend verification email');
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const checkAvailability = async (email, username) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/check-availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check availability');
+      }
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
+      setUser,
       loading, 
       isAuthenticated: !!user, 
       login, 
@@ -212,7 +290,8 @@ export function AuthProvider({ children }) {
       register,
       sendVerificationEmail,
       verifyEmail,
-      resendVerificationEmail
+      resendVerificationEmail,
+      checkAvailability
     }}>
       {children}
     </AuthContext.Provider>

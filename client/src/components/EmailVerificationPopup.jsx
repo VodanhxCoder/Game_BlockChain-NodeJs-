@@ -28,7 +28,7 @@ const EmailVerificationPopup = ({
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          setError('Mã xác nhận đã hết hạn. Vui lòng yêu cầu mã mới.');
+          setError('Verification code has expired. Please request a new code.');
           return 0;
         }
         return prev - 1;
@@ -51,19 +51,28 @@ const EmailVerificationPopup = ({
 
   // Reset state when popup opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && email && username) {
       setCode(['', '', '', '', '', '']);
       setError('');
-      setSuccess('');
+      setSuccess('Verification code sent to your email!');
       setTimeLeft(600);
+      setResendCooldown(0);
+
+      const successTimer = setTimeout(() => setSuccess(''), 3000);
+      
       // Focus first input
-      setTimeout(() => {
+      const focusTimer = setTimeout(() => {
         if (inputRefs.current[0]) {
           inputRefs.current[0].focus();
         }
       }, 100);
+
+      return () => {
+        clearTimeout(successTimer);
+        clearTimeout(focusTimer);
+      };
     }
-  }, [isOpen]);
+  }, [isOpen, email, username]);
 
   const handleInputChange = (index, value) => {
     // Only allow numbers
@@ -107,7 +116,7 @@ const EmailVerificationPopup = ({
     const verificationCode = code.join('');
     
     if (verificationCode.length !== 6) {
-      setError('Vui lòng nhập đầy đủ 6 chữ số.');
+      setError('Please enter all 6 digits.');
       return;
     }
 
@@ -129,10 +138,10 @@ const EmailVerificationPopup = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Xác nhận thất bại');
+        throw new Error(data.error || 'Verification failed');
       }
 
-      setSuccess('Email đã được xác nhận thành công!');
+      setSuccess('Email verified successfully!');
       setTimeout(() => {
         onVerifySuccess();
       }, 1500);
@@ -152,7 +161,7 @@ const EmailVerificationPopup = ({
 
     try {
       await onResendCode();
-      setSuccess('Mã xác nhận mới đã được gửi!');
+      setSuccess('New verification code sent!');
       setTimeLeft(600);
       setResendCooldown(60); // 1 minute cooldown
       setTimeout(() => setSuccess(''), 3000);
