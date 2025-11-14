@@ -6,6 +6,7 @@ const { Op } = require('sequelize');
 const passport = require('../config/passport');
 const emailVerificationMiddleware = require('../middleware/emailVerification');
 
+const User = db.User;
 const router = express.Router();
 
 // Check session and return current user
@@ -90,7 +91,9 @@ router.post('/login', async (req, res) => {
   const notifyFail2ban = async (ip, success) => {
     try {
       const nip = (ip === '::1') ? '127.0.0.1' : (ip && ip.startsWith('::ffff:') ? ip.split(':').pop() : ip);
-      await axios.post(`${FAIL2BAN_URL}/attempt`, { ip: nip, success }, { timeout: 2000 });
+      console.log(`[Fail2Ban] Notifying ${FAIL2BAN_URL}/attempt: ip=${nip}, success=${success}`);
+      const response = await axios.post(`${FAIL2BAN_URL}/attempt`, { ip: nip, success }, { timeout: 2000 });
+      console.log(`[Fail2Ban] Response:`, response.data);
     } catch (err) {
       // don't block login flow if fail2ban service is down
       console.error('notifyFail2ban error:', err && err.message);
@@ -98,6 +101,27 @@ router.post('/login', async (req, res) => {
   };
 
   try {
+    // Check if IP is banned before processing login
+    const clientIp = getClientIp(req);
+    const nip = (clientIp === '::1') ? '127.0.0.1' : (clientIp && clientIp.startsWith('::ffff:') ? clientIp.split(':').pop() : clientIp);
+    
+    try {
+      const checkResponse = await axios.get(`${FAIL2BAN_URL}/check`, { 
+        params: { ip: nip },
+        timeout: 1000 
+      });
+      if (checkResponse.data && checkResponse.data.banned) {
+        console.log(`[Fail2Ban] 🚫 Blocked login attempt from banned IP: ${nip}, remaining: ${checkResponse.data.remaining}s`);
+        return res.status(429).json({ 
+          error: 'Too many failed login attempts. Please try again later.',
+          remainingTime: checkResponse.data.remaining 
+        });
+      }
+    } catch (checkErr) {
+      // If fail2ban is down, allow the login attempt to proceed
+      console.log(`[Fail2Ban] Check failed (service may be down), allowing attempt: ${checkErr.message}`);
+    }
+
     // Debug log to help trace login attempts (do not log full passwords in production)
     //console.log('Login attempt for:', username, 'hash(prefix):', (passwordHash || '').slice(0, 12));
     // Validate input
@@ -117,7 +141,6 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       // notify fail2ban about failed attempt
-      const clientIp = getClientIp(req);
       console.log(`[Fail2Ban] ❌ Failed login attempt for username: ${username} from IP: ${clientIp}`);
       try { await notifyFail2ban(clientIp, false); } catch (e) {}
       return res.status(401).json({ error: 'Invalid username or password.' });
@@ -127,7 +150,6 @@ router.post('/login', async (req, res) => {
     const isValid = user.validPassword(passwordHash);
 
     if (!isValid) {
-      const clientIp = getClientIp(req);
       console.log(`[Fail2Ban] ❌ Failed login attempt for username: ${username} from IP: ${clientIp}`);
       try { await notifyFail2ban(clientIp, false); } catch (e) {}
       return res.status(401).json({ error: 'Invalid username or password.' });
@@ -135,7 +157,6 @@ router.post('/login', async (req, res) => {
 
     // Successful login
     // Notify fail2ban of successful auth (clears failures)
-    const clientIp = getClientIp(req);
     console.log(`[Fail2Ban] ✅ Successful login for username: ${username} from IP: ${clientIp} - clearing ban history`);
     try { await notifyFail2ban(clientIp, true); } catch (e) {}
 
@@ -149,6 +170,7 @@ router.post('/login', async (req, res) => {
         status: user.status,
         highScore: user.highScore,
         userImage: user.userImage,
+        walletAddress: user.walletAddress || null,
       },
     });
   } catch (error) {

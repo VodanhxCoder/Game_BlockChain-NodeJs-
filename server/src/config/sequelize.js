@@ -1,6 +1,6 @@
 // src/config/sequelize.js
-const { Sequelize } = require('sequelize');
-const dotenv = require('dotenv');
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
 dotenv.config();
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
@@ -19,11 +19,10 @@ const testConnection = async () => {
   }
 };
 
-if (require.main === module) {
+export { sequelize, testConnection };
+
+// Run test connection if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
   testConnection();
 }
-
-module.exports = {
-  sequelize: sequelize,
-  testConnection: testConnection
-};
+;

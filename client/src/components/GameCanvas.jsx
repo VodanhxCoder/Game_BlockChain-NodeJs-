@@ -150,32 +150,16 @@ function generateInvaderPattern(rows, cols, lvl) {
 
 const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, onKillsChange }) => {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const rafRef = useRef(null);
   const keys = useRef({});
   const state = useRef({});
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [gameOver, setGameOver] = useState(false);
   const [running, setRunning] = useState(false);
   const runningRef = useRef(running);
-  const killCountRef = useRef(0);
   const { user } = useAuth();
-
-  const syncKills = (value) => {
-    killCountRef.current = value;
-    if (onKillsChange) onKillsChange(value);
-  };
-
-  const incrementKills = () => {
-    syncKills(killCountRef.current + 1);
-  };
-
-  const resetKills = () => {
-    syncKills(0);
-  };
 
   // Callback helpers to notify parent of state changes
   const updateScore = (newScore) => {
@@ -183,15 +167,9 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     if (onScoreChange) onScoreChange(newScore);
   };
 
-  const updateLives = (nextValue) => {
-    setLives((prev) => {
-      const resolved = typeof nextValue === "function" ? nextValue(prev) : nextValue;
-      if (resolved < prev) {
-        resetKills();
-      }
-      if (onLivesChange) onLivesChange(resolved);
-      return resolved;
-    });
+  const updateLives = (newLives) => {
+    setLives(newLives);
+    if (onLivesChange) onLivesChange(newLives);
   };
 
   const updateLevel = (newLevel) => {
@@ -272,7 +250,6 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     updateScore(0);
     updateLives(3);
     updateLevel(lvl);
-    resetKills();
   };
 
   useEffect(() => {
@@ -316,37 +293,9 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    const onFsChange = () => {
-      const fs = !!document.fullscreenElement;
-      setIsFullscreen(fs);
-      const c = canvasRef.current;
-      const s = state.current;
-      if (c && s) {
-        if (fs) {
-          // enlarge logical resolution to current window size when entering fullscreen
-          s.w = window.innerWidth;
-          s.h = window.innerHeight;
-          c.width = s.w;
-          c.height = s.h;
-          c.style.width = s.w + "px";
-          c.style.height = s.h + "px";
-        } else {
-          // restore default game viewport
-          s.w = 1600;
-          s.h = 900;
-          c.width = s.w;
-          c.height = s.h;
-          c.style.width = s.w + "px";
-          c.style.height = s.h + "px";
-        }
-      }
-    };
-    document.addEventListener("fullscreenchange", onFsChange);
-
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      document.removeEventListener("fullscreenchange", onFsChange);
       cancelAnimationFrame(rafRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -397,7 +346,6 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
             inv.alive = false;
             s.bullets.splice(i, 1);
             updateScore((p) => p + 10);
-            incrementKills();
             
             // Request item drop from backend (backend controls drop chance via drop pool)
             const username = user?.username || 'guest';
@@ -545,7 +493,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
         const byCol = {};
         for (const inv of s.invaders) {
           if (!inv.alive) continue;
-          const col = inv.col;  
+          const col = inv.col;
           if (!byCol[col] || inv.y > byCol[col].y) byCol[col] = inv;
         }
         const cols = Object.keys(byCol);
@@ -747,26 +695,8 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, score, lives, level, gameOver]);
 
-  const toggleFullscreen = async () => {
-    const el = containerRef.current || canvasRef.current;
-    if (!el) return;
-    if (!document.fullscreenElement) {
-      try {
-        await el.requestFullscreen();
-      } catch (e) {
-        console.warn("fullscreen request failed", e);
-      }
-    } else {
-      try {
-        await document.exitFullscreen();
-      } catch (e) {
-        console.warn("exit fullscreen failed", e);
-      }
-    }
-  };
-
   return (
-    <div ref={containerRef} className="game-frame game-frame--container">
+    <div className="game-frame">
       <canvas ref={canvasRef} className="game-frame__surface" />
     </div>
   );

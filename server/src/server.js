@@ -1,13 +1,24 @@
 import express from "express";
 import bodyParser from "body-parser";
-import viewEngine from "./config/viewEngine";
-import initWebRoutes from "./route/web";
-import { testConnection } from "./config/sequelize";
+import viewEngine from "./config/viewEngine.js";
+import initWebRoutes from "./route/web.js";
+import { testConnection } from "./config/sequelize.js";
 import cors from "cors";
-require('dotenv').config(); //tải biến môi trường từ file .env
+import dotenv from 'dotenv';
+dotenv.config(); //tải biến môi trường từ file .env
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+// Import HardhatBlockchainService (CommonJS module)
+const require = createRequire(import.meta.url);
+const HardhatBlockchainService = require('./services/HardhatBlockchainService');
+
+// Provide `__dirname` compatibility for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const session = require('express-session');
 const passport = require('./config/passport');
 
@@ -45,7 +56,10 @@ app.use(cors({
 // Optionally auto-start the Python Fail2Ban service when the Node server starts.
 // Controlled via environment variable FAIL2BAN_AUTO_START (defaults to 'true').
 try {
-    const AUTO_START = (process.env.FAIL2BAN_AUTO_START || 'true').toLowerCase() !== 'false';
+    // Default to auto-starting the Python Fail2Ban service. If you need to
+    // disable auto-start (e.g., on CI or systems without Python/Flask), set
+    // environment variable `FAIL2BAN_AUTO_START=false`.
+    const AUTO_START = (process.env.FAIL2BAN_AUTO_START || 'true').toLowerCase() === 'true';
     if (AUTO_START) {
         const pythonCmd = process.env.FAIL2BAN_PYTHON || 'python';
         const scriptPath = path.resolve(__dirname, '..', 'fail2ban_service', 'app.py');
@@ -95,6 +109,14 @@ initWebRoutes(app);
 viewEngine(app);
 testConnection();
 
+// Initialize blockchain service
+(async () => {
+    try {
+        await HardhatBlockchainService.initialize();
+    } catch (error) {
+        console.error('Failed to initialize blockchain service:', error.message);
+    }
+})();
 
 // Default to port 3000 when PORT not set (was incorrectly defaulting to 3)
 let port = parseInt(process.env.PORT, 10) || 3000;

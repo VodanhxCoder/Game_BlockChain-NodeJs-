@@ -3,6 +3,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import "../../../assets/css/Homepage.css";
 import { useAuth } from "../../../context/AuthContext";
 import { useLanguage } from "../../../context/LanguageContext";
+import WalletConnect from '../../../components/WalletConnect';
+import { useWeb3 } from '../../../context/Web3Context';
 import axios from "axios";
 
 const rarityColors = {
@@ -20,6 +22,7 @@ const rarityLabels = {
 export default function Inventory() {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { account, isConnected } = useWeb3();
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,6 +32,9 @@ export default function Inventory() {
     totalValue: 0
   });
   const [sortOption, setSortOption] = useState('time-desc');
+  const [actionLoading, setActionLoading] = useState({});
+  const [listingModal, setListingModal] = useState({ open: false, itemHash: null, wantedItemId: null });
+  const [availableWantedItems, setAvailableWantedItems] = useState([]);
 
   // Compute sorted inventory based on user selection
   const sortedInventory = useMemo(() => {
@@ -118,6 +124,88 @@ export default function Inventory() {
     });
   };
 
+  const handleListOnShop = async (itemHash) => {
+    // Open the listing modal and load available wanted-items
+    if (!user?.username) {
+      alert('Please sign in');
+      return;
+    }
+    setListingModal({ open: true, itemHash, wantedItemId: null });
+    try {
+      const r = await axios.get('/api/market/items');
+      setAvailableWantedItems(r.data.items || []);
+    } catch (e) {
+      console.error('Failed to load wanted-items', e);
+      setAvailableWantedItems([]);
+    }
+  };
+
+  const confirmListOnShop = async () => {
+    const { itemHash, wantedItemId } = listingModal;
+    if (!user?.username) {
+      alert('Please sign in');
+      return;
+    }
+    if (!wantedItemId) {
+      alert('Please choose the item you want in exchange');
+      return;
+    }
+    setActionLoading(prev => ({ ...prev, [itemHash]: true }));
+    try {
+      await axios.post('/api/market/list', {
+        username: user.username,
+        itemHash,
+        wantedItemId
+      });
+      // notify marketplace components so they can refresh without a full reload
+      try { window.dispatchEvent(new Event('market:updated')); } catch (e) { /* ignore */ }
+      setListingModal({ open: false, itemHash: null, wantedItemId: null });
+      await fetchInventory();
+    } catch (err) {
+      console.error('Failed to list item:', err);
+      alert(err.response?.data?.error || 'Failed to list item');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [itemHash]: false }));
+    }
+  };
+
+  const cancelListingModal = () => setListingModal({ open: false, itemHash: null, wantedItemId: null });
+
+  const handleUnlistFromShop = async (itemHash) => {
+    if (!user?.username) {
+      alert('Please sign in');
+      return;
+    }
+    
+    setActionLoading(prev => ({ ...prev, [itemHash]: true }));
+    try {
+      // Find listing by itemHash (we need listingId, so fetch listings first or use itemHash)
+      // For simplicity, we'll call cancel with a pseudo-lookup or extend API
+      // Current API expects listingId. Let's fetch the listing by itemHash first:
+      const listingsRes = await axios.get('/api/market/listings?limit=100');
+      const listing = listingsRes.data.listings.find(l => l.itemHash === itemHash && l.seller?.username === user.username);
+      
+      if (!listing) {
+        alert('Listing not found');
+        setActionLoading(prev => ({ ...prev, [itemHash]: false }));
+        return;
+      }
+
+      await axios.post('/api/market/cancel', {
+        listingId: listing.listingId,
+        username: user.username
+      });
+      // refresh marketplace views silently
+      try { window.dispatchEvent(new Event('market:updated')); } catch (e) { /* ignore */ }
+      await fetchInventory();
+    } catch (err) {
+      console.error('Failed to unlist item:', err);
+      alert(err.response?.data?.error || 'Failed to unlist item');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [itemHash]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="page-shell">
@@ -160,9 +248,27 @@ export default function Inventory() {
         </span>
         <h1 className="gradient-title">Your Galactic Loot</h1>
         <p className="page-hero__text">
-          Items collected from battles across the cosmos. Each item is stored on-chain and can be traded or equipped.
+          Manage your collected items, list them for trade, and track your blockchain NFTs.
         </p>
       </section>
+
+      {/* MetaMask Wallet Connection */}
+      <WalletConnect />
+
+      {isConnected && (
+        <div style={{ 
+          background: 'rgba(139, 92, 246, 0.1)', 
+          border: '1px solid rgba(139, 92, 246, 0.3)',
+          borderRadius: '0.5rem',
+          padding: '1rem',
+          marginBottom: '2rem',
+          textAlign: 'center'
+        }}>
+          <p style={{ fontSize: '0.875rem', color: '#a78bfa' }}>
+            🎨 Your items can be minted as NFTs on blockchain when listed for trade!
+          </p>
+        </div>
+      )}
 
       {/* Stats Overview */}
       <section className="page-grid">
@@ -270,13 +376,27 @@ export default function Inventory() {
                     )}
                   </div>
                   
-                  <button 
-                    type="button" 
-                    className="ui-btn ui-btn--ghost"
-                    style={{ width: '100%', marginTop: 8, fontSize: 12 }}
-                  >
-                    View Details
-                  </button>
+                  {inventoryItem.inMarket ? (
+                    <button 
+                      type="button" 
+                      className="ui-btn ui-btn--ghost"
+                      style={{ width: '100%', marginTop: 8, fontSize: 12 }}
+                      onClick={() => handleUnlistFromShop(inventoryItem.itemHash)}
+                      disabled={actionLoading[inventoryItem.itemHash]}
+                    >
+                      {actionLoading[inventoryItem.itemHash] ? '⏳ Processing...' : '🏪 Unlist from Shop'}
+                    </button>
+                  ) : (
+                    <button 
+                      type="button" 
+                      className="ui-btn ui-btn--primary"
+                      style={{ width: '100%', marginTop: 8, fontSize: 12 }}
+                      onClick={() => handleListOnShop(inventoryItem.itemHash)}
+                      disabled={actionLoading[inventoryItem.itemHash]}
+                    >
+                      {actionLoading[inventoryItem.itemHash] ? '⏳ Listing...' : '🛒 List on Shop'}
+                    </button>
+                  )}
                 </div>
               );
             })}
@@ -284,6 +404,27 @@ export default function Inventory() {
           </div>
         )}
       </section>
+
+      {listingModal.open && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
+          <div style={{ width: 520, background: '#fff', borderRadius: 8, padding: 20 }}>
+            <h3>List item on Shop</h3>
+            <p style={{ marginTop: 6 }}>Choose the item you want in exchange (wanted item).</p>
+            <div style={{ marginTop: 12 }}>
+              <select style={{ width: '100%', padding: 8 }} value={listingModal.wantedItemId || ''} onChange={(e) => setListingModal(s => ({ ...s, wantedItemId: Number(e.target.value) }))}>
+                <option value="">-- Select wanted item --</option>
+                {availableWantedItems.map(it => (
+                  <option key={it.itemId} value={it.itemId}>{it.name} ({it.rarity})</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+              <button className="ui-btn ui-btn--ghost" onClick={cancelListingModal}>Cancel</button>
+              <button className="ui-btn ui-btn--primary" onClick={confirmListOnShop}>Confirm List</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Rarity Breakdown */}
       {Object.keys(stats.byRarity).length > 0 && (

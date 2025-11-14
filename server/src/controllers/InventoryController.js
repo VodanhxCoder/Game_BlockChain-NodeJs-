@@ -1,12 +1,12 @@
 // controllers/InventoryController.js
-const db = require("../models");
-const { Op } = require("sequelize");
+import db from "../models/index.js";
+import { Op } from "sequelize";
+import DropController from './DropController.js';
 const User = db.User;
 const Item = db.Item;
 const Inventory = db.Inventory;
 const InventoryItem = db.InventoryItem;
 const DropPool = db.DropPool;
-const DropController = require('./DropController');
 
 /**
  * Get user's inventory
@@ -51,6 +51,7 @@ const getUserInventory = async (req, res) => {
       inventoryItemId: ii.inventoryItemId,
       itemHash: ii.itemHash,
       obtainedAt: ii.obtainedAt,
+      inMarket: ii.inMarket || false,
       item: ii.Item ? {
         itemId: ii.Item.itemId,
         itemName: ii.Item.name,
@@ -206,7 +207,7 @@ const getDropPool = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   getUserInventory,
   simulateItemDrop,
   getDropPool

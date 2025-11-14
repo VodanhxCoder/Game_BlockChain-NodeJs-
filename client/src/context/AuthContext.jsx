@@ -123,6 +123,7 @@ export function AuthProvider({ children }) {
         role: data.user.role,
         status: data.user.status,
         highScore: data.user.highScore,
+        walletAddress: data.user.walletAddress || null,
       };
       setUser(user);
       return user;

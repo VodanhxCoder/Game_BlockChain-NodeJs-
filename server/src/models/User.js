@@ -1,8 +1,8 @@
 // models/User.js
 
-const { DataTypes, Model } = require('sequelize');
+import { DataTypes, Model } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   /**
    * User model aligned with the provided SQL dump `users` table.
    * - `username` is the PK (varchar(50))
@@ -86,6 +86,19 @@ module.exports = (sequelize) => {
         allowNull: false,
         defaultValue: 0,
         field: 'high_score',
+      },
+      walletAddress: {
+        type: DataTypes.STRING(66),
+        allowNull: true,
+        unique: true,
+        field: 'walletAddress',
+        validate: {
+          isValidAddress(value) {
+            if (value && !/^0x[a-fA-F0-9]{40}$/.test(value)) {
+              throw new Error('Invalid Ethereum address format');
+            }
+          }
+        }
       },
     },
     {

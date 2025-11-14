@@ -1,5 +1,5 @@
-const db = require("../models");
-const { Op } = require("sequelize");
+import db from "../models/index.js";
+import { Op } from "sequelize";
 const DropPool = db.DropPool;
 const InventoryItem = db.InventoryItem;
 const Inventory = db.Inventory;
@@ -99,4 +99,4 @@ async function simulateDrop(username, forcedItemId = null) {
   }
 }
 
-module.exports = { simulateDrop };
+export default { simulateDrop };
