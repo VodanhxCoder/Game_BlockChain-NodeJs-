@@ -95,7 +95,11 @@ export default function SignUp() {
           </div>
 
           <form className="auth-form" onSubmit={onSubmit} noValidate>
-            {error && <div className="auth-error" role="alert">{error}</div>}
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
+              </div>
+            )}
 
             <label className="auth-field">
               <span className="field-label">Display name</span>

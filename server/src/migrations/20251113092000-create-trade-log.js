@@ -21,7 +21,7 @@ module.exports = {
       },
       // User information
       from_user: {
-        type: Sequelize.VARCHAR(50),
+        type: Sequelize.STRING(50),
         allowNull: true,
         references: {
           model: "users",
@@ -30,7 +30,7 @@ module.exports = {
         onDelete: "SET NULL",
       },
       to_user: {
-        type: Sequelize.VARCHAR(50),
+        type: Sequelize.STRING(50),
         allowNull: true,
         references: {
           model: "users",

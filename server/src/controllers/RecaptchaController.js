@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 /**
  * Verify reCAPTCHA token with Google API
@@ -66,6 +66,6 @@ const verifyRecaptcha = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   verifyRecaptcha
 };

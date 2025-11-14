@@ -19,8 +19,8 @@ const HardhatBlockchainService = require('./services/HardhatBlockchainService');
 // Provide `__dirname` compatibility for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const session = require('express-session');
-const passport = require('./config/passport');
+import session from 'express-session';
+import passport from './config/passport.js';
 
 let app = express();
 

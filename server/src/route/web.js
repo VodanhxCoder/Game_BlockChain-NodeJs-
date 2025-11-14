@@ -1,11 +1,11 @@
 import express from "express";
-import HomeController  from "../controllers/HomeController";
-import authRoutes from "../routes/auth";
-import userRoutes from "../routes/user";
-import inventoryRoutes from "../routes/inventory";
+import HomeController  from "../controllers/HomeController.js";
+import authRoutes from "../routes/auth.js";
+import userRoutes from "../routes/user.js";
+import inventoryRoutes from "../routes/inventory.js";
 import marketRoutes from "../routes/market.js";
-import fail2ban from "../middleware/fail2ban";
-const RecaptchaController = require("../controllers/RecaptchaController");
+import fail2ban from "../middleware/fail2ban.js";
+import RecaptchaController from "../controllers/RecaptchaController.js";
 
 let router = express.Router();
 

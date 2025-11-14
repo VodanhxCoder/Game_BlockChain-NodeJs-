@@ -28,7 +28,6 @@ export default function SignIn() {
   // Redirect to home if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      console.log('[SignIn] Already authenticated, redirecting to /H');
       navigate('/H', { replace: true });
     }
   }, [authLoading, isAuthenticated, navigate]);
@@ -149,7 +148,11 @@ export default function SignIn() {
           </div>
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
-            {error && <div className="auth-error" role="alert">{error}</div>}
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
+              </div>
+            )}
 
             <label className="auth-field">
               <span className="field-label">Email</span>

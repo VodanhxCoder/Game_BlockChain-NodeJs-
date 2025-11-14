@@ -53,7 +53,7 @@ export default function GameLayoutEditor() {
   };
 
   const handleSave = () => {
-    alert("Cài đặt đã được lưu! (Mock - sẽ gửi API khi có backend)");
+    alert("Settings saved!");
     console.log("Saved settings:", gameSettings);
   };
 

@@ -1,9 +1,8 @@
 import express from 'express';
 import axios from 'axios';
-const db = require('../models');
-const User = db.User;
-const { Op } = require('sequelize');
-const passport = require('../config/passport');
+import db from '../models/index.js';
+import { Op } from 'sequelize';
+import passport from '../config/passport.js';
 
 const User = db.User;
 const router = express.Router();
