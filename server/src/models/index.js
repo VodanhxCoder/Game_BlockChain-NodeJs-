@@ -10,7 +10,6 @@ const sequelize = sequelizeModule && sequelizeModule.sequelize ? sequelizeModule
 const setupUserModel = require('./User');
 const setupItemModel = require('./Item');
 
-
 const setupDropPoolModel = require('./DropPool');
 const setupInventoryModel = require('./Inventory');
 const setupInventoryItemModel = require('./InventoryItem');

@@ -4,6 +4,7 @@ const db = require('../models');
 const User = db.User;
 const { Op } = require('sequelize');
 const passport = require('../config/passport');
+const emailVerificationMiddleware = require('../middleware/emailVerification');
 
 const router = express.Router();
 
@@ -158,9 +159,10 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /api/signup
- * Handles user registration.
- * Expects { username, email, passwordHash, playername } in the request body.
- * Frontend sends a SHA-256 hex digest; the server stores that value directly.
+ * Handles user registration with email verification.
+ * Step 1: Send verification code to email
+ * Step 2: User verifies email with code
+ * Step 3: Create user account after verification
  */
 router.post('/signup', async (req, res) => {
   const { username, email, passwordHash, playername } = req.body;
@@ -190,7 +192,7 @@ router.post('/signup', async (req, res) => {
       }
     }
 
-    // Create new user (passwordHash will be stored as provided by frontend)
+    // Create new user (email verification handled by middleware)
     const newUser = await User.create({
       username: username.trim(),
       email: email.trim(),
@@ -198,7 +200,7 @@ router.post('/signup', async (req, res) => {
       playername: playername ? playername.trim() : username.trim(),
       role: 'player',
       status: 'active',
-      highScore: 0,
+      highScore: 0
     });
 
     // Return success with user data
@@ -229,5 +231,23 @@ router.post('/signup', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });
+
+/**
+ * POST /api/auth/send-verification
+ * Gửi mã xác nhận email
+ */
+router.post('/send-verification', emailVerificationMiddleware.sendVerificationCode);
+
+/**
+ * POST /api/auth/verify-email
+ * Xác nhận email với mã 6 số
+ */
+router.post('/verify-email', emailVerificationMiddleware.verifyEmailCode);
+
+/**
+ * POST /api/auth/resend-verification
+ * Gửi lại mã xác nhận email
+ */
+router.post('/resend-verification', emailVerificationMiddleware.resendVerificationCode);
 
 export default router;
