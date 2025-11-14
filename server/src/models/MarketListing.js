@@ -1,7 +1,7 @@
 // models/MarketListing.js
-const { DataTypes, Model } = require('sequelize');
+import { DataTypes, Model } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   class MarketListing extends Model {}
 
   MarketListing.init({
@@ -27,8 +27,9 @@ module.exports = (sequelize) => {
       allowNull: false
     },
     tier: {
-      type: DataTypes.INTEGER,
-      allowNull: false
+      type: DataTypes.ENUM('Common', 'Rare', 'Legendary'),
+      allowNull: false,
+      defaultValue: 'Common'
     },
     createdAt: {
       type: DataTypes.DATE,

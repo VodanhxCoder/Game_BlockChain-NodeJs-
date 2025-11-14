@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useLanguage } from "../context/LanguageContext";
+import WalletConnect from "./WalletConnect";
 
 const NAV_ITEMS = [
   { key: "home", to: "/H", icon: "home", public: true },
@@ -122,6 +123,13 @@ export default function Menu() {
         </div>
 
         <div className="menu-divider" />
+
+        {/* Wallet Connection in compact mode */}
+        {isAuthenticated && (
+          <div style={{ padding: '0.75rem 1rem', marginBottom: '0.5rem' }}>
+            <WalletConnect compact={true} />
+          </div>
+        )}
 
         <div className="menu-panel__scroll">
           <ul className="menu-items">

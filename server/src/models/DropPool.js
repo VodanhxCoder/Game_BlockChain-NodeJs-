@@ -1,7 +1,7 @@
 // models/DropPool.js
-const { DataTypes, Model } = require('sequelize');
+import { DataTypes, Model } from 'sequelize';
 
-module.exports = (sequelize) => {
+export default (sequelize) => {
   class DropPool extends Model {}
 
   DropPool.init({

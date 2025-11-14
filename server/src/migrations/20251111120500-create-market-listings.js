@@ -39,8 +39,10 @@ module.exports = {
         onDelete: "CASCADE",
       },
       tier: {
-        type: Sequelize.INTEGER,
+        // store tier as string enum to match `items.item_tier`
+        type: Sequelize.ENUM('Common', 'Rare', 'Legendary'),
         allowNull: false,
+        defaultValue: 'Common'
       },
       created_at: {
         type: Sequelize.DATE,

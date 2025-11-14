@@ -1,7 +1,8 @@
-// routes/inventory.js
-const express = require('express');
+// src/routes/inventory.js
+import express from 'express';
+import InventoryController from '../controllers/InventoryController.js';
+
 const router = express.Router();
-const InventoryController = require('../controllers/InventoryController');
 
 /**
  * @route GET /api/inventory/:username
@@ -22,4 +23,4 @@ router.post('/drop', InventoryController.simulateItemDrop);
  */
 router.get('/drop-pool', InventoryController.getDropPool);
 
-module.exports = router;
+export default router;

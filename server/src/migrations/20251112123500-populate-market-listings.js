@@ -3,20 +3,15 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Insert listings for any inventory_items flagged as in_market = true.
-    // We map item rarity to a numeric tier: Common=0, Rare=1, Legendary=2.
-    // Skip items already listed (by item_hash) to make this idempotent.
+  // Insert listings for any inventory_items flagged as in_market = true.
+  // Copy the item's string rarity directly into market_listings.tier (Common/Rare/Legendary).
+  // Skip items already listed (by item_hash) to make this idempotent.
     const insertSql = `
       INSERT INTO market_listings (item_hash, wanted_item_id, seller, tier, created_at)
       SELECT ii.item_hash,
              NULL as wanted_item_id,
              ii.owner as seller,
-             CASE it.item_tier
-               WHEN 'Common' THEN 0
-               WHEN 'Rare' THEN 1
-               WHEN 'Legendary' THEN 2
-               ELSE 0
-             END as tier,
+             it.item_tier as tier,
              ii.obtained_at
       FROM inventory_items ii
       JOIN items it ON ii.item_id = it.item_id

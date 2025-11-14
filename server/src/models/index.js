@@ -1,20 +1,20 @@
 // models/index.js
-const { Sequelize } = require('sequelize');
+import { Sequelize } from 'sequelize';
 
 // `src/config/sequelize.js` may export the Sequelize instance directly or an object
 // { sequelize, testConnection }. Accept both shapes.
-const sequelizeModule = require('../config/sequelize');
-const sequelize = sequelizeModule && sequelizeModule.sequelize ? sequelizeModule.sequelize : sequelizeModule;
+import { sequelize } from '../config/sequelize.js';
 
 // 2. Nạp các file model
-const setupUserModel = require('./User');
-const setupItemModel = require('./Item');
+import setupUserModel from './User.js';
+import setupItemModel from './Item.js';
 
 
-const setupDropPoolModel = require('./DropPool');
-const setupInventoryModel = require('./Inventory');
-const setupInventoryItemModel = require('./InventoryItem');
-const setupMarketListingModel = require('./MarketListing');
+import setupDropPoolModel from './DropPool.js';
+import setupInventoryModel from './Inventory.js';
+import setupInventoryItemModel from './InventoryItem.js';
+import setupMarketListingModel from './MarketListing.js';
+import setupTradeLogModel from './TradeLog.js';
 
 // 3. Khởi tạo các models
 const User = setupUserModel(sequelize);
@@ -23,6 +23,7 @@ const DropPool = setupDropPoolModel(sequelize);
 const Inventory = setupInventoryModel(sequelize);
 const InventoryItem = setupInventoryItemModel(sequelize);
 const MarketListing = setupMarketListingModel(sequelize);
+const TradeLog = setupTradeLogModel(sequelize);
 
 // 4. Định nghĩa các mối quan hệ (Associations)
 // Mối quan hệ 1-1: Item và NFT
@@ -72,12 +73,15 @@ MarketListing.belongsTo(InventoryItem, { foreignKey: 'itemHash', targetKey: 'ite
 
 
 // 5. Xuất các models và sequelize instance
-module.exports = {
+const db = {
   sequelize,
   User,
   Item,
   DropPool,
   Inventory,
   InventoryItem,
-  MarketListing
+  MarketListing,
+  TradeLog
 };
+
+export default db;

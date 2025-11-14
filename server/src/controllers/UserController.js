@@ -1,7 +1,7 @@
-const db = require('../models');
+import db from '../models/index.js';
+import { Op } from 'sequelize';
+
 const User = db.User;
-// Sequelize Op for where comparisons
-const { Op } = require('sequelize');
 
 /**
  * Update player's high score if the provided score is greater than current.
@@ -69,7 +69,7 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   updateHighScore,
   getLeaderboard
 };
