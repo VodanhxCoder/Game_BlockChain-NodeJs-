@@ -42,11 +42,25 @@ module.exports = (sequelize) => {
       passwordHash: {
         // map JS attr passwordHash to DB column `password_hash`
         type: DataTypes.STRING(1024),
-        allowNull: false,
+        allowNull: true, // Changed to true for OAuth users
         field: 'password_hash',
-        validate: {
-          notEmpty: { msg: 'Mật khẩu là bắt buộc.' },
-        },
+      },
+      googleId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+        field: 'google_id',
+      },
+      githubId: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+        field: 'github_id',
+      },
+      provider: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: 'local',
       },
       playername: {
         type: DataTypes.STRING(100),

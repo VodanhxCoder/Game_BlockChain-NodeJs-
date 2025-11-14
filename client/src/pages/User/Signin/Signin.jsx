@@ -11,7 +11,7 @@ import "../../../assets/css/auth.css";
 const TRANSITION_MS = 420;
 
 export default function SignIn() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +24,14 @@ export default function SignIn() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const recaptchaRef = useRef(null);
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log('[SignIn] Already authenticated, redirecting to /H');
+      navigate('/H', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   // Reset reCAPTCHA when theme changes
   useEffect(() => {
@@ -108,8 +116,10 @@ export default function SignIn() {
     },
   ];
 
-  const handleProvider = (provider) => {
-    setError(`${provider.label} is not available yet.`);
+  const handleProvider = (providerId) => {
+    // Redirect to OAuth endpoint
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+    window.location.href = `${API_BASE}/api/auth/${providerId}`;
   };
 
   return (
@@ -203,7 +213,7 @@ export default function SignIn() {
                   key={provider.id}
                   type="button"
                   className="auth-social-btn"
-                  onClick={() => handleProvider(provider)}
+                  onClick={() => handleProvider(provider.id)}
                   disabled={isSwapping}
                 >
                   <span className={`auth-social-icon auth-social-icon--${provider.id}`}>{provider.icon}</span>

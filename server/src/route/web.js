@@ -14,8 +14,8 @@ let initWebRoutes = (app) => {
     // reCAPTCHA verification endpoint
     router.post("/api/recaptcha/verify", RecaptchaController.verifyRecaptcha);
     
-    // Auth routes (apply Fail2Ban middleware only to auth endpoints)
-    app.use("/api", fail2ban, authRoutes);
+    // Auth routes (apply Fail2Ban middleware only to login/signup, not OAuth)
+    app.use("/api/auth", authRoutes);
     
     // User routes (highscore and user-related endpoints)
     app.use("/api", userRoutes);

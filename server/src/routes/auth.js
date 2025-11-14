@@ -3,8 +3,69 @@ import axios from 'axios';
 const db = require('../models');
 const User = db.User;
 const { Op } = require('sequelize');
+const passport = require('../config/passport');
 
 const router = express.Router();
+
+// Check session and return current user
+router.get('/me', (req, res) => {
+  if (req.isAuthenticated()) {
+    const user = req.user;
+    return res.json({
+      authenticated: true,
+      user: {
+        username: user.username,
+        email: user.email,
+        playername: user.playername || user.username,
+        role: user.role,
+        status: user.status,
+        highScore: user.highScore || 0
+      }
+    });
+  }
+  res.json({ authenticated: false });
+});
+
+// Logout
+router.post('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ error: 'Logout failed' });
+    req.session.destroy();
+    res.json({ success: true });
+  });
+});
+
+// Google OAuth Routes
+router.get('/google', passport.authenticate('google', { 
+  scope: ['profile', 'email'] 
+}));
+
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/signin' }),
+  (req, res) => {
+    // Set session cookie maxAge (7 days)
+    req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
+    
+    const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(`${CLIENT_URL}/H`); // Redirect directly to home
+  }
+);
+
+// GitHub OAuth Routes
+router.get('/github', passport.authenticate('github', { 
+  scope: ['user:email'] 
+}));
+
+router.get('/github/callback',
+  passport.authenticate('github', { failureRedirect: '/signin' }),
+  (req, res) => {
+    // Set session cookie maxAge (7 days)
+    req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
+    
+    const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+    res.redirect(`${CLIENT_URL}/H`); // Redirect directly to home
+  }
+);
 
 /**
  * POST /api/login

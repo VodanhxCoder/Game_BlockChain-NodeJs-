@@ -8,15 +8,37 @@ require('dotenv').config(); //tải biến môi trường từ file .env
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+const session = require('express-session');
+const passport = require('./config/passport');
 
 let app = express();
+
+// Session configuration (required for passport)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'default_secret_key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: false, // Set to false for localhost development
+        httpOnly: true,
+        sameSite: 'lax', // Important for OAuth callbacks
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 //config app
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+}));
 
 // Note: Fail2Ban middleware is applied only to auth routes to reduce noise.
 
