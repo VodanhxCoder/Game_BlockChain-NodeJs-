@@ -6,15 +6,19 @@ const User = db.User;
 
 // Serialize user for session
 passport.serializeUser((user, done) => {
+  console.log('[Passport] Serializing user:', user.username);
   done(null, user.username); // Use username as primary key
 });
 
 // Deserialize user from session
 passport.deserializeUser(async (username, done) => {
+  console.log('[Passport] Deserializing user:', username);
   try {
     const user = await User.findByPk(username);
+    console.log('[Passport] Found user:', user ? user.username : 'null');
     done(null, user);
   } catch (err) {
+    console.error('[Passport] Deserialize error:', err);
     done(err, null);
   }
 });

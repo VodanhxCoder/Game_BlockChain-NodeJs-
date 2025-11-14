@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "app.mock.auth";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -165,12 +165,16 @@ export function AuthProvider({ children }) {
         }),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Registration failed');
+        // If requires verification, return special object
+        if (responseData.requiresVerification) {
+          throw new Error('EMAIL_VERIFICATION_REQUIRED');
+        }
+        throw new Error(responseData.error || 'Registration failed');
       }
 
-      const responseData = await response.json();
       const user = {
         username: responseData.user.username,
         name: responseData.user.playername,
@@ -178,6 +182,7 @@ export function AuthProvider({ children }) {
         role: responseData.user.role,
         status: responseData.user.status,
         highScore: responseData.user.highScore,
+        emailVerified: responseData.user.emailVerified,
       };
       setUser(user);
       return user;
@@ -187,8 +192,79 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const sendVerificationEmail = async (email, username) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send verification email');
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Send verification email failed:', error);
+      throw error;
+    }
+  };
+
+  const verifyEmail = async (email, code) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Email verification failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Email verification failed:', error);
+      throw error;
+    }
+  };
+
+  const resendVerificationEmail = async (email) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to resend verification email');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Resend verification email failed:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, isAuthenticated: !!user, login, logout, register }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isAuthenticated: !!user, 
+      login, 
+      logout, 
+      register,
+      sendVerificationEmail,
+      verifyEmail,
+      resendVerificationEmail
+    }}>
       {children}
     </AuthContext.Provider>
   );
