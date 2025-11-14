@@ -86,7 +86,11 @@ export default function Shop() {
         throw new Error('MetaMask not installed');
       }
 
-      const message = `Approve trade:\nListing ID: ${tradeModal.listing.listingId}\nSeller: ${tradeModal.listing.seller}\nBuyer: ${user.username}\nTimestamp: ${Date.now()}`;
+      const sellerName = typeof tradeModal.listing.seller === 'string' 
+        ? tradeModal.listing.seller 
+        : (tradeModal.listing.seller?.username || tradeModal.listing.seller?.playername || 'Unknown');
+      
+      const message = `Approve trade:\nListing ID: ${tradeModal.listing.listingId}\nSeller: ${sellerName}\nBuyer: ${user.username}\nTimestamp: ${Date.now()}`;
       
       const signature = await window.ethereum.request({
         method: 'personal_sign',
