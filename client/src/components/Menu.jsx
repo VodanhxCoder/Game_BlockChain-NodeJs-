@@ -73,7 +73,7 @@ export default function Menu() {
 
   const handleLogout = () => {
     logout();
-    navigate("/H");
+    navigate("/signin");
   };
 
   const requireAuth = (event, item) => {

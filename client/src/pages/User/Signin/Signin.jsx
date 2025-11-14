@@ -1,6 +1,7 @@
 // Handles credential-based sign-in, mock autofill, and redirect logic for authenticated users.
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
@@ -10,7 +11,7 @@ import "../../../assets/css/auth.css";
 const TRANSITION_MS = 420;
 
 export default function SignIn() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,11 +22,35 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
+
+  // Redirect to home if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      console.log('[SignIn] Already authenticated, redirecting to /H');
+      navigate('/H', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+
+  // Reset reCAPTCHA when theme changes
+  useEffect(() => {
+    if (recaptchaRef.current) {
+      recaptchaRef.current.reset();
+      setCaptchaToken(null);
+    }
+  }, [isDark]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
+    
+    if (!captchaToken) {
+      setError("Please complete the reCAPTCHA verification.");
+      return;
+    }
+    
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedPassword = sanitizeInput(password);
     if (!sanitizedEmail || !sanitizedPassword) {
@@ -91,8 +116,10 @@ export default function SignIn() {
     },
   ];
 
-  const handleProvider = (provider) => {
-    setError(`${provider.label} is not available yet.`);
+  const handleProvider = (providerId) => {
+    // Redirect to OAuth endpoint
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+    window.location.href = `${API_BASE}/api/auth/${providerId}`;
   };
 
   return (
@@ -157,6 +184,17 @@ export default function SignIn() {
               <Link to="/forgot" className="auth-link">Forgot password?</Link>
             </div>
 
+            <div className="recaptcha-container">
+              <ReCAPTCHA
+                key={isDark ? "dark" : "light"}
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={(token) => setCaptchaToken(token)}
+                onExpired={() => setCaptchaToken(null)}
+                theme={isDark ? "dark" : "light"}
+              />
+            </div>
+
             <div className="auth-actions">
               <button type="submit" className="btn primary" disabled={loading}>
                 {loading ? "Signing in..." : "Sign in"}
@@ -175,7 +213,7 @@ export default function SignIn() {
                   key={provider.id}
                   type="button"
                   className="auth-social-btn"
-                  onClick={() => handleProvider(provider)}
+                  onClick={() => handleProvider(provider.id)}
                   disabled={isSwapping}
                 >
                   <span className={`auth-social-icon auth-social-icon--${provider.id}`}>{provider.icon}</span>

@@ -79,15 +79,6 @@ export default function Homepage() {
             </button>
           </div>
 
-          <div className="game-hud__metrics">
-            {statCards.map((card) => (
-              <div key={card.id} className="game-hud__card">
-                <span>{card.label}</span>
-                <strong>{card.value}</strong>
-              </div>
-            ))}
-          </div>
-
           <div className="game-hud__card">
             <div className="game-hud__card-header">
                 <strong>Recent Drops</strong>
@@ -120,10 +111,13 @@ export default function Homepage() {
 
         <section className="game-frame">
           <div className="game-frame__header">
-            <div>
-              <span className="chip chip--accent">Live build</span>
-              <h2>Space Raiders</h2>
-              <p>{t("nav.home.hint")}</p>
+            <div className="game-hud__metrics" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              {statCards.map((card) => (
+                <div key={card.id} className="game-hud__card" style={{ flex: '1 1 auto', minWidth: '140px' }}>
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
             </div>
           </div>
 

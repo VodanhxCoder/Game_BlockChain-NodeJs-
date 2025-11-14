@@ -4,13 +4,16 @@ import { useAuth } from "../context/AuthContext";
 import Menu from "../components/Menu";
 
 export default function AppLayout() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
+
+  console.log('[AppLayout] loading:', loading, 'isAuthenticated:', isAuthenticated, 'user:', user?.username);
 
   if (loading) {
     return <div className="splash-screen">Đang tải giao diện...</div>;
   }
 
   if (!isAuthenticated) {
+    console.log('[AppLayout] Not authenticated, redirecting to signin');
     return <Navigate to="/signin" replace />;
   }
 

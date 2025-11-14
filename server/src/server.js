@@ -19,15 +19,37 @@ const HardhatBlockchainService = require('./services/HardhatBlockchainService');
 // Provide `__dirname` compatibility for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const session = require('express-session');
+const passport = require('./config/passport');
 
 let app = express();
+
+// Session configuration (required for passport)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'default_secret_key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: false, // Set to false for localhost development
+        httpOnly: true,
+        sameSite: 'lax', // Important for OAuth callbacks
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 //config app
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Enable CORS for all routes
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true
+}));
 
 // Note: Fail2Ban middleware is applied only to auth routes to reduce noise.
 

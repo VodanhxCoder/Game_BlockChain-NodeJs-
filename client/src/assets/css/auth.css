@@ -202,8 +202,8 @@
   color: var(--color-auth-muted);
 }
 .auth-social-buttons{
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 .auth-social-btn{
@@ -476,4 +476,30 @@
   overflow:hidden;
   clip:rect(0,0,0,0);
   border:0;
+}
+
+/* reCAPTCHA Container */
+.recaptcha-container {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+/* Dark mode for reCAPTCHA */
+.recaptcha-container > div,
+.recaptcha-container iframe {
+  filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(0.9) !important;
+}
+
+@media (max-width: 640px) {
+  .recaptcha-container {
+    transform: scale(0.9);
+    margin: 1rem 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .recaptcha-container {
+    transform: scale(0.77);
+  }
 }
