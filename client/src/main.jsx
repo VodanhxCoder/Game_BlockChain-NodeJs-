@@ -8,6 +8,10 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { Web3Provider } from "./context/Web3Context";
 import "./assets/css/ui.css";
 import "./assets/css/AuthSlider.css";
+import axios from 'axios';
+
+// Configure axios to send cookies with all requests
+axios.defaults.withCredentials = true;
 
 const rootElement = document.getElementById("root");
 

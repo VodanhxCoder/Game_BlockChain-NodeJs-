@@ -4,6 +4,16 @@ import axios from 'axios';
 import { useAuth } from '../../../context/AuthContext';
 import WalletConnect from '../../../components/WalletConnect';
 import { useWeb3 } from '../../../context/Web3Context';
+import { useTheme } from '../../../context/ThemeContext';
+
+// Vite-friendly API base URL and helper to build full image URLs
+const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env) ? (import.meta.env.VITE_API_BASE_URL || '') : '';
+const getFullImageUrl = (imgPath) => {
+  if (!imgPath) return null;
+  if (imgPath.startsWith('http')) return imgPath;
+  if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
+  return `${API_BASE_URL}/${imgPath}`.replace(/\/\/+/, '/');
+};
 
 const featuredDrops = [
   { id: 1, name: "Nebula Phantom", rarity: "Legendary", price: "1200 ZEN", stock: "25 / 50", accent: "#fee2ff" },
@@ -26,6 +36,7 @@ const activities = [
 export default function Shop() {
   const { user } = useAuth();
   const { account, isConnected } = useWeb3();
+  const { isDark } = useTheme();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewModal, setViewModal] = useState({ open: false, itemHash: '', itemName: '' });
@@ -208,42 +219,43 @@ export default function Shop() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
                 {listings.map(l => (
                   <article key={l.listingId} className="page-card" style={{ padding: 12 }}>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <div style={{ width: 72, height: 72, background: '#0b1220', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {l.inventoryItem?.item?.itemImage ? (
-                          <img src={l.inventoryItem.item.itemImage} alt="item" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6 }} />
-                        ) : (
-                          <div style={{ color: '#fff', fontSize: 12 }}>{l.inventoryItem?.item?.itemName?.slice(0,2) || '—'}</div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                          <strong>{l.inventoryItem?.item?.itemName || l.itemHash.slice(0,12) + '…'}</strong>
-                          <span style={{ fontSize: 12, color: '#666' }}>
-                            {l.inventoryItem?.item?.itemTier || l.tier || '—'}
-                          </span>
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        {/* image / placeholder adapts to theme */}
+                        <div style={{ width: 72, height: 72, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? '#0b1220' : '#f3f4f6' }}>
+                          {getFullImageUrl(l.inventoryItem?.item?.itemImage) ? (
+                              <img src={getFullImageUrl(l.inventoryItem.item.itemImage)} alt="item" loading="lazy" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6 }} />
+                            ) : (
+                              <div style={{ color: isDark ? '#fff' : '#111827', fontSize: 12 }}>{l.inventoryItem?.item?.itemName?.slice(0,2) || '—'}</div>
+                            )}
                         </div>
-                        <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
-                        {!l.seller?.walletAddress && (
-                          <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            ⚠️ Seller wallet not connected
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                            <strong style={{ color: isDark ? '#fff' : '#111827' }}>{l.inventoryItem?.item?.itemName || l.itemHash.slice(0,12) + '…'}</strong>
+                            <span style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280' }}>
+                              {l.inventoryItem?.item?.itemTier || l.tier || '—'}
+                            </span>
                           </div>
-                        )}
-                        <div style={{ fontSize: 12, color: '#444', marginTop: 8 }}>
-                          Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
-                        </div>
-                        <div style={{ marginTop: 8, fontSize: 11, color: '#666', display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <span style={{ fontFamily: 'monospace', opacity: 0.85 }}>{(l.itemHash || '').substring(0, 16)}{(l.itemHash || '').length > 16 ? '…' : ''}</span>
-                          <button
-                            className="ui-btn ui-btn--ghost"
-                            style={{ fontSize: 11, padding: '4px 8px' }}
-                            onClick={() => setViewModal({ open: true, itemHash: l.itemHash || '', itemName: l.inventoryItem?.item?.itemName || '' })}
-                          >
-                            View
-                          </button>
+                          <div style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
+                          {!l.seller?.walletAddress && (
+                            <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              ⚠️ Seller wallet not connected
+                            </div>
+                          )}
+                          <div style={{ fontSize: 12, color: isDark ? '#d1d5db' : '#374151', marginTop: 8 }}>
+                            Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: 11, color: isDark ? '#9ca3af' : '#6b7280', display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontFamily: 'monospace', opacity: 0.85 }}>{(l.itemHash || '').substring(0, 16)}{(l.itemHash || '').length > 16 ? '…' : ''}</span>
+                            <button
+                              className="ui-btn ui-btn--ghost"
+                              style={{ fontSize: 11, padding: '4px 8px' }}
+                              onClick={() => setViewModal({ open: true, itemHash: l.itemHash || '', itemName: l.inventoryItem?.item?.itemName || '' })}
+                            >
+                              View
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
                     <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
                           <button
                             className="ui-btn ui-btn--primary"
@@ -335,10 +347,10 @@ export default function Shop() {
       </section>
       {viewModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
-          <div style={{ width: 520, background: '#fff', borderRadius: 8, padding: 20 }}>
+          <div style={{ width: 520, background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
             <h3 style={{ marginTop: 0 }}>{viewModal.itemName || 'Item details'}</h3>
-            <p style={{ fontSize: 12, color: '#444' }}>Full item hash (copy to clipboard):</p>
-            <div style={{ fontFamily: 'monospace', background: '#f6f6f8', padding: 12, borderRadius: 6, wordBreak: 'break-all' }}>{viewModal.itemHash}</div>
+            <p style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#444' }}>Full item hash (copy to clipboard):</p>
+            <div style={{ fontFamily: 'monospace', background: isDark ? '#071022' : '#f6f6f8', padding: 12, borderRadius: 6, wordBreak: 'break-all' }}>{viewModal.itemHash}</div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <button className="ui-btn ui-btn--ghost" onClick={closeViewModal}>Close</button>
               <button className="ui-btn ui-btn--primary" onClick={handleCopyHash}>{copySuccess ? 'Copied!' : 'Copy'}</button>
@@ -348,9 +360,9 @@ export default function Shop() {
       )}
       {tradeModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
-          <div style={{ width: 720, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 20 }}>
+          <div style={{ width: 720, maxHeight: '80vh', overflowY: 'auto', background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
             <h3 style={{ marginTop: 0 }}>Choose an item to trade</h3>
-            <p style={{ fontSize: 13, color: '#444' }}>{tradeModal.listing?.inventoryItem?.item?.itemName} — select one of your items to offer in exchange.</p>
+            <p style={{ fontSize: 13, color: isDark ? '#9ca3af' : '#444' }}>{tradeModal.listing?.inventoryItem?.item?.itemName} — select one of your items to offer in exchange.</p>
             <div style={{ marginTop: 12 }}>
               {tradeModal.loading ? (
                 <div>Loading your inventory…</div>
@@ -362,8 +374,8 @@ export default function Shop() {
                     <label key={ii.inventoryItemId} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 8, border: tradeModal.selectedItemId === ii.inventoryItemId ? '1px solid #0b74de' : '1px solid #eee', borderRadius: 6 }}>
                       <input type="radio" name="trade-item" checked={tradeModal.selectedItemId === ii.inventoryItemId} onChange={() => setTradeModal(prev => ({ ...prev, selectedItemId: ii.inventoryItemId }))} />
                       <div style={{ width: 56, height: 56, background: '#0b1220', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {ii.item?.itemImage ? (
-                          <img src={ii.item.itemImage} alt="item" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} />
+                        {getFullImageUrl(ii.item?.itemImage) ? (
+                          <img src={getFullImageUrl(ii.item.itemImage)} alt="item" loading="lazy" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} />
                         ) : (
                           <div style={{ color: '#fff' }}>{ii.item?.itemName?.slice(0,2) || '—'}</div>
                         )}

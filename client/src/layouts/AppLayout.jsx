@@ -17,6 +17,12 @@ export default function AppLayout() {
     return <Navigate to="/signin" replace />;
   }
 
+  // If user is admin, redirect to admin panel
+  if (user?.role === 'admin') {
+    console.log('[AppLayout] Admin detected, redirecting to /admin');
+    return <Navigate to="/admin" replace />;
+  }
+
   return (
     <div className="app-shell">
       <aside className="app-shell__sidebar">

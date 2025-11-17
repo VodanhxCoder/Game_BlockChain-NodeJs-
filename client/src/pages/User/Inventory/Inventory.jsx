@@ -4,6 +4,7 @@ import "../../../assets/css/Homepage.css";
 import { useAuth } from "../../../context/AuthContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import WalletConnect from '../../../components/WalletConnect';
+import { useTheme } from '../../../context/ThemeContext';
 import { useWeb3 } from '../../../context/Web3Context';
 import axios from "axios";
 
@@ -20,9 +21,23 @@ const rarityLabels = {
 };
 
 export default function Inventory() {
+  // Build API base URL for server-hosted uploads.
+  // Vite exposes env via import.meta.env.VITE_API_BASE_URL; fallback to empty string
+  const API_BASE_URL = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL || '' : '';
+
+  const getFullImageUrl = (imgPath) => {
+    if (!imgPath) return null;
+    // If already an absolute URL, use it as-is
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+    // If it already starts with a slash, prepend base URL
+    if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
+    // Otherwise assume relative path and prepend slash + base
+    return `${API_BASE_URL}/${imgPath}`.replace(/([^:]\/\/)\//, '$1');
+  };
   const { user } = useAuth();
   const { t } = useLanguage();
   const { account, isConnected } = useWeb3();
+  const { isDark } = useTheme();
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -353,6 +368,45 @@ export default function Inventory() {
                     borderLeft: `3px solid ${rarityColors[item.itemTier] || '#6B7280'}`
                   }}
                 >
+                  {/* Item image / GIF (if available) */}
+                  {(() => {
+                    // Support multiple possible image fields coming from different APIs
+                    const imgPath =
+                      item.imageUrl ||
+                      item.image ||
+                      item.itemImage ||
+                      item.image_path ||
+                      item.imagePath ||
+                      inventoryItem.imageUrl ||
+                      inventoryItem.image || '';
+
+                    const imageSrc = getFullImageUrl(imgPath);
+                    if (imageSrc) {
+                      return (
+                        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                          <a href={imageSrc} target="_blank" rel="noreferrer">
+                            <img
+                              src={imageSrc}
+                              alt={item.itemName || item.name || 'item'}
+                              style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                            />
+                          </a>
+                        </div>
+                      );
+                    }
+
+                    // small placeholder when no image
+                    return (
+                      <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                        <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af' }}>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 28 }}>🖼️</div>
+                            <div style={{ fontSize: 12, marginTop: 6 }}>No image</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
                     <span 
                       className="chip chip--accent"
@@ -407,20 +461,70 @@ export default function Inventory() {
 
       {listingModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div style={{ width: 520, background: '#fff', borderRadius: 8, padding: 20 }}>
-            <h3>List item on Shop</h3>
-            <p style={{ marginTop: 6 }}>Choose the item you want in exchange (wanted item).</p>
-            <div style={{ marginTop: 12 }}>
-              <select style={{ width: '100%', padding: 8 }} value={listingModal.wantedItemId || ''} onChange={(e) => setListingModal(s => ({ ...s, wantedItemId: Number(e.target.value) }))}>
-                <option value="">-- Select wanted item --</option>
-                {availableWantedItems.map(it => (
-                  <option key={it.itemId} value={it.itemId}>{it.name} ({it.rarity})</option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
-              <button className="ui-btn ui-btn--ghost" onClick={cancelListingModal}>Cancel</button>
-              <button className="ui-btn ui-btn--primary" onClick={confirmListOnShop}>Confirm List</button>
+          <div style={{ width: 560, maxWidth: '96%', background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
+            <h3 style={{ marginTop: 0 }}>List item on Shop</h3>
+            <p style={{ marginTop: 6, color: isDark ? '#9ca3af' : '#444' }}>Choose the item you want in exchange (wanted item).</p>
+
+            <div style={{ display: 'flex', gap: 16, marginTop: 12, alignItems: 'flex-start' }}>
+              {/* Left: image preview of the selected inventory item */}
+              <div style={{ width: 160, flex: '0 0 160px' }}>
+                {(() => {
+                  const sel = inventory.find(ii => ii.itemHash === listingModal.itemHash) || {};
+                  const itm = sel.item || {};
+                  const imgPath = itm.imageUrl || itm.image || itm.itemImage || sel.imageUrl || '';
+                  const src = getFullImageUrl(imgPath);
+                  if (src) {
+                    return (
+                      <a href={src} target="_blank" rel="noreferrer">
+                        <img src={src} alt={itm.itemName || itm.name || 'item'} style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 8, display: 'block' }} />
+                      </a>
+                    );
+                  }
+                  return (
+                    <div style={{ width: 160, height: 160, borderRadius: 8, background: isDark ? '#071022' : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isDark ? '#9ca3af' : '#9ca3af' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 32 }}>🖼️</div>
+                        <div style={{ fontSize: 12, marginTop: 8 }}>No image</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Right: select wanted item */}
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', marginBottom: 8, color: isDark ? '#e5e7eb' : '#111827' }}>Wanted item</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, maxHeight: 220, overflowY: 'auto' }}>
+                  {availableWantedItems.length === 0 ? (
+                    <div style={{ color: isDark ? '#9ca3af' : '#6b7280' }}>No wanted items available</div>
+                  ) : (
+                    availableWantedItems.map(it => {
+                      const img = it.imageUrl || it.image || it.itemImage || '';
+                      const src = getFullImageUrl(img);
+                      const selected = listingModal.wantedItemId === it.itemId;
+                      return (
+                        <label key={it.itemId} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 8, borderRadius: 8, cursor: 'pointer', border: selected ? `2px solid ${isDark ? '#2563eb' : '#0b74de'}` : `1px solid ${isDark ? '#1f2937' : '#e5e7eb'}`, background: selected ? (isDark ? '#06172b' : '#eef6ff') : (isDark ? '#071022' : '#fff') }}>
+                          <input type="radio" name="wanted-item" value={it.itemId} checked={selected} onChange={() => setListingModal(s => ({ ...s, wantedItemId: it.itemId }))} style={{ display: 'none' }} />
+                          <div style={{ width: '100%', height: 84, borderRadius: 6, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? '#071022' : '#f3f4f6' }}>
+                            {src ? (
+                              <img src={src} alt={it.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ color: isDark ? '#9ca3af' : '#9ca3af' }}>{it.name?.slice(0,2) || '—'}</div>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: isDark ? '#e5e7eb' : '#111827', textAlign: 'center' }}>{it.name}</div>
+                          <div style={{ fontSize: 11, color: isDark ? '#9ca3af' : '#6b7280', textAlign: 'center' }}>{it.rarity}</div>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+                  <button className="ui-btn ui-btn--ghost" onClick={cancelListingModal}>Cancel</button>
+                  <button className="ui-btn ui-btn--primary" onClick={confirmListOnShop}>Confirm List</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

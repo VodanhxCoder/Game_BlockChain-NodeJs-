@@ -25,8 +25,30 @@ async function main() {
   console.log('\nDeployment info saved to deployment.json');
   console.log('Contract address:', contractAddress);
   console.log('Network:', hre.network.name);
-  console.log('\nUpdate your .env file with:');
-  console.log(`BLOCKCHAIN_CONTRACT_ADDRESS=${contractAddress}`);
+
+  // Auto-update .env file
+  const envPath = './.env';
+  let envContent = '';
+  
+  if (fs.existsSync(envPath)) {
+    envContent = fs.readFileSync(envPath, 'utf-8');
+  }
+
+  // Update or add CONTRACT_ADDRESS
+  const contractAddressRegex = /^(BLOCKCHAIN_)?CONTRACT_ADDRESS=.*/m;
+  
+  if (contractAddressRegex.test(envContent)) {
+    // Update existing
+    envContent = envContent.replace(contractAddressRegex, `CONTRACT_ADDRESS=${contractAddress}`);
+    console.log('\n✅ Updated CONTRACT_ADDRESS in .env');
+  } else {
+    // Add new entry
+    envContent += `\n# Auto-generated contract address\nCONTRACT_ADDRESS=${contractAddress}\n`;
+    console.log('\n✅ Added CONTRACT_ADDRESS to .env');
+  }
+
+  fs.writeFileSync(envPath, envContent);
+  console.log(`CONTRACT_ADDRESS=${contractAddress}`);
 }
 
 main().catch((error) => {

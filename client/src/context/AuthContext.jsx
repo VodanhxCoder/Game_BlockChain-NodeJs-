@@ -87,6 +87,7 @@ export function AuthProvider({ children }) {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username: email, passwordHash: password }),
       });
 
@@ -157,6 +158,7 @@ export function AuthProvider({ children }) {
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           username: username || email, 
           email: email,
