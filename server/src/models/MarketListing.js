@@ -36,6 +36,19 @@ export default (sequelize) => {
       defaultValue: DataTypes.NOW,
       field: 'created_at'
     }
+    ,
+    sellerSignature: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: 'seller_signature',
+      comment: 'Off-chain signature from seller approving the listing/trade payload'
+    },
+    sellerSignatureTimestamp: {
+      type: DataTypes.BIGINT,
+      allowNull: true,
+      field: 'seller_signature_timestamp',
+      comment: 'Timestamp when seller signature was created (milliseconds)'
+    }
   }, {
     sequelize,
     modelName: 'MarketListing',

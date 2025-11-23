@@ -191,14 +191,23 @@ const prepareTrade = async (req, res) => {
       contractAddress
     });
 
+    // For buyer-initiated on-chain trades, we need the seller's signature in contract format
+    // The seller should have signed: keccak256(sellerItemHash, listingId, timestamp, contractAddress)
+    // But the seller signed a simple message at listing time. We'll need to convert it or have seller re-sign.
+    // For now, if seller signature exists, we'll use it as-is and let the frontend handle it.
+    
     return res.json({
       contractAddress,
       data,
       value: '0x0',
       listingId,
       seller: listing.seller,
+      sellerWallet: sellerUser.walletAddress,
+      buyerWallet: buyerUser.walletAddress,
       sellerItemHash: listing.itemHash,
-      buyerItemHash: buyerItem ? buyerItem.itemHash : null
+      buyerItemHash: buyerItem ? buyerItem.itemHash : null,
+      sellerSignature: listing.sellerSignature || null,
+      sellerSignatureTimestamp: listing.sellerSignatureTimestamp || null
     });
   } catch (err) {
     console.error('❌ Error preparing trade calldata:', err.message);
@@ -225,6 +234,7 @@ const confirmTrade = async (req, res) => {
     }
 
     const receipt = txInfo.receipt;
+    const { ethers } = require('ethers');
     // Note: with ethers v6 receipt.status is 1 for success
     if (receipt.status !== 1 && receipt.status !== '0x1') {
       // log failed
@@ -300,6 +310,21 @@ const confirmTrade = async (req, res) => {
       await buyerItem.save({ transaction: t });
 
       // Create trade log BEFORE deleting listing (to satisfy foreign key constraint)
+      // compute gas fee (wei and ETH) if available
+      const gasUsedStr = receipt.gasUsed ? receipt.gasUsed.toString() : null;
+      const effectiveGasPriceStr = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
+      let gasFeeWei = null;
+      let gasFeeEth = null;
+      if (gasUsedStr && effectiveGasPriceStr) {
+        try {
+          const feeBig = BigInt(gasUsedStr) * BigInt(effectiveGasPriceStr);
+          gasFeeWei = feeBig.toString();
+          gasFeeEth = ethers.formatEther(feeBig);
+        } catch (feeErr) {
+          console.warn('Failed to compute gas fee in confirmTrade:', feeErr && feeErr.message ? feeErr.message : feeErr);
+        }
+      }
+
       const tradeLog = await TradeLog.create({
         itemHash: sellerItem.itemHash,
         tradeItemHash: buyerItem.itemHash,
@@ -309,7 +334,9 @@ const confirmTrade = async (req, res) => {
         transactionType: 'TRADE',
         status: 'CONFIRMED',
         blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed ? receipt.gasUsed.toString() : null,
+        gasUsed: gasUsedStr,
+        gasFee: gasFeeWei,
+        gasFeeEth: gasFeeEth,
         fromWallet: receipt.from || null,
         toWallet: receipt.to || null,
         listingId: listingId,
@@ -423,7 +450,7 @@ const executeTrade = async (req, res) => {
 
     // Execute trade on blockchain
     console.log('⛓️  Executing trade on blockchain...');
-    const txHash = await HardhatBlockchainService.executeTrade(
+    const txResult = await HardhatBlockchainService.executeTrade(
       listing.itemHash,
       buyerItem.itemHash,
       sellerUser.walletAddress,
@@ -432,6 +459,31 @@ const executeTrade = async (req, res) => {
       listing.seller,
       buyer
     );
+
+    // txResult may be null when blockchain disabled
+    let txHash = null;
+    let txBlockNumber = null;
+    let txGasUsed = null;
+    let txEffectiveGasPrice = null;
+    let txGasFee = null;
+    let txGasFeeEth = null;
+
+    if (txResult) {
+      txHash = txResult.txHash || txResult.hash || null;
+      txBlockNumber = txResult.blockNumber || null;
+      txGasUsed = txResult.gasUsed || null;
+      txEffectiveGasPrice = txResult.effectiveGasPrice || null;
+
+      if (txGasUsed && txEffectiveGasPrice) {
+        try {
+          const gasFeeBig = BigInt(txGasUsed) * BigInt(txEffectiveGasPrice);
+          txGasFee = gasFeeBig.toString();
+          txGasFeeEth = ethers.formatEther(gasFeeBig);
+        } catch (feeErr) {
+          console.warn('Failed to compute gas fee:', feeErr && feeErr.message ? feeErr.message : feeErr);
+        }
+      }
+    }
 
     console.log('✅ Blockchain trade executed:', txHash);
 
@@ -465,6 +517,10 @@ const executeTrade = async (req, res) => {
         transactionHash: txHash,
         transactionType: 'TRADE',
         status: 'CONFIRMED',
+        blockNumber: txBlockNumber,
+        gasUsed: txGasUsed,
+        gasFee: txGasFee,
+        gasFeeEth: txGasFeeEth,
         fromWallet: sellerUser.walletAddress,
         toWallet: buyerUser.walletAddress,
         listingId: listingId

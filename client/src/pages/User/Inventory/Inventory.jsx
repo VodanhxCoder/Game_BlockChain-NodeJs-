@@ -7,6 +7,7 @@ import WalletConnect from '../../../components/WalletConnect';
 import { useTheme } from '../../../context/ThemeContext';
 import { useWeb3 } from '../../../context/Web3Context';
 import axios from "axios";
+import { ethers } from 'ethers';
 
 const rarityColors = {
   Legendary: "#FFD700",
@@ -167,11 +168,65 @@ export default function Inventory() {
     }
     setActionLoading(prev => ({ ...prev, [itemHash]: true }));
     try {
-      await axios.post('/api/market/list', {
+      // Step 1: Create the listing first (without signature) to get listingId
+      const createResp = await axios.post('/api/market/list', {
         username: user.username,
         itemHash,
         wantedItemId
       });
+      
+      const listingId = createResp.data.listingId;
+      console.log('✅ Listing created with ID:', listingId);
+      
+      // Step 2: If wallet connected, create and save the contract-compatible signature
+      if (isConnected && account && listingId) {
+        try {
+          const sellerSignatureTimestamp = Date.now();
+          
+          // Get contract address from backend
+          const configResp = await axios.get('/api/config');
+          const contractAddress = configResp.data.contractAddress;
+          
+          if (!contractAddress) {
+            console.warn('⚠️  Contract address not available, listing created without signature');
+            return;
+          }
+          
+          console.log('📝 Creating signature for listing...');
+          console.log('   Contract:', contractAddress);
+          console.log('   Listing ID:', listingId);
+          console.log('   Timestamp:', sellerSignatureTimestamp);
+          
+          // Create contract-compatible message: keccak256(sellerItemHash, listingId, timestamp, contractAddress)
+          const sellerHashBytes = '0x' + itemHash;
+          const messageHash = ethers.solidityPackedKeccak256(
+            ['bytes32', 'uint256', 'uint256', 'address'],
+            [sellerHashBytes, listingId, sellerSignatureTimestamp, contractAddress]
+          );
+          
+          console.log('   Message hash:', messageHash);
+          
+          // Sign the hash using eth_sign (or personal_sign with hex string)
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signer = await provider.getSigner();
+          const sellerSignature = await signer.signMessage(ethers.getBytes(messageHash));
+          
+          console.log('✅ Signature obtained:', sellerSignature.substring(0, 20) + '...');
+          
+          // Update the listing with the signature
+          await axios.patch('/api/market/update-signature', {
+            listingId,
+            sellerSignature,
+            sellerSignatureTimestamp
+          });
+          
+          console.log('✅ Listing updated with seller signature');
+        } catch (signErr) {
+          console.warn('Seller signature failed or rejected:', signErr);
+          alert('Signature rejected. Your item is listed but buyer-initiated trades won\'t work until you provide a signature.');
+        }
+      }
+      
       // notify marketplace components so they can refresh without a full reload
       try { window.dispatchEvent(new Event('market:updated')); } catch (e) { /* ignore */ }
       setListingModal({ open: false, itemHash: null, wantedItemId: null });

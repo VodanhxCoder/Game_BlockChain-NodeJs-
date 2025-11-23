@@ -1,6 +1,7 @@
 // Displays featured NFT drops, power-up bundles, and recent on-chain marketplace activity.
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
+import { ethers } from 'ethers';
 import { useAuth } from '../../../context/AuthContext';
 import WalletConnect from '../../../components/WalletConnect';
 import { useWeb3 } from '../../../context/Web3Context';
@@ -88,30 +89,133 @@ export default function Shop() {
     }
     
     try {
-      console.log('🔄 Starting blockchain trade...');
-      
-      // Step 1: Ask user to sign a message to approve the trade
-      console.log('🦊 Requesting user signature for trade approval...');
-      
-      if (!window.ethereum) {
-        throw new Error('MetaMask not installed');
+      console.log('🔄 Starting trade flow — preparing calldata from backend...');
+
+      // Call backend to prepare calldata and get seller signature (if seller provided one)
+      const prep = await axios.post('/api/market/prepare-trade', {
+        listingId: tradeModal.listing.listingId,
+        buyer: user.username,
+        buyerInventoryItemId: tradeModal.selectedItemId,
+        buyerWallet: account
+      });
+
+      const prepData = prep.data || {};
+      const { contractAddress, sellerSignature, sellerItemHash, buyerItemHash, listingId, sellerWallet, buyerWallet, sellerSignatureTimestamp } = prepData;
+
+      console.log('📦 Prepared trade data:', { contractAddress, sellerSignature: sellerSignature ? 'present' : 'missing', sellerSignatureTimestamp, listingId });
+
+      // If seller provided an off-chain signature that allows buyer-initiated on-chain execution,
+      // call the contract method `executeTradeByParticipants` from the buyer's wallet so buyer pays gas.
+      if (sellerSignature && contractAddress && window.ethereum && sellerWallet && sellerSignatureTimestamp) {
+        try {
+          console.log('⛓️  Seller signature present — invoking on-chain trade via MetaMask');
+
+          const sellerAddr = sellerWallet;
+          const buyerAddr = account;
+
+          const sellerHashBytes = sellerItemHash ? ('0x' + sellerItemHash) : ('0x' + (tradeModal.listing.itemHash || '0'.repeat(64)));
+          const buyerHashBytes = buyerItemHash ? ('0x' + buyerItemHash) : ('0x' + '0'.repeat(64));
+
+          console.log('📝 Transaction parameters:');
+          console.log('   Seller item:', sellerHashBytes);
+          console.log('   Buyer item:', buyerHashBytes);
+          console.log('   Seller addr:', sellerAddr);
+          console.log('   Buyer addr:', buyerAddr);
+          console.log('   Listing ID:', listingId || tradeModal.listing.listingId);
+          console.log('   Timestamp:', sellerSignatureTimestamp);
+          console.log('   Contract:', contractAddress);
+
+          // Create the contract-compatible signature
+          // Contract expects: keccak256(sellerItemHash, listingId, timestamp, contractAddress)
+          // We need to recreate this message and have the seller sign it via MetaMask
+          const messageHash = ethers.solidityPackedKeccak256(
+            ['bytes32', 'uint256', 'uint256', 'address'],
+            [sellerHashBytes, listingId || tradeModal.listing.listingId, sellerSignatureTimestamp, contractAddress]
+          );
+          
+          console.log('   Expected message hash:', messageHash);
+          console.log('   Seller signature:', sellerSignature.substring(0, 20) + '...');
+          
+          // Verify signature matches
+          try {
+            const recoveredAddr = ethers.verifyMessage(ethers.getBytes(messageHash), sellerSignature);
+            console.log('   Recovered address:', recoveredAddr);
+            console.log('   Matches seller?', recoveredAddr.toLowerCase() === sellerAddr.toLowerCase());
+            
+            if (recoveredAddr.toLowerCase() !== sellerAddr.toLowerCase()) {
+              throw new Error('Signature verification failed - recovered address does not match seller');
+            }
+          } catch (verifyErr) {
+            console.error('❌ Signature verification failed:', verifyErr);
+            throw new Error('Invalid seller signature: ' + verifyErr.message);
+          }
+          
+          // Minimal ABI for the buyer-executed function
+          const abi = [
+            'function executeTradeByParticipants(bytes32,bytes32,address,address,bytes,uint256,uint256)'
+          ];
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signerLocal = await provider.getSigner();
+          const contract = new ethers.Contract(contractAddress, abi, signerLocal);
+
+          console.log('📤 Sending transaction to contract...');
+          const tx = await contract.executeTradeByParticipants(
+            sellerHashBytes,
+            buyerHashBytes,
+            sellerAddr,
+            buyerAddr,
+            sellerSignature,
+            listingId || tradeModal.listing.listingId,
+            sellerSignatureTimestamp,
+            { gasLimit: 800000 }
+          );
+
+          console.log('🔄 Waiting for MetaMask tx to be mined...', tx.hash);
+          const receipt = await tx.wait();
+
+          console.log('✅ On-chain trade mined:', receipt.transactionHash || receipt.hash);
+          
+          // Calculate gas fee paid by buyer
+          const gasUsed = receipt.gasUsed;
+          const effectiveGasPrice = receipt.gasPrice || receipt.effectiveGasPrice;
+          let gasFeeEth = '0';
+          if (gasUsed && effectiveGasPrice) {
+            const gasFeeWei = gasUsed * effectiveGasPrice;
+            gasFeeEth = ethers.formatEther(gasFeeWei);
+          }
+
+          // Notify backend to finalize DB swap and record gas usage
+          await axios.post('/api/market/confirm-trade', {
+            txHash: receipt.transactionHash || receipt.hash,
+            listingId: tradeModal.listing.listingId,
+            buyer: user.username,
+            buyerInventoryItemId: tradeModal.selectedItemId
+          });
+
+          alert(`✅ Trade successful!\n\nTransaction: ${(receipt.transactionHash || receipt.hash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
+          window.dispatchEvent(new Event('market:updated'));
+          fetchListings();
+          closeTradeModal();
+          return;
+        } catch (onchainErr) {
+          console.error('On-chain execution failed, falling back to server flow:', onchainErr);
+          // fall through to server fallback below
+        }
       }
 
-      const sellerName = typeof tradeModal.listing.seller === 'string' 
-        ? tradeModal.listing.seller 
+      // Fallback: ask buyer to sign a small approval message and POST to server so backend (owner) executes the trade
+      console.log('🦊 Requesting user signature for server-executed trade approval...');
+      if (!window.ethereum) throw new Error('MetaMask not installed');
+
+      const sellerName = typeof tradeModal.listing.seller === 'string'
+        ? tradeModal.listing.seller
         : (tradeModal.listing.seller?.username || tradeModal.listing.seller?.playername || 'Unknown');
-      
+
       const message = `Approve trade:\nListing ID: ${tradeModal.listing.listingId}\nSeller: ${sellerName}\nBuyer: ${user.username}\nTimestamp: ${Date.now()}`;
-      
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, account],
-      });
-      
-      console.log('✅ User approved trade with signature');
-      
-      // Step 2: Send approval to backend - backend will execute the trade
-      console.log('📡 Submitting trade to blockchain...');
+      const signature = await window.ethereum.request({ method: 'personal_sign', params: [message, account] });
+
+      console.log('📡 Submitting trade to backend for execution (backend pays gas)');
       const tradeResp = await axios.post('/api/market/execute-trade', {
         listingId: tradeModal.listing.listingId,
         buyer: user.username,
@@ -120,13 +224,11 @@ export default function Shop() {
         signature,
         message
       });
-      
-      const { txHash, success } = tradeResp.data;
-      console.log('✅ Trade executed:', txHash);
-      
-      alert(`Trade successful!\nTransaction: ${txHash.substring(0, 10)}...\n\nCheck your inventory!`);
-      
-      // notify other parts of the app and refresh
+
+      const { txHash } = tradeResp.data || {};
+      console.log('✅ Server-executed trade response:', txHash);
+
+      alert(`Trade successful!\nTransaction: ${txHash ? (txHash.substring ? txHash.substring(0,10)+'...' : txHash) : 'pending'}`);
       window.dispatchEvent(new Event('market:updated'));
       fetchListings();
       closeTradeModal();
@@ -390,6 +492,25 @@ export default function Shop() {
                 </div>
               )}
             </div>
+            {tradeModal.selectedItemId && isConnected && (
+              <div style={{ 
+                marginTop: 16, 
+                padding: 12, 
+                background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: 6,
+                fontSize: 12,
+                color: isDark ? '#93c5fd' : '#1e40af'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span>⛽</span>
+                  <strong>Gas Fee Notice</strong>
+                </div>
+                <div>
+                  You will pay the blockchain gas fee for this transaction from your MetaMask wallet. Estimated: ~0.001-0.003 ETH
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <button className="ui-btn ui-btn--ghost" onClick={closeTradeModal}>Cancel</button>
               <button className="ui-btn ui-btn--primary" disabled={!tradeModal.selectedItemId} onClick={confirmTrade}>Confirm trade</button>

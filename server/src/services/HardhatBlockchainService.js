@@ -99,8 +99,16 @@ class HardhatBlockchainService {
       console.log('   Block:', receipt.blockNumber);
       console.log('   Gas Used:', receipt.gasUsed.toString());
 
-      // Return transaction hash for controller to log
-      return receipt.hash;
+      // Provide detailed receipt info so caller can compute fees
+      const effectiveGasPrice = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
+
+      return {
+        txHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed ? receipt.gasUsed.toString() : null,
+        effectiveGasPrice: effectiveGasPrice,
+        receipt
+      };
 
     } catch (error) {
       console.error('❌ Blockchain trade failed:', error.message);
@@ -174,6 +182,25 @@ class HardhatBlockchainService {
 
       console.log('✅ Listing recorded:', receipt.hash);
 
+      // compute gas fee
+      const effectiveGasPrice = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
+      let gasFeeWei = null;
+      let gasFeeEth = null;
+      if (receipt.gasUsed && effectiveGasPrice) {
+        try {
+          const feeBig = BigInt(receipt.gasUsed.toString()) * BigInt(effectiveGasPrice);
+          gasFeeWei = feeBig.toString();
+          // Use ethers to format to Ether string
+          try {
+            gasFeeEth = ethers.formatEther(feeBig);
+          } catch (fmtErr) {
+            gasFeeEth = null;
+          }
+        } catch (err) {
+          console.warn('Failed to compute gas fee for listing record:', err && err.message ? err.message : err);
+        }
+      }
+
       // Log to database
       await db.TradeLog.create({
         itemHash: itemHash,
@@ -184,6 +211,8 @@ class HardhatBlockchainService {
         status: 'CONFIRMED',
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString(),
+        gasFee: gasFeeWei,
+        gasFeeEth: gasFeeEth,
         listingId: listingId
       });
 
