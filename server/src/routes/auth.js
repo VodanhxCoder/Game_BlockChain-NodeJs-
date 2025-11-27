@@ -191,9 +191,10 @@ router.post('/login', async (req, res) => {
 
 /**
  * POST /api/signup
- * Handles user registration.
- * Expects { username, email, passwordHash, playername } in the request body.
- * Frontend sends a SHA-256 hex digest; the server stores that value directly.
+ * Handles user registration with email verification.
+ * Step 1: Send verification code to email
+ * Step 2: User verifies email with code
+ * Step 3: Create user account after verification
  */
 router.post('/signup', async (req, res) => {
   const { username, email, passwordHash, playername } = req.body;
@@ -202,6 +203,14 @@ router.post('/signup', async (req, res) => {
     // Validate input
     if (!username || !email || !passwordHash) {
       return res.status(400).json({ error: 'Username, email, and password are required.' });
+    }
+
+    // Check if email has been verified
+    if (!emailVerificationMiddleware.isEmailVerified(email)) {
+      return res.status(403).json({ 
+        error: 'Email verification required. Please verify your email before signing up.',
+        code: 'EMAIL_NOT_VERIFIED'
+      });
     }
 
     // Check if user already exists
@@ -223,7 +232,7 @@ router.post('/signup', async (req, res) => {
       }
     }
 
-    // Create new user (passwordHash will be stored as provided by frontend)
+    // Create new user
     const newUser = await User.create({
       username: username.trim(),
       email: email.trim(),
@@ -231,7 +240,7 @@ router.post('/signup', async (req, res) => {
       playername: playername ? playername.trim() : username.trim(),
       role: 'player',
       status: 'active',
-      highScore: 0,
+      highScore: 0
     });
 
     // Auto-login the new user by establishing a session
@@ -284,5 +293,103 @@ router.post('/signup', async (req, res) => {
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });
+
+/**
+ * POST /api/auth/check-availability
+ * Kiểm tra email và username có sẵn sàng chưa
+ */
+router.post('/check-availability', async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username) {
+      return res.status(400).json({ error: 'Email and username are required.' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(409).json({ 
+          available: false,
+          error: 'Username already taken.' 
+        });
+      }
+      if (existingUser.email === email) {
+        return res.status(409).json({ 
+          available: false,
+          error: 'Email already registered.' 
+        });
+      }
+    }
+
+    return res.json({ 
+      available: true,
+      message: 'Email and username are available.' 
+    });
+  } catch (error) {
+    console.error('Check availability error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /api/auth/send-verification
+ * Gửi mã xác nhận email (sau khi check availability)
+ */
+router.post('/send-verification', async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username) {
+      return res.status(400).json({ error: 'Email and username are required.' });
+    }
+
+    // Check if user already exists before sending email
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      if (existingUser.username === username) {
+        return res.status(409).json({ error: 'Username already taken.' });
+      }
+      if (existingUser.email === email) {
+        return res.status(409).json({ error: 'Email already registered.' });
+      }
+    }
+
+    // If available, send verification email
+    return emailVerificationMiddleware.sendVerificationCode(req, res);
+  } catch (error) {
+    console.error('Send verification error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+/**
+ * POST /api/auth/verify-email
+ * Xác nhận email với mã 6 số
+ */
+router.post('/verify-email', emailVerificationMiddleware.verifyEmailCode);
+
+/**
+ * POST /api/auth/resend-verification
+ * Gửi lại mã xác nhận email
+ */
+router.post('/resend-verification', emailVerificationMiddleware.resendVerificationCode);
 
 export default router;
