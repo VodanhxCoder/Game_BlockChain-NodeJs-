@@ -87,6 +87,18 @@ export default (sequelize) => {
         allowNull: true,
         field: "gas_used",
       },
+      gasFee: {
+        type: DataTypes.STRING(78),
+        allowNull: true,
+        field: "gas_fee",
+        comment: "Total gas fee paid (in wei)"
+      },
+      gasFeeEth: {
+        type: DataTypes.DECIMAL(30, 18),
+        allowNull: true,
+        field: "gas_fee_eth",
+        comment: "Total gas fee paid (in ETH)"
+      },
       fromWallet: {
         type: DataTypes.STRING(42),
         allowNull: true,

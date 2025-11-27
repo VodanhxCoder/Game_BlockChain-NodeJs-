@@ -205,10 +205,25 @@ class BlockchainService {
 
       console.log(`✅ Trade executed successfully. Gas used: ${receipt.gasUsed.toString()}`);
 
+      const effectiveGasPrice = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
+      let gasFeeWei = null;
+      let gasFeeEth = null;
+      if (receipt.gasUsed && effectiveGasPrice) {
+        try {
+          const feeBig = BigInt(receipt.gasUsed.toString()) * BigInt(effectiveGasPrice);
+          gasFeeWei = feeBig.toString();
+          try { gasFeeEth = ethers.formatEther(feeBig); } catch (e) { gasFeeEth = null; }
+        } catch (err) {
+          console.warn('Failed to compute gas fee in BlockchainService.executeTrade:', err && err.message ? err.message : err);
+        }
+      }
+
       return {
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber,
-        gasUsed: receipt.gasUsed.toString()
+        gasUsed: receipt.gasUsed.toString(),
+        gasFeeWei,
+        gasFeeEth
       };
     } catch (error) {
       console.error('❌ Failed to execute trade:', error.message);

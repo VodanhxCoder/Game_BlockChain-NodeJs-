@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
  * @title ItemTradingNFT
@@ -23,6 +24,8 @@ contract ItemTradingNFT is ERC721, ERC721URIStorage, Ownable {
     
     // Track if an item has been minted
     mapping(bytes32 => bool) public itemMinted;
+    // Prevent replay of off-chain seller signatures used for buyer-initiated trades
+    mapping(bytes32 => bool) public usedSignatures;
 
     // Events for tracking on-chain activities
     event ItemMinted(
@@ -57,6 +60,8 @@ contract ItemTradingNFT is ERC721, ERC721URIStorage, Ownable {
     );
 
     constructor() ERC721("GameItemNFT", "GITEM") {}
+
+    using ECDSA for bytes32;
 
     /**
      * @dev Mint a new NFT for a game item
@@ -118,6 +123,57 @@ contract ItemTradingNFT is ERC721, ERC721URIStorage, Ownable {
         require(ownerOf(buyerTokenId) == buyer, "Buyer doesn't own item");
 
         // Perform atomic swap
+        _transfer(seller, buyer, sellerTokenId);
+        _transfer(buyer, seller, buyerTokenId);
+
+        emit ItemTraded(
+            sellerTokenId,
+            buyerTokenId,
+            sellerItemHash,
+            buyerItemHash,
+            seller,
+            buyer,
+            block.timestamp
+        );
+    }
+
+    /**
+     * @dev Buyer-initiated trade where seller provides an off-chain signature approving the specific trade payload.
+     * Buyer must call this function (msg.sender == buyer). The contract verifies the seller signature
+     * and performs the atomic swap. This lets the buyer submit the on-chain transaction and pay gas.
+     * Seller signs: (sellerItemHash, listingId, timestamp, contractAddress) at listing creation time.
+     */
+    function executeTradeByParticipants(
+        bytes32 sellerItemHash,
+        bytes32 buyerItemHash,
+        address seller,
+        address buyer,
+        bytes memory sellerSignature,
+        uint256 listingId,
+        uint256 timestamp
+    ) public {
+        require(buyer != address(0) && seller != address(0), "Invalid addresses");
+        require(buyer == msg.sender, "Only buyer may call this");
+        require(seller != buyer, "Cannot trade with self");
+
+        // Recreate the signed message - seller only signs their listing details (not buyer-specific)
+        bytes32 message = keccak256(abi.encodePacked(sellerItemHash, listingId, timestamp, address(this)));
+        require(!usedSignatures[message], "Signature already used");
+
+        address recovered = message.toEthSignedMessageHash().recover(sellerSignature);
+        require(recovered == seller, "Invalid seller signature");
+
+        uint256 sellerTokenId = itemHashToTokenId[sellerItemHash];
+        uint256 buyerTokenId = itemHashToTokenId[buyerItemHash];
+
+        require(sellerTokenId != 0, "Seller item not minted");
+        require(buyerTokenId != 0, "Buyer item not minted");
+        require(ownerOf(sellerTokenId) == seller, "Seller doesn't own item");
+        require(ownerOf(buyerTokenId) == buyer, "Buyer doesn't own item");
+
+        // mark signature used before performing transfers
+        usedSignatures[message] = true;
+
         _transfer(seller, buyer, sellerTokenId);
         _transfer(buyer, seller, buyerTokenId);
 

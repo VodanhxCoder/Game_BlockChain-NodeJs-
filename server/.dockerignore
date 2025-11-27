@@ -1,0 +1,10 @@
+# Add Docker-specific ignores
+node_modules
+dist
+build
+.env
+*.log
+
+# Keep these for Docker builds
+!.env.example
+!.env.docker.example

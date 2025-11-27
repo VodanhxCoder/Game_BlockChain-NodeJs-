@@ -1,14 +1,11 @@
 import express from 'express';
 import axios from 'axios';
 import db from '../models/index.js';
+const { User } = db;
 import { Op } from 'sequelize';
 import passport from '../config/passport.js';
-import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-const emailVerificationMiddleware = require('../middleware/emailVerification.js');
 
-const User = db.User;
 const router = express.Router();
 
 // Check session and return current user
@@ -162,18 +159,29 @@ router.post('/login', async (req, res) => {
     console.log(`[Fail2Ban] ✅ Successful login for username: ${username} from IP: ${clientIp} - clearing ban history`);
     try { await notifyFail2ban(clientIp, true); } catch (e) {}
 
-    return res.status(200).json({
-      message: 'Login successful.',
-      user: {
-        username: user.username,
-        email: user.email,
-        playername: user.playername,
-        role: user.role,
-        status: user.status,
-        highScore: user.highScore,
-        userImage: user.userImage,
-        walletAddress: user.walletAddress || null,
-      },
+    // Establish session using passport
+    req.login(user, (err) => {
+      if (err) {
+        console.error('Session creation error:', err);
+        return res.status(500).json({ error: 'Failed to create session.' });
+      }
+
+      // Set session cookie maxAge (7 days)
+      req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
+
+      return res.status(200).json({
+        message: 'Login successful.',
+        user: {
+          username: user.username,
+          email: user.email,
+          playername: user.playername,
+          role: user.role,
+          status: user.status,
+          highScore: user.highScore,
+          userImage: user.userImage,
+          walletAddress: user.walletAddress || null,
+        },
+      });
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -235,20 +243,39 @@ router.post('/signup', async (req, res) => {
       highScore: 0
     });
 
-    // Clear verification after successful signup
-    emailVerificationMiddleware.clearEmailVerification(email);
+    // Auto-login the new user by establishing a session
+    req.login(newUser, (err) => {
+      if (err) {
+        console.error('Session creation error after signup:', err);
+        // Still return success but without session
+        return res.status(201).json({
+          message: 'Account created successfully.',
+          user: {
+            username: newUser.username,
+            email: newUser.email,
+            playername: newUser.playername,
+            role: newUser.role,
+            status: newUser.status,
+            highScore: newUser.highScore,
+          },
+        });
+      }
 
-    // Return success with user data
-    return res.status(201).json({
-      message: 'Account created successfully.',
-      user: {
-        username: newUser.username,
-        email: newUser.email,
-        playername: newUser.playername,
-        role: newUser.role,
-        status: newUser.status,
-        highScore: newUser.highScore,
-      },
+      // Set session cookie maxAge (7 days)
+      req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000;
+
+      // Return success with user data
+      return res.status(201).json({
+        message: 'Account created successfully.',
+        user: {
+          username: newUser.username,
+          email: newUser.email,
+          playername: newUser.playername,
+          role: newUser.role,
+          status: newUser.status,
+          highScore: newUser.highScore,
+        },
+      });
     });
   } catch (error) {
     console.error('Signup error:', error);

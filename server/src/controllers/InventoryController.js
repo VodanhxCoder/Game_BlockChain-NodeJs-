@@ -181,7 +181,7 @@ const getDropPool = async (req, res) => {
     const dropPool = await DropPool.findAll({
       include: [{
         model: Item,
-        attributes: ['itemId', 'name', 'rarity']
+        attributes: ['itemId', 'name', 'imageUrl', 'rarity']
       }],
       order: [['dropRate', 'DESC']]
     });
@@ -192,7 +192,9 @@ const getDropPool = async (req, res) => {
       dropRate: parseFloat(entry.dropRate),
       active: entry.active,
       item: entry.Item ? {
+        itemId: entry.Item.itemId,
         itemName: entry.Item.name,
+        itemImage: entry.Item.imageUrl,
         itemTier: entry.Item.rarity
       } : null
     }));

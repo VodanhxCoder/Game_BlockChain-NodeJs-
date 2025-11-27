@@ -13,6 +13,9 @@ router.get('/market/items', MarketController.getWantedItems);
 // POST /api/market/list - create a listing
 router.post('/market/list', MarketController.createListing);
 
+// PATCH /api/market/update-signature - update listing with seller signature
+router.patch('/market/update-signature', MarketController.updateSignature);
+
 // POST /api/market/buy - buy a listing
 router.post('/market/buy', MarketController.buyListing);
 

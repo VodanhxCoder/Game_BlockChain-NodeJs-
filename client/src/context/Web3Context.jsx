@@ -30,6 +30,7 @@ export function Web3Provider({ children }) {
       const challengeResp = await fetch(`${API_BASE_URL}/api/user/wallet/challenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username })
       });
       if (!challengeResp.ok) {
@@ -50,6 +51,7 @@ export function Web3Provider({ children }) {
       const verifyResp = await fetch(`${API_BASE_URL}/api/user/wallet/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username, address: walletAddress, signature })
       });
       if (!verifyResp.ok) {

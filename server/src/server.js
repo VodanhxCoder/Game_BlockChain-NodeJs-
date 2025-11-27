@@ -16,6 +16,10 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const HardhatBlockchainService = require('./services/HardhatBlockchainService');
 
+// Use ESM imports for session and passport
+import session from 'express-session';
+import passport from './config/passport.js';
+
 // Provide `__dirname` compatibility for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +55,13 @@ app.use(cors({
     credentials: true
 }));
 
+// Serve uploaded files from /server/uploads at client path /uploads
+const uploadsPath = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsPath)) {
+    fs.mkdirSync(uploadsPath, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsPath));
+
 // Note: Fail2Ban middleware is applied only to auth routes to reduce noise.
 
 // Optionally auto-start the Python Fail2Ban service when the Node server starts.
@@ -85,6 +96,11 @@ try {
 
             child.on('exit', (code, signal) => {
                 console.log(`Fail2Ban service exited with code=${code} signal=${signal}`);
+            });
+
+            // Handle spawn errors (e.g., python not found) so Node doesn't crash
+            child.on('error', (err) => {
+                console.error('[fail2ban-error] Failed to start Fail2Ban service:', err && err.message ? err.message : err);
             });
 
             // Ensure the child is killed when the parent exits

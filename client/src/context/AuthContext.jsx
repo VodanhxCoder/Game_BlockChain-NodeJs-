@@ -71,20 +71,12 @@ export function AuthProvider({ children }) {
       }
 
       // Regular credential-based login
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: email, passwordHash: password }),
-        });
-      } catch (fetchError) {
-        // Handle network errors (server not running, connection refused, etc.)
-        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error('Unable to connect to server.');
-        }
-        throw new Error('Server connection error');
-      }
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username: email, passwordHash: password }),
+      });
 
       // If Fail2Ban or middleware reports a ban, surface a clear message to the UI
       if (response.status === 429) {
@@ -155,25 +147,17 @@ export function AuthProvider({ children }) {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      let response;
-      try {
-        response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            username: username || email, 
-            email: email,
-            passwordHash: hashed,
-            playername: name 
-          }),
-        });
-      } catch (fetchError) {
-        // Handle network errors
-        if (fetchError.message.includes('Failed to fetch') || fetchError.name === 'TypeError') {
-          throw new Error('Unable to connect to server. Please check your connection or start the server.');
-        }
-        throw new Error('Server connection error');
-      }
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          username: username || email, 
+          email: email,
+          passwordHash: hashed,
+          playername: name 
+        }),
+      });
 
       if (!response.ok) {
         let errorData = {};
