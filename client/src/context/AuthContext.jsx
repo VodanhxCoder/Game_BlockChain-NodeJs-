@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 
 const STORAGE_KEY = "app.mock.auth";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);

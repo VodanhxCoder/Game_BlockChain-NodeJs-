@@ -23,8 +23,7 @@ import passport from './config/passport.js';
 // Provide `__dirname` compatibility for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-import session from 'express-session';
-import passport from './config/passport.js';
+
 
 let app = express();
 

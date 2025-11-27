@@ -4,6 +4,9 @@ import db from '../models/index.js';
 const { User } = db;
 import { Op } from 'sequelize';
 import passport from '../config/passport.js';
+import emailVerificationMiddleware from '../middleware/emailVerification.js';
+
+
 
 
 const router = express.Router();
@@ -205,14 +208,6 @@ router.post('/signup', async (req, res) => {
       return res.status(400).json({ error: 'Username, email, and password are required.' });
     }
 
-    // Check if email has been verified
-    if (!emailVerificationMiddleware.isEmailVerified(email)) {
-      return res.status(403).json({ 
-        error: 'Email verification required. Please verify your email before signing up.',
-        code: 'EMAIL_NOT_VERIFIED'
-      });
-    }
-
     // Check if user already exists
     const existingUser = await User.findOne({
       where: {
@@ -224,12 +219,23 @@ router.post('/signup', async (req, res) => {
     });
 
     if (existingUser) {
-      if (existingUser.username === username) {
+      // Case-insensitive check
+      if (existingUser.username.toLowerCase() === username.toLowerCase()) {
         return res.status(409).json({ error: 'Username already taken.' });
       }
-      if (existingUser.email === email) {
+      if (existingUser.email.toLowerCase() === email.toLowerCase()) {
         return res.status(409).json({ error: 'Email already registered.' });
       }
+      // Fallback if somehow neither matched but record was found
+      return res.status(409).json({ error: 'Username or email already exists.' });
+    }
+
+    // Check if email has been verified
+    if (!emailVerificationMiddleware.isEmailVerified(email)) {
+      return res.status(403).json({ 
+        error: 'Email verification required. Please verify your email before signing up.',
+        code: 'EMAIL_NOT_VERIFIED'
+      });
     }
 
     // Create new user
@@ -317,18 +323,24 @@ router.post('/check-availability', async (req, res) => {
     });
 
     if (existingUser) {
-      if (existingUser.username === username) {
+      // Case-insensitive check
+      if (existingUser.username.toLowerCase() === username.toLowerCase()) {
         return res.status(409).json({ 
           available: false,
           error: 'Username already taken.' 
         });
       }
-      if (existingUser.email === email) {
+      if (existingUser.email.toLowerCase() === email.toLowerCase()) {
         return res.status(409).json({ 
           available: false,
           error: 'Email already registered.' 
         });
       }
+      // Fallback
+      return res.status(409).json({ 
+        available: false,
+        error: 'Username or email already exists.' 
+      });
     }
 
     return res.json({ 
@@ -364,12 +376,15 @@ router.post('/send-verification', async (req, res) => {
     });
 
     if (existingUser) {
-      if (existingUser.username === username) {
+      // Case-insensitive check
+      if (existingUser.username.toLowerCase() === username.toLowerCase()) {
         return res.status(409).json({ error: 'Username already taken.' });
       }
-      if (existingUser.email === email) {
+      if (existingUser.email.toLowerCase() === email.toLowerCase()) {
         return res.status(409).json({ error: 'Email already registered.' });
       }
+      // Fallback
+      return res.status(409).json({ error: 'Username or email already exists.' });
     }
 
     // If available, send verification email
