@@ -21,6 +21,8 @@ axios.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    // Add ngrok skip header to bypass warning page
+    config.headers['ngrok-skip-browser-warning'] = 'true';
     return config;
   },
   (error) => {
