@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 841.9 595.3">
+  <g fill="#61DAFB">
+    <circle cx="420.9" cy="296.5" r="45.7"/>
+    <!-- Simplified React-style atom for placeholder -->
+    <g stroke="#61DAFB" stroke-width="24" fill="none">
+      <ellipse cx="420.9" cy="296.5" rx="250" ry="90" transform="rotate(0 420.9 296.5)"/>
+      <ellipse cx="420.9" cy="296.5" rx="250" ry="90" transform="rotate(60 420.9 296.5)"/>
+      <ellipse cx="420.9" cy="296.5" rx="250" ry="90" transform="rotate(120 420.9 296.5)"/>
+    </g>
+  </g>
+</svg>

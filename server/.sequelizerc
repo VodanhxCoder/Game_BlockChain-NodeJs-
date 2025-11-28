@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   // Đường dẫn đến file config JSON cho CLI
-  'config': path.resolve('src', 'config', 'config.js'),
+  'config': path.resolve('src', 'config', 'config.cjs'),
   // Đường dẫn đến thư mục models 
   'models-path': path.resolve('src', 'models'),
 
