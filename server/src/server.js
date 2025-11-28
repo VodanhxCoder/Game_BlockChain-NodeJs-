@@ -136,8 +136,27 @@ try {
     // environment variable `FAIL2BAN_AUTO_START=false`.
     const AUTO_START = (process.env.FAIL2BAN_AUTO_START || 'true').toLowerCase() === 'true';
     if (AUTO_START) {
-        const pythonCmd = process.env.FAIL2BAN_PYTHON || 'python';
         const scriptPath = path.resolve(__dirname, '..', 'fail2ban_service', 'app.py');
+        
+        // Resolve python command for Fail2Ban:
+        // 1) use FAIL2BAN_PYTHON env var if provided
+        // 2) prefer the project's virtualenv python (Windows: .venv\Scripts\python.exe, Unix: .venv/bin/python)
+        // 3) fallback to 'python' on PATH
+        let pythonCmd = process.env.FAIL2BAN_PYTHON;
+        if (!pythonCmd) {
+            const venvWin = path.resolve(__dirname, '..', 'fail2ban_service', '.venv', 'Scripts', 'python.exe');
+            const venvNix = path.resolve(__dirname, '..', 'fail2ban_service', '.venv', 'bin', 'python');
+            if (fs.existsSync(venvWin)) {
+                pythonCmd = venvWin;
+            } else if (fs.existsSync(venvNix)) {
+                pythonCmd = venvNix;
+            } else {
+                pythonCmd = 'python';
+            }
+        }
+        
+        console.log('[Fail2Ban] Python command:', pythonCmd);
+        console.log('[Fail2Ban] Python exists:', fs.existsSync(pythonCmd));
         if (fs.existsSync(scriptPath)) {
             console.log('Auto-starting Fail2Ban Python service:', scriptPath);
             const child = spawn(pythonCmd, [scriptPath], {
