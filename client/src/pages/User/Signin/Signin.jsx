@@ -47,7 +47,9 @@ export default function SignIn() {
     const checkAuthStatus = async () => {
       try {
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-        const res = await fetch(`${API_BASE}/api/auth/check-status`);
+        const res = await fetch(`${API_BASE}/api/auth/check-status`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.requiresCaptcha) {
