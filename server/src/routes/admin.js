@@ -37,6 +37,9 @@ const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFil
 
 const router = express.Router();
 
+// Apply JWT verification to all admin routes
+router.use(authJwt.verifyToken);
+
 // Middleware to check if user is admin
 const requireAdmin = (req, res, next) => {
   // authJwt.verifyToken already ensures req.user is set
