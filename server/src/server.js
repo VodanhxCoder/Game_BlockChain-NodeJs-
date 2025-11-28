@@ -114,8 +114,11 @@ app.use((req, res, next) => {
 
 // Enable CORS for all routes
 app.use(cors({
-    origin:[ process.env.CLIENT_URL || 'http://localhost:5173',
-        "https://front-end-game-blockchain.vercel.app"],
+    origin:[ 
+        process.env.CLIENT_URL || 'http://localhost:5173',
+        "https://front-end-game-blockchain.vercel.app",
+        "https://game-block-chain-node-js.vercel.app"
+    ],
     credentials: true
 }));
 
