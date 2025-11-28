@@ -14,6 +14,7 @@ import UserManagement from "../pages/Admin/Users/UserManagement";
 import ItemManagement from "../pages/Admin/Items/ItemManagement";
 import GameLayoutEditor from "../pages/Admin/GameLayout/GameLayoutEditor";
 import RoleBasedRedirect from "../components/RoleBasedRedirect";
+import OAuthCallback from "../components/OAuthCallback";
 
 /**
  * Public routes show the split sign-in/sign-up experience.
@@ -26,6 +27,7 @@ export default function AppRouter() {
       {/* Public routes */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/auth/callback" element={<OAuthCallback />} />
 
       {/* Root redirects based on role after login */}
       <Route path="/" element={<RoleBasedRedirect />} />

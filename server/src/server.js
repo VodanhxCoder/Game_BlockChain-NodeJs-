@@ -4,6 +4,10 @@ import viewEngine from "./config/viewEngine.js";
 import initWebRoutes from "./route/web.js";
 import { testConnection } from "./config/sequelize.js";
 import cors from "cors";
+import helmet from "helmet";
+import xssSanitizer from "./middleware/xssSanitizer.js";
+import hpp from "hpp";
+import rateLimit from "express-rate-limit";
 import dotenv from 'dotenv';
 dotenv.config(); //tải biến môi trường từ file .env
 import { spawn } from 'child_process';
@@ -27,36 +31,97 @@ const __dirname = path.dirname(__filename);
 
 let app = express();
 
-// Session configuration (required for passport)
+// Security Middleware
+// Security Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow images from other origins
+  crossOriginEmbedderPolicy: false                       // avoid COEP blocking
+}));
+
+// Trust proxy (required for Ngrok/Vercel/Heroku)
+app.set('trust proxy', 1);
+
+// Determine if we are in a secure environment (HTTPS)
+const clientUrl = (process.env.CLIENT_URL || '').trim();
+const isSecure = process.env.NODE_ENV === 'production' || clientUrl.startsWith('https');
+
+console.log('------------------------------------------------');
+console.log('[Config] CLIENT_URL:', clientUrl);
+console.log('[Config] isSecure:', isSecure);
+console.log('[Config] Cookie Settings:', {
+    secure: isSecure,
+    sameSite: isSecure ? 'none' : 'lax'
+});
+console.log('------------------------------------------------');
+
+// Session configuration (required for passport OAuth state)
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret_key',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // Set to false for localhost development
+        secure: isSecure, 
         httpOnly: true,
-        sameSite: 'lax', // Important for OAuth callbacks
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 60000 // Short lived, just for handshake
     }
 }));
 
 // Initialize Passport
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session()); // Not needed for JWT
 
 //config app
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Data Sanitization against XSS
+app.use(xssSanitizer);
+
+// Prevent HTTP Parameter Pollution
+app.use(hpp());
+
+// Global Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api', limiter);
+
+// Debug Middleware: Check if cookies are being received
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const cookie = req.headers.cookie;
+    if (req.path.startsWith('/api/auth')) {
+        console.log(`[Request] ${req.method} ${req.path}`);
+        console.log(`   Origin: ${origin}`);
+        console.log(`   Protocol: ${req.protocol}`);
+        console.log(`   Secure: ${req.secure}`);
+        console.log(`   Cookie: ${cookie ? 'Present' : 'MISSING'}`);
+        if (cookie) console.log(`   Cookie Content: ${cookie}`);
+        
+        // Hook into response to log Set-Cookie
+        const originalSetHeader = res.setHeader;
+        res.setHeader = function(name, value) {
+            if (name.toLowerCase() === 'set-cookie') {
+                console.log(`   [Response] Set-Cookie: ${JSON.stringify(value)}`);
+            }
+            return originalSetHeader.apply(this, arguments);
+        };
+    }
+    next();
+});
+
 // Enable CORS for all routes
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin:[ process.env.CLIENT_URL || 'http://localhost:5173',
+        "https://front-end-game-blockchain.vercel.app"],
     credentials: true
 }));
 
 // Serve uploaded files from /server/uploads at client path /uploads
 const uploadsPath = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsPath)) {
+if (!fs.existsSync(uploadsPath)) {  
     fs.mkdirSync(uploadsPath, { recursive: true });
 }
 app.use('/uploads', express.static(uploadsPath));

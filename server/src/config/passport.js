@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import db from '../models/index.js';
 const { User } = db;
 
@@ -94,5 +95,25 @@ passport.use(new GitHubStrategy({
     }
   }
 ));
+
+// JWT Strategy
+const jwtOptions = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: process.env.JWT_SECRET || 'your_jwt_secret', // Fallback if env not set
+};
+
+passport.use(new JwtStrategy(jwtOptions, async (jwt_payload, done) => {
+  try {
+    // jwt_payload should contain the data we signed (username, role)
+    const user = await User.findByPk(jwt_payload.username);
+    if (user) {
+      return done(null, user);
+    } else {
+      return done(null, false);
+    }
+  } catch (err) {
+    return done(err, false);
+  }
+}));
 
 export default passport;

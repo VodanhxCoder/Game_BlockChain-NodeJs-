@@ -25,11 +25,11 @@ async function runMigration() {
     console.log('✅ Database connection established');
 
     // Load and run the specific migration
-    const migrationFile = require('./src/migrations/20251123000000-add-seller-signature-to-market-listings.cjs');
+    const migrationFile = require('./src/migrations/20251123000001-add-seller-signature-timestamp.cjs');
     
     const queryInterface = sequelize.getQueryInterface();
     
-    console.log('🔄 Running migration: add-seller-signature-to-market-listings');
+    console.log('🔄 Running migration: add-seller-signature-timestamp');
     await migrationFile.up(queryInterface, Sequelize);
     console.log('✅ Migration completed successfully');
 

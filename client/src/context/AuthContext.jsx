@@ -1,84 +1,70 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-const STORAGE_KEY = "app.mock.auth";
+const TOKEN_KEY = "auth_token";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 export const AuthContext = createContext(null);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check session on mount
-  useEffect(() => {
-    let isMounted = true;
-    
-    const checkSession = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-          credentials: 'include'
-        });
-        const data = await response.json();
-        
-        if (!isMounted) return;
-        
-        if (data.authenticated) {
-          setUser(data.user);
-          setTimeout(() => {
-            if (isMounted) {
-              setLoading(false);
-            }
-          }, 0);
-        } else {
-          setLoading(false);
+  // Helper to set token
+  const setToken = (token) => {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+      // Trigger re-fetch of user
+      fetchUser(token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(null);
+    }
+  };
+
+  const fetchUser = async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (e) {
-        // Session check failed - proceed without session (silent fail)
-        if (isMounted) setLoading(false);
+      });
+      const data = await response.json();
+      
+      if (data.authenticated) {
+        setUser(data.user);
+      } else {
+        // Token invalid or expired
+        localStorage.removeItem(TOKEN_KEY);
+        setUser(null);
       }
-    };
-    
-    checkSession();
-    
-    return () => {
-      isMounted = false;
-    };
+    } catch (e) {
+      console.error('Failed to fetch user:', e);
+      localStorage.removeItem(TOKEN_KEY);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check token on mount
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      fetchUser(token);
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  // Remove localStorage sync - using session only
-  // useEffect(() => {
-  //   if (user) {
-  //     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-  //     console.log('[AuthContext] User saved to localStorage:', user.username);
-  //   } else {
-  //     localStorage.removeItem(STORAGE_KEY);
-  //     console.log('[AuthContext] User removed from localStorage');
-  //   }
-  // }, [user]);
-
-  const login = async (email, password, isOAuth = false, oauthUserData = null) => {
+  const login = async (email, password, recaptchaToken) => {
     try {
-      // Handle OAuth login - user data already provided from callback
-      if (isOAuth && oauthUserData) {
-        const user = {
-          username: oauthUserData.username,
-          name: oauthUserData.playername || oauthUserData.username,
-          email: oauthUserData.email,
-          role: oauthUserData.role,
-          status: oauthUserData.status,
-          highScore: oauthUserData.highScore || 0,
-        };
-        setUser(user);
-        return user;
-      }
-
       // Regular credential-based login
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username: email, passwordHash: password }),
+        body: JSON.stringify({ username: email, passwordHash: password, recaptchaToken }),
       });
 
-      // If Fail2Ban or middleware reports a ban, surface a clear message to the UI
+      // If Fail2Ban or middleware reports a ban
       if (response.status === 429) {
         let data = {};
         try { data = await response.json(); } catch (e) { /* ignore parse errors */ }
@@ -90,7 +76,6 @@ export function AuthProvider({ children }) {
           ? `${data.error} (${human} remaining)`
           : `Too many failed attempts. Your IP is temporarily banned (${human}).`;
         const err = new Error(msg);
-        // attach metadata so callers can react programmatically if they want
         err.isBanned = true;
         err.remaining = remaining;
         err.ip = data.ip;
@@ -98,44 +83,43 @@ export function AuthProvider({ children }) {
       }
 
       if (!response.ok) {
-        let errData = {};
-        try { 
-          errData = await response.json(); 
-        } catch (e) {
-          // If can't parse JSON, provide a generic error message
-          throw new Error('Login error: Server returned invalid response');
+        const errorData = await response.json();
+        const err = new Error(errorData.error || 'Login failed');
+        if (errorData.requiresCaptcha) {
+          err.requiresCaptcha = true;
         }
-        throw new Error(errData.error || 'Invalid email or password');
+        throw err;
       }
 
       const data = await response.json();
-      const user = {
-        username: data.user.username,
-        name: data.user.playername,
-        email: data.user.email,
-        role: data.user.role,
-        status: data.user.status,
-        highScore: data.user.highScore,
-        walletAddress: data.user.walletAddress || null,
-      };
-      setUser(user);
-      return user;
+      
+      if (data.token) {
+        setToken(data.token);
+        return data.user;
+      }
     } catch (error) {
-      // Error will be displayed to user via UI
+      console.error('Login error:', error);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
+      // Optional: Call backend to blacklist token
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
     } catch (e) {
-      // Logout failed on server, but clear local state anyway
+      console.error('Logout error:', e);
+    } finally {
+      setToken(null);
     }
-    setUser(null);
   };
 
   const register = async ({ name, email, password, username }) => {
@@ -150,7 +134,6 @@ export function AuthProvider({ children }) {
       const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ 
           username: username || email, 
           email: email,
@@ -170,22 +153,18 @@ export function AuthProvider({ children }) {
       }
 
       const responseData = await response.json();
-      const user = {
-        username: responseData.user.username,
-        name: responseData.user.playername,
-        email: responseData.user.email,
-        role: responseData.user.role,
-        status: responseData.user.status,
-        highScore: responseData.user.highScore,
-      };
-      setUser(user);
-      return user;
+      
+      if (responseData.token) {
+        setToken(responseData.token);
+        return responseData.user;
+      }
     } catch (error) {
       // Error will be displayed to user via UI
       throw error;
     }
   };
 
+  // Keep existing helper functions
   const sendVerificationEmail = async (email, username) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
@@ -275,7 +254,8 @@ export function AuthProvider({ children }) {
       sendVerificationEmail,
       verifyEmail,
       resendVerificationEmail,
-      checkAvailability
+      checkAvailability,
+      setToken // Export setToken for OAuthCallback
     }}>
       {children}
     </AuthContext.Provider>

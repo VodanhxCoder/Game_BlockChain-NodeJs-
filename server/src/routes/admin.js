@@ -5,6 +5,7 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import authJwt from '../middleware/authJwt.js';
 
 const { Item, DropPool } = db;
 
@@ -38,7 +39,8 @@ const router = express.Router();
 
 // Middleware to check if user is admin
 const requireAdmin = (req, res, next) => {
-  if (!req.isAuthenticated()) {
+  // authJwt.verifyToken already ensures req.user is set
+  if (!req.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   if (req.user.role !== 'admin') {
@@ -48,7 +50,7 @@ const requireAdmin = (req, res, next) => {
 };
 
 // Apply admin middleware to all routes
-router.use(requireAdmin);
+router.use([authJwt.verifyToken, requireAdmin]);
 
 /**
  * POST /api/admin/upload

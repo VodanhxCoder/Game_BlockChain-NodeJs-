@@ -40,7 +40,9 @@ def check():
     entry = attempts[ip]
     banned = entry.get('banned_until', 0) > now()
     remaining = max(0, entry.get('banned_until', 0) - now()) if banned else 0
-    return jsonify({ 'banned': banned, 'remaining': remaining })
+    # Count valid failures in window
+    valid_fails = [ts for ts in entry['fails'] if ts >= now() - FAILURE_WINDOW]
+    return jsonify({ 'banned': banned, 'remaining': remaining, 'fails_count': len(valid_fails) })
 
 @app.route('/attempt', methods=['POST'])
 def attempt():
