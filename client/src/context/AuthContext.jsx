@@ -82,6 +82,19 @@ export function AuthProvider({ children }) {
         throw err;
       }
 
+      // If account is banned (403 status)
+      if (response.status === 403) {
+        const errorData = await response.json();
+        const err = new Error(errorData.error || 'Account access denied');
+        if (errorData.isBanned) {
+          err.isBanned = true;
+        }
+        if (errorData.isInactive) {
+          err.isInactive = true;
+        }
+        throw err;
+      }
+
       if (!response.ok) {
         const errorData = await response.json();
         const err = new Error(errorData.error || 'Login failed');

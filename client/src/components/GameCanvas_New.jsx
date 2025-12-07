@@ -35,7 +35,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
   // Initialize WebSocket connection
   useEffect(() => {
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+    const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080';
     const socket = io(serverUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']
@@ -46,15 +46,6 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
     // Handle connection
     socket.on('connect', () => {
       console.log('🔌 Connected to game server');
-      console.log('Socket ID:', socket.id);
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('❌ Connection error:', error.message);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log('🔌 Disconnected:', reason);
     });
 
     // Handle game state updates from server
@@ -97,11 +88,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
     // Handle pause state
     socket.on('game:paused', (data) => {
-      console.log('⏸️ Pause state changed:', data.paused);
       setPaused(data.paused);
-      if (gameState.current) {
-        gameState.current.paused = data.paused;
-      }
     });
 
     // Handle errors
@@ -136,8 +123,8 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
           return;
         }
 
-        if (!state || (state && !state.started)) {
-          // Start game - allow starting even if state is null
+        if (state && !state.started) {
+          // Start game
           socket.emit('game:start', { 
             username: user?.username || 'guest', 
             level: 1 
@@ -153,7 +140,6 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
       if (e.code === "KeyP") {
         e.preventDefault();
-        console.log('🎮 Pause key pressed, current state:', state?.started, state?.paused);
         if (state && state.started) {
           socket.emit('game:pause', { sessionId: sessionId });
         }
@@ -322,16 +308,14 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
       // Draw pause screen
       if (s.paused && s.started && !s.gameOver) {
-        console.log('🎨 Drawing pause overlay');
-        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
         ctx.fillRect(0, 0, s.w, s.h);
-        ctx.fillStyle = "#4ad994";
-        ctx.font = "36px Inter, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "48px Inter, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText("PAUSED", s.w / 2, s.h / 2 - 10);
         ctx.font = "18px Inter, sans-serif";
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("Press P to continue", s.w / 2, s.h / 2 + 22);
+        ctx.fillText("Press P to continue", s.w / 2, s.h / 2 + 26);
         ctx.textAlign = "start";
       }
 

@@ -1,81 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
 
-// Mock data
-const MOCK_USERS = [
-  {
-    id: 1,
-    name: "Nguyễn Văn A",
-    email: "nguyenvana@example.com",
-    username: "nguyenvana",
-    status: "active",
-    level: 12,
-    score: 45600,
-    items: 28,
-    joinDate: "2025-09-15",
-  },
-  {
-    id: 2,
-    name: "Trần Thị B",
-    email: "tranthib@example.com",
-    username: "tranthib",
-    status: "active",
-    level: 8,
-    score: 23400,
-    items: 15,
-    joinDate: "2025-10-20",
-  },
-  {
-    id: 3,
-    name: "Lê Văn C",
-    email: "levanc@example.com",
-    username: "levanc",
-    status: "banned",
-    level: 15,
-    score: 67800,
-    items: 42,
-    joinDate: "2025-08-10",
-  },
-  {
-    id: 4,
-    name: "Phạm Thị D",
-    email: "phamthid@example.com",
-    username: "phamthid",
-    status: "active",
-    level: 5,
-    score: 12300,
-    items: 8,
-    joinDate: "2025-11-05",
-  },
-  {
-    id: 5,
-    name: "Hoàng Văn E",
-    email: "hoangvane@example.com",
-    username: "hoangvane",
-    status: "active",
-    level: 20,
-    score: 98500,
-    items: 56,
-    joinDate: "2025-07-01",
-  },
-];
+const API_BASE = import.meta.env.VITE_API_BASE_URL + "/api";
 
 export default function UserManagement() {
-  const [users, setUsers] = useState(MOCK_USERS);
+  const { user: currentUser } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showBanModal, setShowBanModal] = useState(false);
+  const [inventory, setInventory] = useState([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  // Fetch users on component mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`${API_BASE}/admin/users`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch users");
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      showMessage(error.message || "Không thể tải danh sách người dùng", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserInventory = async (username) => {
+    try {
+      setInventoryLoading(true);
+      const token = localStorage.getItem("auth_token");
+      const response = await fetch(`${API_BASE}/admin/users/${username}/inventory`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch inventory");
+      }
+
+      const data = await response.json();
+      setInventory(data.inventory || []);
+    } catch (error) {
+      console.error("Error fetching inventory:", error);
+      showMessage("Không thể tải kho đồ", "error");
+    } finally {
+      setInventoryLoading(false);
+    }
+  };
+
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  };
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      user.playername?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleViewInventory = (user) => {
+  const handleViewInventory = async (user) => {
     setSelectedUser(user);
     setShowInventoryModal(true);
+    await fetchUserInventory(user.username);
   };
 
   const handleBanUser = (user) => {
@@ -83,26 +94,62 @@ export default function UserManagement() {
     setShowBanModal(true);
   };
 
-  const confirmBan = () => {
-    setUsers(
-      users.map((u) =>
-        u.id === selectedUser.id ? { ...u, status: u.status === "banned" ? "active" : "banned" } : u
-      )
-    );
-    setShowBanModal(false);
-    setSelectedUser(null);
+  const confirmBan = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const isBanned = selectedUser.status === "banned";
+      
+      const response = await fetch(`${API_BASE}/admin/users/${selectedUser.username}/ban`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ban: !isBanned })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update user status");
+      }
+
+      // Update local state
+      setUsers(users.map(u => 
+        u.username === selectedUser.username 
+          ? { ...u, status: isBanned ? "active" : "banned" } 
+          : u
+      ));
+
+      showMessage(
+        isBanned ? "Đã gỡ cấm người dùng" : "Đã cấm người dùng",
+        "success"
+      );
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      showMessage(error.message || "Không thể cập nhật trạng thái người dùng", "error");
+    } finally {
+      setShowBanModal(false);
+      setSelectedUser(null);
+    }
   };
 
-  // Mock inventory items
-  const mockInventory = [
-    { id: 1, name: "Legendary Sword", rarity: "legendary", quantity: 1, image: "⚔️" },
-    { id: 2, name: "Epic Shield", rarity: "epic", quantity: 2, image: "🛡️" },
-    { id: 3, name: "Rare Potion", rarity: "rare", quantity: 5, image: "🧪" },
-    { id: 4, name: "Common Gem", rarity: "common", quantity: 15, image: "💎" },
-  ];
+  const getRarityBadgeClass = (rarity) => {
+    const rarityMap = {
+      'Common': 'common',
+      'Rare': 'rare',
+      'Legendary': 'legendary'
+    };
+    return rarityMap[rarity] || 'common';
+  };
 
   return (
     <div>
+      {message && (
+        <div className={`admin-message admin-message--${message.type}`}>
+          {message.text}
+        </div>
+      )}
+
       <div className="admin-page-header">
         <h1 className="admin-page-header__title">Quản lý tài khoản</h1>
         <div className="admin-page-header__actions">
@@ -119,81 +166,111 @@ export default function UserManagement() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="admin-btn admin-btn--primary">
+          <button className="admin-btn admin-btn--secondary" onClick={fetchUsers}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Thêm người dùng
+            Làm mới
           </button>
         </div>
       </div>
 
-      <div className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Người dùng</th>
-              <th>Username</th>
-              <th>Trạng thái</th>
-              <th>Level</th>
-              <th>Điểm</th>
-              <th>Vật phẩm</th>
-              <th>Ngày tham gia</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td data-label="Người dùng">
-                  <div className="admin-user-info">
-                    <div className="admin-user-avatar">{user.name.charAt(0)}</div>
-                    <div className="admin-user-details">
-                      <span className="admin-user-name">{user.name}</span>
-                      <span className="admin-user-email">{user.email}</span>
-                    </div>
-                  </div>
-                </td>
-                <td data-label="Username">@{user.username}</td>
-                <td data-label="Trạng thái">
-                  <span className={`admin-badge admin-badge--${user.status}`}>
-                    {user.status === "active" ? "Hoạt động" : "Bị cấm"}
-                  </span>
-                </td>
-                <td data-label="Level">{user.level}</td>
-                <td data-label="Điểm">{user.score.toLocaleString()}</td>
-                <td data-label="Vật phẩm">{user.items}</td>
-                <td data-label="Ngày tham gia">{new Date(user.joinDate).toLocaleDateString("vi-VN")}</td>
-                <td data-label="Hành động">
-                  <div className="admin-actions">
-                    <button
-                      className="admin-btn admin-btn--secondary admin-btn--small"
-                      onClick={() => handleViewInventory(user)}
-                    >
-                      Kho đồ
-                    </button>
-                    <button
-                      className={`admin-btn admin-btn--small ${
-                        user.status === "banned" ? "admin-btn--success" : "admin-btn--danger"
-                      }`}
-                      onClick={() => handleBanUser(user)}
-                    >
-                      {user.status === "banned" ? "Unban" : "Ban"}
-                    </button>
-                  </div>
-                </td>
+      {loading ? (
+        <div className="admin-card" style={{ textAlign: "center", padding: "3rem" }}>
+          <p>Đang tải danh sách người dùng...</p>
+        </div>
+      ) : (
+        <div className="admin-card">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Người dùng</th>
+                <th>Username</th>
+                <th>Trạng thái</th>
+                <th>Điểm cao</th>
+                <th>Vật phẩm</th>
+                <th>Nhà cung cấp</th>
+                <th>Ngày tham gia</th>
+                <th>Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="8" style={{ textAlign: "center", padding: "2rem" }}>
+                    Không tìm thấy người dùng
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.username}>
+                    <td data-label="Người dùng">
+                      <div className="admin-user-info">
+                        <div className="admin-user-avatar">
+                          {user.userImage ? (
+                            <img src={user.userImage} alt={user.playername} />
+                          ) : (
+                            user.playername?.charAt(0) || user.username.charAt(0)
+                          )}
+                        </div>
+                        <div className="admin-user-details">
+                          <span className="admin-user-name">{user.playername || user.username}</span>
+                          <span className="admin-user-email">{user.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Username">@{user.username}</td>
+                    <td data-label="Trạng thái">
+                      <span className={`admin-badge admin-badge--${user.status}`}>
+                        {user.status === "active" ? "Hoạt động" : user.status === "banned" ? "Bị cấm" : "Không hoạt động"}
+                      </span>
+                    </td>
+                    <td data-label="Điểm cao">{user.highScore?.toLocaleString() || 0}</td>
+                    <td data-label="Vật phẩm">{user.itemCount || 0}</td>
+                    <td data-label="Nhà cung cấp">
+                      <span className="admin-badge admin-badge--info">
+                        {user.provider === "local" ? "Local" : user.provider === "google" ? "Google" : "GitHub"}
+                      </span>
+                    </td>
+                    <td data-label="Ngày tham gia">
+                      {user.joinDate ? new Date(user.joinDate).toLocaleDateString("vi-VN") : "N/A"}
+                    </td>
+                    <td data-label="Hành động">
+                      <div className="admin-actions">
+                        <button
+                          className="admin-btn admin-btn--secondary admin-btn--small"
+                          onClick={() => handleViewInventory(user)}
+                        >
+                          Kho đồ
+                        </button>
+                        {user.role !== "admin" && (
+                          <button
+                            className={`admin-btn admin-btn--small ${
+                              user.status === "banned" ? "admin-btn--success" : "admin-btn--danger"
+                            }`}
+                            onClick={() => handleBanUser(user)}
+                          >
+                            {user.status === "banned" ? "Unban" : "Ban"}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Inventory Modal */}
       {showInventoryModal && selectedUser && (
         <div className="admin-modal-overlay" onClick={() => setShowInventoryModal(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal__header">
-              <h3 className="admin-modal__title">Kho đồ - {selectedUser.name}</h3>
+              <h3 className="admin-modal__title">
+                Kho đồ - {selectedUser.playername || selectedUser.username}
+              </h3>
               <button className="admin-modal__close" onClick={() => setShowInventoryModal(false)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -201,33 +278,69 @@ export default function UserManagement() {
               </button>
             </div>
             <div className="admin-modal__body">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Vật phẩm</th>
-                    <th>Độ hiếm</th>
-                    <th>Số lượng</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockInventory.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                          <span style={{ fontSize: "2rem" }}>{item.image}</span>
-                          <span>{item.name}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`admin-badge admin-badge--${item.rarity}`}>
-                          {item.rarity.toUpperCase()}
-                        </span>
-                      </td>
-                      <td>{item.quantity}</td>
+              {inventoryLoading ? (
+                <div style={{ textAlign: "center", padding: "2rem" }}>
+                  <p>Đang tải kho đồ...</p>
+                </div>
+              ) : inventory.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+                  <p>Người dùng chưa có vật phẩm nào</p>
+                </div>
+              ) : (
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Vật phẩm</th>
+                      <th>Độ hiếm</th>
+                      <th>Số lượng</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {inventory.map((item) => (
+                      <tr key={item.itemId}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                style={{ 
+                                  width: "40px", 
+                                  height: "40px", 
+                                  objectFit: "contain",
+                                  borderRadius: "4px"
+                                }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: "40px",
+                                height: "40px",
+                                backgroundColor: "var(--bg-tertiary)",
+                                borderRadius: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "1.5rem"
+                              }}>
+                                📦
+                              </div>
+                            )}
+                            <span>{item.name}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`admin-badge admin-badge--${getRarityBadgeClass(item.rarity)}`}>
+                            {item.rarity}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: "600" }}>{item.quantity}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
             <div className="admin-modal__footer">
               <button className="admin-btn admin-btn--secondary" onClick={() => setShowInventoryModal(false)}>
@@ -255,8 +368,8 @@ export default function UserManagement() {
             <div className="admin-modal__body">
               <p style={{ color: "var(--text-primary)", marginBottom: "1rem" }}>
                 {selectedUser.status === "banned"
-                  ? `Bạn có chắc chắn muốn gỡ cấm cho người dùng "${selectedUser.name}"?`
-                  : `Bạn có chắc chắn muốn cấm người dùng "${selectedUser.name}"?`}
+                  ? `Bạn có chắc chắn muốn gỡ cấm cho người dùng "${selectedUser.playername || selectedUser.username}"?`
+                  : `Bạn có chắc chắn muốn cấm người dùng "${selectedUser.playername || selectedUser.username}"?`}
               </p>
             </div>
             <div className="admin-modal__footer">

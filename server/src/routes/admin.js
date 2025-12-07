@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import authJwt from '../middleware/authJwt.js';
 
-const { Item, DropPool } = db;
+const { Item, DropPool, User, Inventory, InventoryItem } = db;
 
 // Compute uploads directory path (server/uploads)
 const __filename = fileURLToPath(import.meta.url);
@@ -336,6 +336,174 @@ router.post('/populate-drop-pool', async (req, res) => {
   } catch (error) {
     console.error('Error populating drop pool:', error);
     res.status(500).json({ error: 'Failed to populate drop pool' });
+  }
+});
+
+/**
+ * GET /api/admin/users
+ * Get all users with their stats
+ */
+router.get('/users', async (req, res) => {
+  try {
+    const users = await User.findAll({
+      attributes: [
+        'username', 
+        'email', 
+        'playername', 
+        'userImage', 
+        'role', 
+        'status', 
+        'highScore', 
+        'walletAddress', 
+        'provider',
+        'created_at'
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    // Get inventory item counts for each user
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const inventory = await Inventory.findOne({ where: { username: user.username } });
+      let itemCount = 0;
+      
+      if (inventory) {
+        itemCount = await InventoryItem.count({
+          where: { inventoryId: inventory.inventoryId }
+        });
+      }
+
+      return {
+        username: user.username,
+        email: user.email,
+        playername: user.playername || user.username,
+        userImage: user.userImage,
+        role: user.role,
+        status: user.status,
+        highScore: user.highScore,
+        walletAddress: user.walletAddress,
+        provider: user.provider,
+        itemCount,
+        joinDate: user.created_at
+      };
+    }));
+
+    res.json({ 
+      total: usersWithStats.length, 
+      users: usersWithStats 
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+/**
+ * GET /api/admin/users/:username/inventory
+ * Get specific user's inventory with item details and counts
+ */
+router.get('/users/:username/inventory', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Verify user exists
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Find user's inventory
+    const inventory = await Inventory.findOne({
+      where: { username }
+    });
+
+    if (!inventory) {
+      return res.status(200).json({
+        username,
+        totalItems: 0,
+        inventory: []
+      });
+    }
+
+    // Fetch all inventory items with item details
+    const inventoryItems = await InventoryItem.findAll({
+      where: { inventoryId: inventory.inventoryId },
+      include: [{
+        model: Item,
+        attributes: ['itemId', 'name', 'imageUrl', 'rarity']
+      }],
+      order: [['obtainedAt', 'DESC']]
+    });
+
+    // Group items by itemId and count quantities
+    const itemGroups = {};
+    inventoryItems.forEach(ii => {
+      if (ii.Item) {
+        const itemId = ii.Item.itemId;
+        if (!itemGroups[itemId]) {
+          itemGroups[itemId] = {
+            itemId: ii.Item.itemId,
+            name: ii.Item.name,
+            imageUrl: ii.Item.imageUrl,
+            rarity: ii.Item.rarity,
+            quantity: 0,
+            items: []
+          };
+        }
+        itemGroups[itemId].quantity++;
+        itemGroups[itemId].items.push({
+          inventoryItemId: ii.inventoryItemId,
+          itemHash: ii.itemHash,
+          obtainedAt: ii.obtainedAt,
+          inMarket: ii.inMarket || false
+        });
+      }
+    });
+
+    const groupedInventory = Object.values(itemGroups);
+
+    res.status(200).json({
+      username,
+      playername: user.playername || user.username,
+      totalItems: inventoryItems.length,
+      uniqueItems: groupedInventory.length,
+      inventory: groupedInventory
+    });
+  } catch (error) {
+    console.error('Error fetching user inventory:', error);
+    res.status(500).json({ error: 'Failed to fetch user inventory' });
+  }
+});
+
+/**
+ * PUT /api/admin/users/:username/ban
+ * Ban or unban a user
+ */
+router.put('/users/:username/ban', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { ban } = req.body; // true to ban, false to unban
+
+    const user = await User.findOne({ where: { username } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Don't allow banning admins
+    if (user.role === 'admin') {
+      return res.status(403).json({ error: 'Cannot ban admin users' });
+    }
+
+    const newStatus = ban ? 'banned' : 'active';
+    await user.update({ status: newStatus });
+
+    res.json({ 
+      message: `User ${ban ? 'banned' : 'unbanned'} successfully`,
+      username: user.username,
+      status: user.status
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({ error: 'Failed to update user status' });
   }
 });
 

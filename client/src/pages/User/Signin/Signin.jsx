@@ -85,7 +85,15 @@ export default function SignIn() {
       await login(sanitizedEmail, hashed, captchaToken);
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign in failed.");
+      // Handle specific error cases
+      if (err?.isBanned) {
+        setError("Your account has been banned. Please contact support for assistance.");
+      } else if (err?.isInactive) {
+        setError("Your account is inactive. Please contact support to reactivate your account.");
+      } else {
+        setError(err?.message || "Sign in failed.");
+      }
+      
       if (err?.requiresCaptcha) {
         setRequiresCaptcha(true);
       }
