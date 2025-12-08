@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set "VIRTUAL_ENV=D:\EPU\ky7\Script-Blockchain\Game_BlockChain-NodeJs-\server\.venv"
+set "VIRTUAL_ENV=E:\A_NAM_4_KI_1\Ngon_Ngu_Kich_Ban\Game_BlockChain-NodeJs-\server\.venv"
 
 if not defined PROMPT set PROMPT=$P$G
 
