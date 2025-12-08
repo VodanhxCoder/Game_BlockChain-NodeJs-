@@ -10,7 +10,7 @@ const router = express.Router();
  * @desc Submit player's high score (game over)
  * @body { username: string, score: number }
  */
-router.post('/user/highscore', UserController.updateHighScore);
+router.post('/user/highscore', authJwt.verifyToken, UserController.updateHighScore);
 
 /**
  * @route GET /api/user/leaderboard
@@ -21,8 +21,8 @@ router.get('/user/leaderboard', UserController.getLeaderboard);
 /**
  * Wallet linking: create challenge and verify signature
  */
-router.post('/user/wallet/challenge', WalletController.createChallenge);
-router.post('/user/wallet/verify', WalletController.verifySignatureAndSave);
+router.post('/user/wallet/challenge', authJwt.verifyToken, WalletController.createChallenge);
+router.post('/user/wallet/verify', authJwt.verifyToken, WalletController.verifySignatureAndSave);
 
 /**
  * @route PUT /api/user/profile
