@@ -202,33 +202,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const checkAvailability = async (email, username) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/check-availability`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, username }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to check availability');
-      }
-
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const sendVerificationEmail = async (email, username, options = {}) => {
-    const { skipAvailability = false } = options;
-
-    if (!skipAvailability) {
-      await checkAvailability(email, username);
-    }
-
+  const sendVerificationEmail = async (email, username) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
         method: 'POST',
@@ -280,6 +254,26 @@ export function AuthProvider({ children }) {
       }
 
       return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const checkAvailability = async (email, username) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/check-availability`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check availability');
+      }
+
+      return data;
     } catch (error) {
       throw error;
     }
