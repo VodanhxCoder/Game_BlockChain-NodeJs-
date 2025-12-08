@@ -24,7 +24,8 @@ export function AuthProvider({ children }) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true'
         }
       });
       const data = await response.json();
@@ -60,7 +61,10 @@ export function AuthProvider({ children }) {
       // Regular credential-based login
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ username: email, passwordHash: password, recaptchaToken }),
       });
 

@@ -6,6 +6,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 import WalletConnect from '../../../components/WalletConnect';
 import { useTheme } from '../../../context/ThemeContext';
 import { useWeb3 } from '../../../context/Web3Context';
+import ProtectedImage from '../../../components/ProtectedImage';
 import axios from "axios";
 import { ethers } from 'ethers';
 
@@ -443,7 +444,7 @@ export default function Inventory() {
                       return (
                         <div style={{ textAlign: 'center', marginBottom: 8 }}>
                           <a href={imageSrc} target="_blank" rel="noreferrer">
-                            <img
+                            <ProtectedImage
                               src={imageSrc}
                               alt={item.itemName || item.name || 'item'}
                               style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 8 }}

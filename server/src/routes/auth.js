@@ -49,7 +49,7 @@ router.get('/me', authJwt.verifyToken, (req, res) => {
 });
 
 // Logout (Client side just clears token)
-router.post('/logout', (req, res) => {
+router.post('/logout', authJwt.verifyToken, (req, res) => {
   // Optional: Blacklist token here if using Redis
   res.json({ success: true });
 });
