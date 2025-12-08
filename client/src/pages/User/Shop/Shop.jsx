@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from 'axios';
 import { ethers } from 'ethers';
 import { useAuth } from '../../../context/AuthContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import WalletConnect from '../../../components/WalletConnect';
 import { useWeb3 } from '../../../context/Web3Context';
 import { useTheme } from '../../../context/ThemeContext';
@@ -12,18 +13,17 @@ const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env) ? (
 const getFullImageUrl = (imgPath) => {
   if (!imgPath) return null;
   if (imgPath.startsWith('http')) return imgPath;
-  if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
-  return `${API_BASE_URL}/${imgPath}`.replace(/\/\/+/, '/');
+  
+  const base = API_BASE_URL.replace(/\/+$/, '');
+  const path = imgPath.replace(/^\/+/, '');
+  return `${base}/${path}`;
 };
 
-const activities = [
-  { player: "Raven", item: "Chrono Blade", time: "1 phút trước", tx: "#7F9D...1A9" },
-  { player: "Kaito", item: "Nebula Phantom", time: "12 phút trước", tx: "#1BC0...6E2" },
-  { player: "Mona", item: "Aurora Pack", time: "30 phút trước", tx: "#5E21...A92" },
-];
+
 
 export default function Shop() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { account, isConnected } = useWeb3();
   const { isDark } = useTheme();
   const [listings, setListings] = useState([]);
@@ -241,19 +241,18 @@ export default function Shop() {
           <span role="img" aria-hidden="true">
             🪐
           </span>
-          Marketplace
+          {t("shop.title")}
         </span>
-        <h1 className="gradient-title">Săn vật phẩm giới hạn trên chuỗi.</h1>
+        <h1 className="gradient-title">{t("shop.subtitle")}</h1>
         <p className="page-hero__text">
-          Kết hợp NFT và item in-game để nâng cấp tàu chiến. Mỗi vật phẩm đều có chỉ số thực, có thể giao dịch trực tiếp
-          trên blockchain và mang vào trận chiến ngay lập tức.
+          {t("shop.description")}
         </p>
         <div className="page-hero__actions">
           <button type="button" className="ui-btn ui-btn--primary">
-            Mua ngay
+            {t("shop.buyNow")}
           </button>
           <button type="button" className="ui-btn ui-btn--ghost">
-            Tìm hiểu smart contract
+            {t("shop.learnContract")}
           </button>
         </div>
       </section>
@@ -271,20 +270,20 @@ export default function Shop() {
           textAlign: 'center'
         }}>
           <p style={{ fontSize: '0.875rem', color: '#22c55e' }}>
-            ✅ Wallet connected! Your trades will be recorded on blockchain with address: {account?.slice(0, 6)}...{account?.slice(-4)}
+            ✅ {t("shop.walletConnected", { address: `${account?.slice(0, 6)}...${account?.slice(-4)}` })}
           </p>
         </div>
       )}
 
       <section className="page-grid">
         <div className="page-card">
-          <h3>Marketplace</h3>
-          <p className="page-hero__text">Mua đồ người chơi khác rao bán.</p>
+          <h3>{t("shop.marketplaceTitle")}</h3>
+          <p className="page-hero__text">{t("shop.marketplaceDesc")}</p>
           <div className="list-card">
             {loading ? (
-              <div>Loading...</div>
+              <div>{t("shop.loading")}</div>
             ) : listings.length === 0 ? (
-              <div className="muted">No active listings</div>
+              <div className="muted">{t("shop.noListings")}</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
                 {listings.map(l => (
@@ -308,11 +307,11 @@ export default function Shop() {
                           <div style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
                           {!l.seller?.walletAddress && (
                             <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              ⚠️ Seller wallet not connected
+                              ⚠️ {t("shop.sellerNoWallet")}
                             </div>
                           )}
                           <div style={{ fontSize: 12, color: isDark ? '#d1d5db' : '#374151', marginTop: 8 }}>
-                            Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
+                            {t("shop.wanted")}: {l.wantedItem?.name || t("shop.any")} {l.wantedItem ? `(${t("shop.tier")}: ${l.wantedItem.rarity})` : ''}
                           </div>
                           <div style={{ marginTop: 8, fontSize: 11, color: isDark ? '#9ca3af' : '#6b7280', display: 'flex', gap: 8, alignItems: 'center' }}>
                             <span style={{ fontFamily: 'monospace', opacity: 0.85 }}>{(l.itemHash || '').substring(0, 16)}{(l.itemHash || '').length > 16 ? '…' : ''}</span>
@@ -321,7 +320,7 @@ export default function Shop() {
                               style={{ fontSize: 11, padding: '4px 8px' }}
                               onClick={() => setViewModal({ open: true, itemHash: l.itemHash || '', itemName: l.inventoryItem?.item?.itemName || '' })}
                             >
-                              View
+                              {t("shop.view")}
                             </button>
                           </div>
                         </div>
@@ -351,7 +350,7 @@ export default function Shop() {
                               }
                             }}
                           >
-                            Trade
+                            {t("shop.trade")}
                           </button>
                     </div>
                   </article>
@@ -362,45 +361,16 @@ export default function Shop() {
         </div>
       </section>
 
-      <section className="page-grid">
-        <div className="page-card">
-          <h3>Hoạt động on-chain</h3>
-          <p className="page-hero__text">Giao dịch mới nhất từ cộng đồng.</p>
-          <div className="list-card" style={{ border: "none", boxShadow: "none" }}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Người chơi</th>
-                  <th>Vật phẩm</th>
-                  <th>Thời gian</th>
-                  <th>Tx</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activities.map((row) => (
-                  <tr key={row.tx}>
-                    <td>{row.player}</td>
-                    <td>{row.item}</td>
-                    <td>{row.time}</td>
-                    <td>
-                      <span className="chip chip--accent">{row.tx}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+
       {viewModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
           <div style={{ width: 520, background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
-            <h3 style={{ marginTop: 0 }}>{viewModal.itemName || 'Item details'}</h3>
-            <p style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#444' }}>Full item hash (copy to clipboard):</p>
+            <h3 style={{ marginTop: 0 }}>{viewModal.itemName || t("shop.itemDetails")}</h3>
+            <p style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#444' }}>{t("shop.fullHash")}</p>
             <div style={{ fontFamily: 'monospace', background: isDark ? '#071022' : '#f6f6f8', padding: 12, borderRadius: 6, wordBreak: 'break-all' }}>{viewModal.itemHash}</div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
-              <button className="ui-btn ui-btn--ghost" onClick={closeViewModal}>Close</button>
-              <button className="ui-btn ui-btn--primary" onClick={handleCopyHash}>{copySuccess ? 'Copied!' : 'Copy'}</button>
+              <button className="ui-btn ui-btn--ghost" onClick={closeViewModal}>{t("shop.close")}</button>
+              <button className="ui-btn ui-btn--primary" onClick={handleCopyHash}>{copySuccess ? t("shop.copied") : t("shop.copy")}</button>
             </div>
           </div>
         </div>
@@ -408,13 +378,13 @@ export default function Shop() {
       {tradeModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
           <div style={{ width: 720, maxHeight: '80vh', overflowY: 'auto', background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
-            <h3 style={{ marginTop: 0 }}>Choose an item to trade</h3>
-            <p style={{ fontSize: 13, color: isDark ? '#9ca3af' : '#444' }}>{tradeModal.listing?.inventoryItem?.item?.itemName} — select one of your items to offer in exchange.</p>
+            <h3 style={{ marginTop: 0 }}>{t("shop.chooseTradeItem")}</h3>
+            <p style={{ fontSize: 13, color: isDark ? '#9ca3af' : '#444' }}>{t("shop.selectOffer", { item: tradeModal.listing?.inventoryItem?.item?.itemName })}</p>
             <div style={{ marginTop: 12 }}>
               {tradeModal.loading ? (
-                <div>Loading your inventory…</div>
+                <div>{t("shop.loadingInventory")}</div>
               ) : tradeModal.buyerItems.length === 0 ? (
-                <div className="muted">No eligible items found in your inventory.</div>
+                <div className="muted">{t("shop.noEligibleItems")}</div>
               ) : (
                 <div style={{ display: 'grid', gap: 8 }}>
                   {tradeModal.buyerItems.map(ii => (
@@ -429,7 +399,7 @@ export default function Shop() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600 }}>{ii.item?.itemName || ii.itemHash}</div>
-                        <div style={{ fontSize: 12, color: '#666' }}>Tier: {ii.item?.itemTier || '—'}</div>
+                        <div style={{ fontSize: 12, color: '#666' }}>{t("shop.tier")}: {ii.item?.itemTier || '—'}</div>
                         <div style={{ fontSize: 11, color: '#888' }}>Obtained: {new Date(ii.obtainedAt).toLocaleString()}</div>
                       </div>
                     </label>
@@ -449,16 +419,16 @@ export default function Shop() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span>⛽</span>
-                  <strong>Gas Fee Notice</strong>
+                  <strong>{t("shop.gasFeeNotice")}</strong>
                 </div>
                 <div>
-                  You will pay the blockchain gas fee for this transaction from your MetaMask wallet. Estimated: ~0.001-0.003 ETH
+                  {t("shop.gasFeeDesc")}
                 </div>
               </div>
             )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
-              <button className="ui-btn ui-btn--ghost" onClick={closeTradeModal}>Cancel</button>
-              <button className="ui-btn ui-btn--primary" disabled={!tradeModal.selectedItemId} onClick={confirmTrade}>Confirm trade</button>
+              <button className="ui-btn ui-btn--ghost" onClick={closeTradeModal}>{t("shop.cancel")}</button>
+              <button className="ui-btn ui-btn--primary" disabled={!tradeModal.selectedItemId} onClick={confirmTrade}>{t("shop.confirmTrade")}</button>
             </div>
           </div>
         </div>

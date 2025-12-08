@@ -28,12 +28,11 @@ export default function Inventory() {
 
   const getFullImageUrl = (imgPath) => {
     if (!imgPath) return null;
-    // If already an absolute URL, use it as-is
-    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
-    // If it already starts with a slash, prepend base URL
-    if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
-    // Otherwise assume relative path and prepend slash + base
-    return `${API_BASE_URL}/${imgPath}`.replace(/([^:]\/\/)\//, '$1');
+    if (imgPath.startsWith('http')) return imgPath;
+    
+    const base = API_BASE_URL.replace(/\/+$/, '');
+    const path = imgPath.replace(/^\/+/, '');
+    return `${base}/${path}`;
   };
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -56,6 +55,9 @@ export default function Inventory() {
   const sortedInventory = useMemo(() => {
     if (!Array.isArray(inventory)) return [];
     const arr = [...inventory];
+    
+    const getTier = (item) => item?.itemTier || item?.rarity;
+
     const tierRank = (tier) => {
       if (!tier) return 0;
       const t = String(tier);
@@ -73,10 +75,10 @@ export default function Inventory() {
         arr.sort((a, b) => new Date(b.obtainedAt) - new Date(a.obtainedAt));
         break;
       case 'tier-asc':
-        arr.sort((a, b) => tierRank(a.item?.itemTier) - tierRank(b.item?.itemTier));
+        arr.sort((a, b) => tierRank(getTier(a.item)) - tierRank(getTier(b.item)));
         break;
       case 'tier-desc':
-        arr.sort((a, b) => tierRank(b.item?.itemTier) - tierRank(a.item?.itemTier));
+        arr.sort((a, b) => tierRank(getTier(b.item)) - tierRank(getTier(a.item)));
         break;
       default:
         break;
@@ -280,7 +282,7 @@ export default function Inventory() {
     return (
       <div className="page-shell">
         <section className="page-hero fade-in-up">
-          <h1 className="gradient-title">Loading Inventory...</h1>
+          <h1 className="gradient-title">{t("inventory.loading")}</h1>
         </section>
       </div>
     );
@@ -290,7 +292,7 @@ export default function Inventory() {
     return (
       <div className="page-shell">
         <section className="page-hero fade-in-up">
-          <h1 className="gradient-title">Inventory</h1>
+          <h1 className="gradient-title">{t("inventory.title")}</h1>
           <div className="page-card" style={{ marginTop: 20, padding: 20, textAlign: 'center' }}>
             <p style={{ color: '#ff6b6b' }}>{error}</p>
             {!user && (
@@ -314,11 +316,11 @@ export default function Inventory() {
       <section className="page-hero fade-in-up">
         <span className="page-hero__badge">
           <span role="img" aria-hidden="true">🎒</span>
-          Inventory
+          {t("inventory.title")}
         </span>
-        <h1 className="gradient-title">Your Galactic Loot</h1>
+        <h1 className="gradient-title">{t("inventory.subtitle")}</h1>
         <p className="page-hero__text">
-          Manage your collected items, list them for trade, and track your blockchain NFTs.
+          {t("inventory.description")}
         </p>
       </section>
 
@@ -343,19 +345,19 @@ export default function Inventory() {
       {/* Stats Overview */}
       <section className="page-grid">
         <article className="page-card">
-          <h3>Total Items</h3>
+          <h3>{t("inventory.totalItems")}</h3>
           <div className="metric-value">{stats.totalItems}</div>
           <div className="metric-label">Collected from drops</div>
         </article>
 
         <article className="page-card">
-          <h3>Total Value</h3>
+          <h3>{t("inventory.totalValue")}</h3>
           <div className="metric-value">{stats.totalItems} Items</div>
           <div className="metric-label">In your collection</div>
         </article>
 
         <article className="page-card">
-          <h3>Rarest Item</h3>
+          <h3>{t("inventory.rarestItem")}</h3>
           <div className="metric-value">
             {stats.byRarity.Legendary ? `${stats.byRarity.Legendary} Legendary` :
              stats.byRarity.Rare ? `${stats.byRarity.Rare} Rare` : 
@@ -369,7 +371,7 @@ export default function Inventory() {
       <section className="page-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <h3 style={{ margin: 0 }}>Your Items ({inventory.length})</h3>
+            <h3 style={{ margin: 0 }}>{t("inventory.yourItems")} ({inventory.length})</h3>
             <select className="sort-select" value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
               <option value="time-desc">Newest first</option>
               <option value="time-asc">Oldest first</option>
@@ -382,21 +384,21 @@ export default function Inventory() {
             className="ui-btn ui-btn--ghost"
             onClick={fetchInventory}
           >
-            🔄 Refresh
+            🔄 {t("inventory.refresh")}
           </button>
         </div>
 
         {inventory.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <p style={{ fontSize: 18, marginBottom: 12 }}>No items yet!</p>
-            <p className="metric-label">Play Space Raiders to collect loot drops</p>
+            <p style={{ fontSize: 18, marginBottom: 12 }}>{t("inventory.noItems")}</p>
+            <p className="metric-label">{t("inventory.playToCollect")}</p>
             <button 
               type="button" 
               className="ui-btn ui-btn--primary"
               onClick={() => window.location.href = '/H'}
               style={{ marginTop: 16 }}
             >
-              Start Playing
+              {t("inventory.startPlaying")}
             </button>
           </div>
         ) : (
@@ -407,12 +409,13 @@ export default function Inventory() {
           }}>
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-              gap: 16 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', 
+              gap: 12 
             }}>
             {sortedInventory.map((inventoryItem) => {
               const item = inventoryItem.item;
               if (!item) return null;
+              const tier = item.itemTier || item.rarity;
               
               return (
                 <div 
@@ -420,7 +423,7 @@ export default function Inventory() {
                   className="page-card"
                   style={{ 
                     padding: 16,
-                    borderLeft: `3px solid ${rarityColors[item.itemTier] || '#6B7280'}`
+                    borderLeft: `3px solid ${rarityColors[tier] || '#6B7280'}`
                   }}
                 >
                   {/* Item image / GIF (if available) */}
@@ -438,12 +441,12 @@ export default function Inventory() {
                     const imageSrc = getFullImageUrl(imgPath);
                     if (imageSrc) {
                       return (
-                        <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 8 }}>
                           <a href={imageSrc} target="_blank" rel="noreferrer">
                             <img
                               src={imageSrc}
                               alt={item.itemName || item.name || 'item'}
-                              style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8 }}
+                              style={{ width: 90, height: 90, objectFit: 'cover', borderRadius: 8 }}
                             />
                           </a>
                         </div>
@@ -452,35 +455,35 @@ export default function Inventory() {
 
                     // small placeholder when no image
                     return (
-                      <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                        <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af' }}>
+                      <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                        <div style={{ width: 90, height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, background: '#f3f4f6', color: '#9ca3af', margin: '0 auto' }}>
                           <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: 28 }}>🖼️</div>
-                            <div style={{ fontSize: 12, marginTop: 6 }}>No image</div>
+                            <div style={{ fontSize: 24 }}>🖼️</div>
+                            <div style={{ fontSize: 10, marginTop: 4 }}>No image</div>
                           </div>
                         </div>
                       </div>
                     );
                   })()}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 8 }}>
                     <span 
                       className="chip chip--accent"
-                      style={{ backgroundColor: rarityColors[item.itemTier] + '20', color: rarityColors[item.itemTier] }}
+                      style={{ backgroundColor: (rarityColors[tier] || '#6B7280') + '20', color: rarityColors[tier] || '#6B7280', fontSize: '0.7rem', padding: '2px 8px' }}
                     >
-                      {rarityLabels[item.itemTier]}
+                      {rarityLabels[tier] || tier}
                     </span>
                   </div>
                   
-                  <h4 style={{ marginBottom: 8, fontSize: 16 }}>{item.itemName}</h4>
-                  <p className="metric-label" style={{ fontSize: 13, marginBottom: 12 }}>
-                    {item.itemTier} tier item
+                  <h4 style={{ marginBottom: 4, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={item.itemName}>{item.itemName}</h4>
+                  <p className="metric-label" style={{ fontSize: 12, marginBottom: 8 }}>
+                    {tier} tier item
                   </p>
                   
-                  <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
-                    <div>📅 Acquired: {formatDate(inventoryItem.obtainedAt)}</div>
+                  <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>
+                    <div>📅 {formatDate(inventoryItem.obtainedAt)}</div>
                     {inventoryItem.itemHash && (
-                      <div style={{ fontSize: 10, marginTop: 4, fontFamily: 'monospace', opacity: 0.6 }}>
-                        🔐 {inventoryItem.itemHash.substring(0, 16)}...
+                      <div style={{ fontSize: 10, marginTop: 2, fontFamily: 'monospace', opacity: 0.6 }}>
+                        🔐 {inventoryItem.itemHash.substring(0, 8)}...
                       </div>
                     )}
                   </div>
@@ -493,7 +496,7 @@ export default function Inventory() {
                       onClick={() => handleUnlistFromShop(inventoryItem.itemHash)}
                       disabled={actionLoading[inventoryItem.itemHash]}
                     >
-                      {actionLoading[inventoryItem.itemHash] ? '⏳ Processing...' : '🏪 Unlist from Shop'}
+                      {actionLoading[inventoryItem.itemHash] ? '⏳ Processing...' : `🏪 ${t("inventory.unlistFromShop")}`}
                     </button>
                   ) : (
                     <button 
@@ -503,7 +506,7 @@ export default function Inventory() {
                       onClick={() => handleListOnShop(inventoryItem.itemHash)}
                       disabled={actionLoading[inventoryItem.itemHash]}
                     >
-                      {actionLoading[inventoryItem.itemHash] ? '⏳ Listing...' : '🛒 List on Shop'}
+                      {actionLoading[inventoryItem.itemHash] ? '⏳ Listing...' : `🛒 ${t("inventory.listOnShop")}`}
                     </button>
                   )}
                 </div>
@@ -588,7 +591,7 @@ export default function Inventory() {
       {/* Rarity Breakdown */}
       {Object.keys(stats.byRarity).length > 0 && (
         <section className="page-card">
-          <h3 style={{ marginBottom: 16 }}>Collection by Rarity</h3>
+          <h3 style={{ marginBottom: 16 }}>{t("inventory.collectionByRarity")}</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
             {Object.entries(stats.byRarity).map(([rarity, count]) => (
               <div 

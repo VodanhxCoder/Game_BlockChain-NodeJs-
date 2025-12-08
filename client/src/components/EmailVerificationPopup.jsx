@@ -1,6 +1,7 @@
 // EmailVerificationPopup.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const EmailVerificationPopup = ({ 
   isOpen, 
@@ -17,6 +18,7 @@ const EmailVerificationPopup = ({
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
   const [resendCooldown, setResendCooldown] = useState(0);
   const { isDark } = useTheme();
+  const { t } = useLanguage();
   const inputRefs = useRef([]);
 
   // console.log("EmailVerificationPopup render - isOpen:", isOpen, "email:", email, "username:", username);
@@ -28,7 +30,7 @@ const EmailVerificationPopup = ({
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {
-          setError('Verification code has expired. Please request a new code.');
+          setError(t("auth.codeExpired"));
           return 0;
         }
         return prev - 1;
@@ -54,7 +56,7 @@ const EmailVerificationPopup = ({
     if (isOpen && email && username) {
       setCode(['', '', '', '', '', '']);
       setError('');
-      setSuccess('Verification code sent to your email!');
+      setSuccess(t("auth.codeSent"));
       setTimeLeft(600);
       setResendCooldown(0);
 
@@ -116,7 +118,7 @@ const EmailVerificationPopup = ({
     const verificationCode = code.join('');
     
     if (verificationCode.length !== 6) {
-      setError('Please enter all 6 digits.');
+      setError(t("auth.enterCode"));
       return;
     }
 
@@ -138,10 +140,10 @@ const EmailVerificationPopup = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
+        throw new Error(data.error || t("auth.verifyError"));
       }
 
-      setSuccess('Email verified successfully!');
+      setSuccess(t("auth.verifySuccess"));
       setTimeout(() => {
         onVerifySuccess();
       }, 1500);
@@ -161,7 +163,7 @@ const EmailVerificationPopup = ({
 
     try {
       await onResendCode();
-      setSuccess('New verification code sent!');
+      setSuccess(t("auth.resendSuccess"));
       setTimeLeft(600);
       setResendCooldown(60); // 1 minute cooldown
       setTimeout(() => setSuccess(''), 3000);
@@ -213,7 +215,7 @@ const EmailVerificationPopup = ({
         }}
       >
         <div style={{ padding: '24px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>Xác nhận Email</h3>
+          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 600 }}>{t("auth.verifyEmail")}</h3>
           <button 
             onClick={onClose} 
             style={{
@@ -234,7 +236,7 @@ const EmailVerificationPopup = ({
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📧</div>
             <p style={{ margin: '8px 0', color: '#6b7280', fontSize: '14px' }}>
-              Chúng tôi đã gửi mã xác nhận 6 số đến
+              {t("auth.verifyDesc", { email: "" }).split(email)[0]}
             </p>
             <strong style={{
               display: 'block',
@@ -249,7 +251,7 @@ const EmailVerificationPopup = ({
               {email}
             </strong>
             <p style={{ margin: '8px 0', color: '#6b7280', fontSize: '14px' }}>
-              Nhập mã xác nhận để hoàn tất đăng ký:
+              {t("auth.enterCode")}:
             </p>
           </div>
 
@@ -325,21 +327,21 @@ const EmailVerificationPopup = ({
                 minHeight: '44px'
               }}
             >
-              {loading ? 'Đang xác nhận...' : 'Xác nhận'}
+              {loading ? t("auth.verifying") : t("auth.verify")}
             </button>
           </div>
 
           <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '20px', textAlign: 'center' }}>
             <div style={{ marginBottom: '16px', fontSize: '13px', color: '#6b7280', fontWeight: 500 }}>
               {timeLeft > 0 ? (
-                <span>Mã hết hạn sau: {formatTime(timeLeft)}</span>
+                <span>{t("auth.codeExpiresIn", { time: formatTime(timeLeft) })}</span>
               ) : (
-                <span style={{ color: '#ef4444', fontWeight: 600 }}>Mã đã hết hạn</span>
+                <span style={{ color: '#ef4444', fontWeight: 600 }}>{t("auth.codeExpired")}</span>
               )}
             </div>
 
             <div style={{ fontSize: '13px', color: '#6b7280' }}>
-              <span>Chưa nhận được mã? </span>
+              <span>{t("auth.notReceived")} </span>
               <button
                 onClick={handleResend}
                 disabled={resendCooldown > 0 || loading}
@@ -355,8 +357,8 @@ const EmailVerificationPopup = ({
                 }}
               >
                 {resendCooldown > 0 
-                  ? `Gửi lại sau ${resendCooldown}s` 
-                  : 'Gửi lại mã'
+                  ? `${t("auth.resendIn")} ${resendCooldown}s` 
+                  : t("auth.resend")
                 }
               </button>
             </div>

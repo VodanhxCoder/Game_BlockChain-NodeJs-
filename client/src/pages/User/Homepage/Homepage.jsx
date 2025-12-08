@@ -81,17 +81,17 @@ export default function Homepage() {
 
           <div className="game-hud__card">
             <div className="game-hud__card-header">
-                <strong>Recent Drops</strong>
+                <strong>{t("game.recentDrops")}</strong>
                 <span className="chip chip--accent">{totalDropsThisRun}</span>
               </div>
             {lootDrops.length === 0 ? (
-              <p className="metric-label" style={{ padding: 12, textAlign: 'center' }}>
-                No drops yet. Destroy enemies to get loot!
+              <p className="metric-label" style={{ padding: 8, textAlign: 'center' }}>
+                {t("game.noDrops")}
               </p>
             ) : (
-              <ul style={{ maxHeight: 240 }}>
+              <ul style={{ maxHeight: 240, listStyle: 'none', padding: 0, margin: 0 }}>
                 {lootDrops.map((drop, idx) => (
-                  <li key={drop.id || idx} style={{ marginBottom: 8, padding: 8, borderRadius: 4, backgroundColor: 'rgba(120,192,255,0.05)' }}>
+                  <li key={drop.id || idx} style={{ marginBottom: 6, padding: 6, borderRadius: 4, backgroundColor: 'rgba(120,192,255,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontWeight: 600, fontSize: 13 }}>{drop.itemName || drop.name}</span>
                       <span className="chip" style={{ fontSize: 11 }}>{drop.itemTier || drop.rarity}</span>
@@ -100,7 +100,7 @@ export default function Homepage() {
                       {drop.timeLabel || new Date(drop.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </small>
                     <small style={{ fontSize: 11, color: '#666', display: 'block', marginTop: 4 }}>
-                      Hash: {drop.itemHash ? `${drop.itemHash.substring(0, 16)}...` : (drop.id || '')}
+                      {t("game.hash")}: {drop.itemHash ? `${drop.itemHash.substring(0, 16)}...` : (drop.id || '')}
                     </small>
                   </li>
                 ))}
@@ -111,9 +111,9 @@ export default function Homepage() {
 
         <section className="game-frame">
           <div className="game-frame__header">
-            <div className="game-hud__metrics" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <div className="game-hud__metrics" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
               {statCards.map((card) => (
-                <div key={card.id} className="game-hud__card" style={{ flex: '1 1 auto', minWidth: '140px' }}>
+                <div key={card.id} className="game-hud__card" style={{ flex: '1 1 auto', minWidth: '120px' }}>
                   <span>{card.label}</span>
                   <strong>{card.value}</strong>
                 </div>

@@ -62,13 +62,13 @@ function Icon({ name }) {
   }
 }
 
-export default function Menu() {
+export default function Menu({ onToggleMenu }) {
   const { isAuthenticated, user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { lang, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState(null);
-  const displayName = user?.name?.trim() || user?.username || user?.email || "";
+  const displayName = user?.playername?.trim() || user?.username || user?.email || "";
   const displayEmail = user?.email || user?.username || "";
 
   const handleLogout = () => {
@@ -119,6 +119,21 @@ export default function Menu() {
             >
               {lang === "vi" ? "VI" : "EN"}
             </button>
+            {onToggleMenu && (
+              <button
+                type="button"
+                className="theme-toggle"
+                onClick={onToggleMenu}
+                aria-label={t("menu.hide")}
+                title={t("menu.hide")}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 

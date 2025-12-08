@@ -137,10 +137,24 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         }
 
         if (!state || (state && !state.started)) {
+          // Calculate responsive dimensions based on the actual canvas element size
+          const canvas = canvasRef.current;
+          let width = 1600;
+          let height = 900;
+
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            width = rect.width;
+            height = rect.height;
+            console.log('📏 Detected canvas size:', width, 'x', height);
+          }
+
           // Start game - allow starting even if state is null
           socket.emit('game:start', { 
             username: user?.username || 'guest', 
-            level: 1 
+            level: 1,
+            width: Math.floor(width),
+            height: Math.floor(height)
           });
           return;
         }
@@ -208,12 +222,11 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         return;
       }
 
-      // Set canvas dimensions
+      // Set canvas dimensions (resolution)
+      // We don't set style.width/height here to allow CSS to handle responsive scaling
       if (canvas.width !== s.w || canvas.height !== s.h) {
         canvas.width = s.w;
         canvas.height = s.h;
-        canvas.style.width = s.w + "px";
-        canvas.style.height = s.h + "px";
       }
 
       // Clear canvas

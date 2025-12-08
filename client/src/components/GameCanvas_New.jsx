@@ -124,10 +124,20 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
         }
 
         if (state && !state.started) {
+          // Calculate responsive dimensions
+          const maxWidth = 1600;
+          const maxHeight = 900;
+          const padding = 40;
+          
+          const width = Math.min(window.innerWidth - padding, maxWidth);
+          const height = Math.min(window.innerHeight - 200, maxHeight); // 200px for header/footer
+
           // Start game
           socket.emit('game:start', { 
             username: user?.username || 'guest', 
-            level: 1 
+            level: 1,
+            width: Math.floor(width),
+            height: Math.floor(height)
           });
           return;
         }
