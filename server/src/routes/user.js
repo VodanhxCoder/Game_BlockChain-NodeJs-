@@ -1,6 +1,7 @@
 import express from 'express';
 import UserController from '../controllers/UserController.js';
 import WalletController from '../controllers/WalletController.js';
+import authJwt from '../middleware/authJwt.js';
 
 const router = express.Router();
 
@@ -22,5 +23,17 @@ router.get('/user/leaderboard', UserController.getLeaderboard);
  */
 router.post('/user/wallet/challenge', WalletController.createChallenge);
 router.post('/user/wallet/verify', WalletController.verifySignatureAndSave);
+
+/**
+ * @route PUT /api/user/profile
+ * @desc Update user profile
+ */
+router.put('/user/profile', authJwt.verifyToken, UserController.updateProfile);
+
+/**
+ * @route PUT /api/user/password
+ * @desc Change user password
+ */
+router.put('/user/password', authJwt.verifyToken, UserController.changePassword);
 
 export default router;

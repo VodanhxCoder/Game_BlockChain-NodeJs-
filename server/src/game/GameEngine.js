@@ -7,12 +7,15 @@
  */
 
 class GameEngine {
-  constructor(sessionId, username, level = 1) {
+  constructor(sessionId, username, level = 1, width = 1600, height = 900) {
     this.sessionId = sessionId;
     this.username = username;
     this.level = level;
-    this.w = 1600;
-    this.h = 900;
+    this.w = width;
+    this.h = height;
+    // Calculate scale factor based on reference width of 1600px
+    this.scale = this.w / 1600;
+    
     this.score = 0;
     this.lives = 3;
     this.gameOver = false;
@@ -23,10 +26,10 @@ class GameEngine {
     // Player state
     this.player = {
       x: this.w / 2,
-      y: this.h - 40,
-      w: 60,
-      h: 15,
-      speed: 5,
+      y: this.h - (40 * this.scale),
+      w: 60 * this.scale,
+      h: 15 * this.scale,
+      speed: 5 * this.scale,
       reload: 0
     };
 
@@ -38,12 +41,12 @@ class GameEngine {
     this.blockades = [];
 
     // Invader configuration
-    this.invaderW = 54;
-    this.invaderH = 30;
-    this.invaderPadding = 18;
-    this.invaderOffsetY = 40;
+    this.invaderW = 54 * this.scale;
+    this.invaderH = 30 * this.scale;
+    this.invaderPadding = 18 * this.scale;
+    this.invaderOffsetY = 40 * this.scale;
     this.invaderDir = 1;
-    this.invaderSpeed = 0.3 + level * 0.1;
+    this.invaderSpeed = (0.3 + level * 0.1) * this.scale;
 
     // Shooting mechanics
     this.lastShotTime = Date.now();
@@ -71,12 +74,12 @@ class GameEngine {
         if (!pattern[r][c]) continue;
         const x = c * (this.invaderW + this.invaderPadding) +
           (this.w - (cfg.cols * (this.invaderW + this.invaderPadding) - this.invaderPadding)) / 2;
-        const y = r * (this.invaderH + 8) + this.invaderOffsetY;
+        const y = r * (this.invaderH + (8 * this.scale)) + this.invaderOffsetY;
         this.invaders.push({ x, y, alive: true, row: r, col: c });
       }
     }
 
-    this.invaderSpeed = cfg.speed;
+    this.invaderSpeed = cfg.speed * this.scale;
     this.blockades = this.generateBlockadesForLevel(lvl);
     this.enemyShotInterval = Math.max(700 - lvl * 60, 300);
   }
@@ -133,13 +136,13 @@ class GameEngine {
     if (lvl >= 5) return blocks;
 
     const clusterCount = 3;
-    const cellW = 27;
-    const cellH = 18;
+    const cellW = 27 * this.scale;
+    const cellH = 18 * this.scale;
     const cols = 5;
     const rows = 3;
     const clusterWidth = cols * cellW;
     const spacing = (this.w - clusterCount * clusterWidth) / (clusterCount + 1);
-    const baseY = this.h - 140;
+    const baseY = this.h - (140 * this.scale);
 
     const fullPattern = [
       [1, 1, 1, 1, 1],
@@ -161,8 +164,8 @@ class GameEngine {
           blocks.push({
             x: clusterX + cc * cellW,
             y: baseY + r * cellH,
-            w: cellW - 3,
-            h: cellH - 3,
+            w: cellW - (3 * this.scale),
+            h: cellH - (3 * this.scale),
             hp: 3,
           });
         }
@@ -198,7 +201,7 @@ class GameEngine {
     
     this.lastShotTime = now;
     this.player.reload = 12;
-    this.bullets.push({ x: this.player.x, y: this.player.y - 20, speed: 6 });
+    this.bullets.push({ x: this.player.x, y: this.player.y - (20 * this.scale), speed: 6 * this.scale });
     return true;
   }
 
@@ -245,7 +248,7 @@ class GameEngine {
       // Check collision with blockades
       for (let bi = this.blockades.length - 1; bi >= 0; bi--) {
         const blk = this.blockades[bi];
-        if (this.rectHit(b.x - 2, b.y - 8, 4, 8, blk.x, blk.y, blk.w, blk.h)) {
+        if (this.rectHit(b.x - (2 * this.scale), b.y - (8 * this.scale), 4 * this.scale, 8 * this.scale, blk.x, blk.y, blk.w, blk.h)) {
           blk.hp--;
           this.bullets.splice(i, 1);
           if (blk.hp <= 0) this.blockades.splice(bi, 1);
@@ -265,8 +268,8 @@ class GameEngine {
       }
 
       // Check collision with player
-      if (this.rectHit(eb.x - 2, eb.y - 6, 4, 8, 
-          this.player.x - this.player.w / 2, this.player.y - 12, this.player.w, this.player.h + 12)) {
+      if (this.rectHit(eb.x - (2 * this.scale), eb.y - (6 * this.scale), 4 * this.scale, 8 * this.scale, 
+          this.player.x - this.player.w / 2, this.player.y - (12 * this.scale), this.player.w, this.player.h + (12 * this.scale))) {
         this.enemyBullets.splice(i, 1);
         this.lives--;
         
@@ -284,7 +287,7 @@ class GameEngine {
       // Check collision with blockades
       for (let bi = this.blockades.length - 1; bi >= 0; bi--) {
         const blk = this.blockades[bi];
-        if (this.rectHit(eb.x - 2, eb.y - 6, 4, 8, blk.x, blk.y, blk.w, blk.h)) {
+        if (this.rectHit(eb.x - (2 * this.scale), eb.y - (6 * this.scale), 4 * this.scale, 8 * this.scale, blk.x, blk.y, blk.w, blk.h)) {
           blk.hp--;
           this.enemyBullets.splice(i, 1);
           if (blk.hp <= 0) this.blockades.splice(bi, 1);
@@ -295,16 +298,17 @@ class GameEngine {
 
     // Update invader movement
     let hitSide = false;
+    const margin = 6 * this.scale;
     for (const inv of this.invaders) {
       if (!inv.alive) continue;
       inv.x += this.invaderDir * this.invaderSpeed;
-      if (inv.x < 6 || inv.x + this.invaderW > this.w - 6) hitSide = true;
+      if (inv.x < margin || inv.x + this.invaderW > this.w - margin) hitSide = true;
     }
     
     if (hitSide) {
       this.invaderDir *= -1;
       for (const inv of this.invaders) {
-        inv.y += 12;
+        inv.y += 12 * this.scale;
       }
     }
 
@@ -332,8 +336,8 @@ class GameEngine {
       if (shooter) {
         this.enemyBullets.push({
           x: shooter.x + this.invaderW / 2,
-          y: shooter.y + this.invaderH + 6,
-          speed: 3 + this.level * 0.2,
+          y: shooter.y + this.invaderH + (6 * this.scale),
+          speed: (3 + this.level * 0.2) * this.scale,
         });
       }
       this.lastEnemyShot = now;
@@ -345,14 +349,14 @@ class GameEngine {
       const item = this.droppedItems[i];
       if (item.collected) continue;
 
-      item.velocityY = Math.min((item.velocityY || 0) + (item.gravity || 0.06), item.maxFallSpeed || 2);
+      item.velocityY = Math.min((item.velocityY || 0) + (item.gravity || 0.06 * this.scale), item.maxFallSpeed || 2 * this.scale);
       item.y += item.velocityY;
 
       // Check collision with player
       const playerLeft = this.player.x - this.player.w / 2;
       const playerRight = this.player.x + this.player.w / 2;
-      const playerTop = this.player.y - 12;
-      const playerBottom = this.player.y + 10;
+      const playerTop = this.player.y - (12 * this.scale);
+      const playerBottom = this.player.y + (10 * this.scale);
 
       const itemLeft = item.x - item.size / 2;
       const itemRight = item.x + item.size / 2;
@@ -389,10 +393,10 @@ class GameEngine {
     this.droppedItems.push({
       ...item,
       velocityY: 0,
-      gravity: 0.06,
-      maxFallSpeed: 2,
+      gravity: 0.06 * this.scale,
+      maxFallSpeed: 2 * this.scale,
       collected: false,
-      size: 28,
+      size: 28 * this.scale,
     });
   }
 

@@ -8,6 +8,7 @@
 import gameSessionManager from '../game/GameSessionManager.js';
 import axios from 'axios';
 import DropController from './DropController.js';
+import { updateUserHighScore } from './UserController.js';
 
 class GameController {
   constructor(io) {
@@ -25,11 +26,11 @@ class GameController {
     // Start a new game
     socket.on('game:start', async (data) => {
       try {
-        const { username, level = 1 } = data;
-        console.log(`🎮 Starting game for ${username}, level ${level}`);
+        const { username, level = 1, width, height } = data;
+        console.log(`🎮 Starting game for ${username}, level ${level}, size: ${width}x${height}`);
 
         // Create new game session
-        const { sessionId, gameEngine } = gameSessionManager.createSession(username, level);
+        const { sessionId, gameEngine } = gameSessionManager.createSession(username, level, width, height);
         gameEngine.start();
 
         // Join socket room for this session
@@ -88,11 +89,16 @@ class GameController {
     socket.on('game:reset', (data) => {
       const { sessionId, username } = data;
       
+      // Get old dimensions if available
+      const oldEngine = gameSessionManager.getSession(sessionId);
+      const width = oldEngine ? oldEngine.w : 1600;
+      const height = oldEngine ? oldEngine.h : 900;
+
       // Stop old game loop
       this.stopGameLoop(sessionId);
       
       // Create new session
-      const { sessionId: newSessionId, gameEngine } = gameSessionManager.createSession(username, 1);
+      const { sessionId: newSessionId, gameEngine } = gameSessionManager.createSession(username, 1, width, height);
       gameEngine.start();
       
       socket.leave(sessionId);
@@ -269,10 +275,10 @@ class GameController {
    */
   async submitHighScore(username, score) {
     try {
-      const response = await axios.post('http://localhost:3000/api/user/highscore', { username, score });
-      console.log('📤 High score submitted:', response.data);
+      const result = await updateUserHighScore(username, score);
+      console.log('📤 High score updated:', result);
     } catch (error) {
-      console.error('❌ Failed to submit high score:', error);
+      console.error('❌ Failed to submit high score:', error.message);
     }
   }
 }

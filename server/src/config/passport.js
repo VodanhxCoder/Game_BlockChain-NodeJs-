@@ -43,11 +43,22 @@ passport.use(new GoogleStrategy({
         return done(null, user);
       }
 
+      // Check if user exists by email to link account
+      const email = profile.emails[0].value;
+      user = await User.findOne({ where: { email } });
+
+      if (user) {
+        user.googleId = profile.id;
+        await user.save();
+        return done(null, user);
+      }
+
       // Create new user if doesn't exist
       user = await User.create({
         googleId: profile.id,
-        email: profile.emails[0].value,
-        username: profile.emails[0].value.split('@')[0] + '_' + Date.now(),
+        email: email,
+        username: email.split('@')[0] + '_' + Date.now(),
+        playername: profile.displayName || email.split('@')[0],
         passwordHash: null, // OAuth users don't need password
         provider: 'google'
       });
@@ -78,13 +89,26 @@ passport.use(new GitHubStrategy({
         return done(null, user);
       }
 
+      const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+      
+      // If email is available, check for existing user to link
+      if (email) {
+        user = await User.findOne({ where: { email } });
+        if (user) {
+          user.githubId = profile.id;
+          await user.save();
+          return done(null, user);
+        }
+      }
+
       // Create new user if doesn't exist
-      const email = profile.emails && profile.emails[0] ? profile.emails[0].value : `${profile.username}@github.com`;
+      const finalEmail = email || `${profile.username}@github.com`;
       
       user = await User.create({
         githubId: profile.id,
-        email: email,
+        email: finalEmail,
         username: profile.username || profile.displayName || 'github_' + Date.now(),
+        playername: profile.displayName || profile.username,
         passwordHash: null, // OAuth users don't need password
         provider: 'github'
       });

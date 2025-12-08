@@ -21,7 +21,7 @@ class GameSessionManager {
   /**
    * Create a new game session for a user
    */
-  createSession(username, level = 1) {
+  createSession(username, level = 1, width = 1600, height = 900) {
     // If user already has a session, clean it up first
     if (this.userSessions.has(username)) {
       const oldSessionId = this.userSessions.get(username);
@@ -29,7 +29,7 @@ class GameSessionManager {
     }
 
     const sessionId = `${username}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const gameEngine = new GameEngine(sessionId, username, level);
+    const gameEngine = new GameEngine(sessionId, username, level, width, height);
     
     this.sessions.set(sessionId, {
       engine: gameEngine,
