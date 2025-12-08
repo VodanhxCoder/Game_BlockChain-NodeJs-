@@ -5,6 +5,7 @@ import userRoutes from "../routes/user.js";
 import inventoryRoutes from "../routes/inventory.js";
 import marketRoutes from "../routes/market.js";
 import adminRoutes from "../routes/admin.js";
+import dashboardRoutes from "../routes/dashboard.js";
 import configRoutes from "../routes/config.js";
 import fail2ban from "../middleware/fail2ban.js";
 import RecaptchaController from "../controllers/RecaptchaController.js";
@@ -34,6 +35,7 @@ let initWebRoutes = (app) => {
 
     // Admin routes (protected by admin middleware)
     app.use("/api/admin", adminRoutes);
+    app.use("/api/admin/dashboard", dashboardRoutes);
 
     return app.use("/", router);
 }

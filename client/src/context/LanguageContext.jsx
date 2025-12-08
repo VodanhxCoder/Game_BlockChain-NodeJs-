@@ -44,11 +44,11 @@ const dictionaries = {
       createAccount: "Tạo tài khoản",
       socialLogin: "Đăng nhập bằng mạng xã hội?",
       continueWith: "Tiếp tục với {provider}",
-      newPilot: "Phi công mới?",
-      forgeIdentity: "Tạo danh tính mới trong vài giây.",
-      preview1: "Nhận hangar NFT khởi đầu và trang phục.",
-      preview2: "Liên kết ví an toàn & bảo mật sinh trắc học.",
-      preview3: "Lưu trữ đám mây đa thiết bị được hỗ trợ bởi dữ liệu chuỗi.",
+      newPilot: "New pilot?",
+      forgeIdentity: "Forge a new identity in seconds.",
+      feature1: "Receive a starter NFT hangar and cosmetics.",
+      feature2: "Secure wallet linkage & biometric prompts.",
+      feature3: "Cross-device cloud saves backed by chain data.",
       slideToSignUp: "Trượt để đăng ký",
       joinRanks: "Gia nhập hàng ngũ",
       startJourney: "Bắt đầu hành trình xuyên qua các vì sao.",
@@ -76,7 +76,8 @@ const dictionaries = {
       close: "Đóng",
       codeExpiresIn: "Mã hết hạn sau: {time}",
       notReceived: "Chưa nhận được mã?",
-      resendIn: "Gửi lại sau"
+      resendIn: "Gửi lại sau",
+      errorBanned: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên."
     },
     shop: {
       title: "Cửa hàng",
@@ -283,9 +284,9 @@ const dictionaries = {
       continueWith: "Continue with {provider}",
       newPilot: "New pilot?",
       forgeIdentity: "Forge a new identity in seconds.",
-      preview1: "Receive a starter NFT hangar and cosmetics.",
-      preview2: "Secure wallet linkage & biometric prompts.",
-      preview3: "Cross-device cloud saves backed by chain data.",
+      feature1: "Receive a starter NFT hangar and cosmetics.",
+      feature2: "Secure wallet linkage & biometric prompts.",
+      feature3: "Cross-device cloud saves backed by chain data.",
       slideToSignUp: "Slide to sign up",
       joinRanks: "Join the ranks",
       startJourney: "Start your journey across the stars.",
@@ -313,7 +314,8 @@ const dictionaries = {
       close: "Close",
       codeExpiresIn: "Code expires in {time}",
       notReceived: "Didn't receive the code?",
-      resendIn: "Resend in"
+      resendIn: "Resend in",
+      errorBanned: "Your account has been banned. Please contact support."
     },
     shop: {
       title: "Marketplace",
