@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081') + "/api";
+import axios from "axios";
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -17,30 +16,31 @@ export default function UserManagement() {
 
   // Fetch users on component mount
   useEffect(() => {
+    // Debugging: Log API Base URL
+    console.log("Current API Base URL:", axios.defaults.baseURL);
+    if (window.location.hostname !== 'localhost' && axios.defaults.baseURL?.includes('localhost')) {
+      console.warn("WARNING: You are running on a production domain but connecting to localhost API. This will likely fail due to Mixed Content or connectivity issues. Please set VITE_API_BASE_URL in your Vercel project settings.");
+    }
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`${API_BASE}/admin/users`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch users");
-      }
-
-      const data = await response.json();
-      setUsers(data.users || []);
+      // axios interceptor in main.jsx handles the Authorization header
+      const response = await axios.get("/api/admin/users");
+      setUsers(response.data.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
-      showMessage(error.message || "Không thể tải danh sách người dùng", "error");
+      const errorMsg = error.response?.data?.error || error.message || "Không thể tải danh sách người dùng";
+      
+      // Check if we got an HTML response (common with 404s on SPA)
+      if (typeof error.response?.data === 'string' && error.response.data.trim().startsWith('<!DOCTYPE')) {
+         console.error("Received HTML instead of JSON. Check API URL configuration.");
+         showMessage("Lỗi cấu hình API: Server trả về HTML thay vì JSON. Vui lòng kiểm tra VITE_API_BASE_URL.", "error");
+      } else {
+         showMessage(errorMsg, "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -49,20 +49,8 @@ export default function UserManagement() {
   const fetchUserInventory = async (username) => {
     try {
       setInventoryLoading(true);
-      const token = localStorage.getItem("auth_token");
-      const response = await fetch(`${API_BASE}/admin/users/${username}/inventory`, {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch inventory");
-      }
-
-      const data = await response.json();
-      setInventory(data.inventory || []);
+      const response = await axios.get(`/api/admin/users/${username}/inventory`);
+      setInventory(response.data.inventory || []);
     } catch (error) {
       console.error("Error fetching inventory:", error);
       showMessage("Không thể tải kho đồ", "error");
@@ -96,22 +84,11 @@ export default function UserManagement() {
 
   const confirmBan = async () => {
     try {
-      const token = localStorage.getItem("auth_token");
       const isBanned = selectedUser.status === "banned";
       
-      const response = await fetch(`${API_BASE}/admin/users/${selectedUser.username}/ban`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ ban: !isBanned })
+      await axios.put(`/api/admin/users/${selectedUser.username}/ban`, {
+        ban: !isBanned
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update user status");
-      }
 
       // Update local state
       setUsers(users.map(u => 
@@ -126,7 +103,8 @@ export default function UserManagement() {
       );
     } catch (error) {
       console.error("Error updating user status:", error);
-      showMessage(error.message || "Không thể cập nhật trạng thái người dùng", "error");
+      const errorMsg = error.response?.data?.error || error.message || "Không thể cập nhật trạng thái người dùng";
+      showMessage(errorMsg, "error");
     } finally {
       setShowBanModal(false);
       setSelectedUser(null);

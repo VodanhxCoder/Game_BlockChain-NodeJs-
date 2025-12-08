@@ -1,38 +1,34 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Dashboard() {
-  const stats = [
-    {
-      label: "Tổng người dùng",
-      value: "1,234",
-      icon: "users",
-      color: "primary",
-    },
-    {
-      label: "Người dùng hoạt động",
-      value: "856",
-      icon: "active",
-      color: "success",
-    },
-    {
-      label: "Tổng vật phẩm",
-      value: "48",
-      icon: "items",
-      color: "warning",
-    },
-    {
-      label: "Drop rate trung bình",
-      value: "12.5%",
-      icon: "rate",
-      color: "primary",
-    },
-  ];
+  const [stats, setStats] = useState([]);
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const recentUsers = [
-    { id: 1, name: "Nguyễn Văn A", email: "nguyenvana@example.com", status: "active", joinDate: "2025-11-10" },
-    { id: 2, name: "Trần Thị B", email: "tranthib@example.com", status: "active", joinDate: "2025-11-11" },
-    { id: 3, name: "Lê Văn C", email: "levanc@example.com", status: "banned", joinDate: "2025-11-09" },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const response = await axios.get("/api/admin/dashboard/stats");
+        setStats(response.data.stats);
+        setRecentUsers(response.data.recentUsers);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="admin-card" style={{ padding: "3rem", textAlign: "center" }}>
+        <p>Đang tải dữ liệu Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div>

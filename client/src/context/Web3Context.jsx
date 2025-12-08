@@ -129,9 +129,14 @@ export function Web3Provider({ children }) {
       setAccount(selectedAccount);
       setChainId(Number(network.chainId));
 
-      // Get balance
-      const bal = await web3Provider.getBalance(selectedAccount);
-      setBalance(ethers.formatEther(bal));
+      // Get balance with error handling
+      try {
+        const bal = await web3Provider.getBalance(selectedAccount);
+        setBalance(ethers.formatEther(bal));
+      } catch (balanceErr) {
+        console.warn("⚠️ Failed to fetch balance (RPC might be busy):", balanceErr);
+        // Don't fail the whole connection if balance fetch fails
+      }
 
       console.log('✅ Wallet connected:', selectedAccount);
       console.log('🌐 Network:', network.name, '(chainId:', Number(network.chainId), ')');
