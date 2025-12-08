@@ -89,7 +89,7 @@ export default function Homepage() {
                 {t("game.noDrops")}
               </p>
             ) : (
-              <ul style={{ maxHeight: 240, listStyle: 'none', padding: 0, margin: 0 }}>
+              <ul style={{ maxHeight: 600, overflowY: 'auto', listStyle: 'none', padding: 0, margin: 0 }}>
                 {lootDrops.map((drop, idx) => (
                   <li key={drop.id || idx} style={{ marginBottom: 6, padding: 6, borderRadius: 4, backgroundColor: 'rgba(120,192,255,0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -5,7 +5,7 @@ import { useWeb3 } from "../../../context/Web3Context";
 import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL + "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081') + "/api";
 
 export default function Settings() {
   const { user, setUser } = useAuth();

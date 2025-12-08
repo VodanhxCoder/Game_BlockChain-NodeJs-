@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { useAuth } from './AuthContext';
 
 const Web3Context = createContext(null);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 export function Web3Provider({ children }) {
   const { user, setUser } = useAuth();
