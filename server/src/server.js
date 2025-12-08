@@ -15,6 +15,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import GameController from './controllers/GameController.js';
 
 // Import HardhatBlockchainService (CommonJS module)
 const require = createRequire(import.meta.url);
@@ -30,6 +33,24 @@ const __dirname = path.dirname(__filename);
 
 
 let app = express();
+const httpServer = createServer(app);
+
+// Initialize Socket.IO with CORS configuration
+const io = new Server(httpServer, {
+  cors: {
+    origin: [process.env.CLIENT_URL || 'http://localhost:5173', "https://front-end-game-blockchain.vercel.app"],
+    credentials: true,
+    methods: ["GET", "POST"]
+  }
+});
+
+// Initialize Game Controller
+const gameController = new GameController(io);
+
+// Set up Socket.IO event handlers
+io.on('connection', (socket) => {
+  gameController.initializeSocketHandlers(socket);
+});
 
 // Security Middleware
 // Security Middleware
@@ -203,8 +224,9 @@ testConnection();
 
 // Default to port 3000 when PORT not set (was incorrectly defaulting to 3)
 let port = parseInt(process.env.PORT, 10) || 3000;
-app.listen(port, () => {
+httpServer.listen(port, () => {
     console.log(`Backend nodejs is running on port: ${port}`);
+    console.log(`🎮 Game WebSocket server is ready`);
 });
 
 
