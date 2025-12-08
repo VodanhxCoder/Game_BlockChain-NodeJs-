@@ -28,7 +28,7 @@ export default function UserManagement() {
     try {
       setLoading(true);
       // axios interceptor in main.jsx handles the Authorization header
-      const response = await axios.get("/admin/users");
+      const response = await axios.get("/api/admin/users");
       setUsers(response.data.users || []);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -49,7 +49,7 @@ export default function UserManagement() {
   const fetchUserInventory = async (username) => {
     try {
       setInventoryLoading(true);
-      const response = await axios.get(`/admin/users/${username}/inventory`);
+      const response = await axios.get(`/api/admin/users/${username}/inventory`);
       setInventory(response.data.inventory || []);
     } catch (error) {
       console.error("Error fetching inventory:", error);
@@ -86,7 +86,7 @@ export default function UserManagement() {
     try {
       const isBanned = selectedUser.status === "banned";
       
-      await axios.put(`/admin/users/${selectedUser.username}/ban`, {
+      await axios.put(`/api/admin/users/${selectedUser.username}/ban`, {
         ban: !isBanned
       });
 
