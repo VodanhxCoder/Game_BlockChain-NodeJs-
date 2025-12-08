@@ -1,85 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from 'axios';
+import MediaPicker from "../../../components/MediaPicker"; // Import MediaPicker component
 
-// Mock data
-const MOCK_ITEMS = [
-  {
-    id: 1,
-    name: "Legendary Sword",
-    itemName: "Legendary Sword",
-    rarity: "legendary",
-    dropRate: 0.5,
-    level: 10,
-    image: "⚔️",
-    description: "A powerful legendary sword with immense damage",
-  },
-  {
-    id: 2,
-    name: "Epic Shield",
-    itemName: "Epic Shield",
-    rarity: "epic",
-    dropRate: 2.5,
-    level: 8,
-    image: "🛡️",
-    description: "An epic shield that provides strong defense",
-  },
-  {
-    id: 3,
-    name: "Rare Potion",
-    itemName: "Rare Potion",
-    rarity: "rare",
-    dropRate: 8.0,
-    level: 5,
-    image: "🧪",
-    description: "A rare potion that restores health",
-  },
-  {
-    id: 4,
-    name: "Common Gem",
-    itemName: "Common Gem",
-    rarity: "common",
-    dropRate: 25.0,
-    level: 1,
-    image: "💎",
-    description: "A common gem found throughout the game",
-  },
-  {
-    id: 5,
-    name: "Epic Helmet",
-    itemName: "Epic Helmet",
-    rarity: "epic",
-    dropRate: 3.0,
-    level: 7,
-    image: "⛑️",
-    description: "An epic helmet with great protection",
-  },
-  {
-    id: 6,
-    name: "Rare Boots",
-    itemName: "Rare Boots",
-    rarity: "rare",
-    dropRate: 10.0,
-    level: 4,
-    image: "👢",
-    description: "Rare boots that increase movement speed",
-  },
-];
+// Use import.meta.env for Vite or fallback to empty string
+const API_BASE_URL = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL || '' : '';
 
 export default function ItemManagement() {
-  const [items, setItems] = useState(MOCK_ITEMS);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [filterRarity, setFilterRarity] = useState("all");
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
-    rarity: "common",
+    rarity: "Common",
     dropRate: 0,
-    level: 1,
-    image: "",
-    description: "",
+    imageUrl: "",
+    active: true,
   });
+
+  // Fetch items from backend
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/api/admin/items');
+      setItems(response.data);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      if (error.response?.status === 401) {
+        alert('Session expired or unauthorized. Please log in as admin.');
+        window.location.href = '/login';
+      } else if (error.response?.status === 403) {
+        alert('Access denied. Admin privileges required.');
+      } else {
+        alert('Failed to load items. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredItems = items.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -93,60 +59,104 @@ export default function ItemManagement() {
       name: item.name,
       rarity: item.rarity,
       dropRate: item.dropRate,
-      level: item.level,
-      image: item.image,
-      description: item.description,
+      imageUrl: item.imageUrl || "",
+      active: item.active !== undefined ? item.active : true,
     });
     setShowEditModal(true);
   };
 
-  const handleDelete = (item) => {
-    setSelectedItem(item);
-    setShowDeleteModal(true);
-  };
-
-  const handleAddNew = () => {
-    setSelectedItem(null);
-    setFormData({
-      name: "",
-      rarity: "common",
-      dropRate: 0,
-      level: 1,
-      image: "",
-      description: "",
-    });
-    setShowEditModal(true);
-  };
-
-  const confirmSave = () => {
-    if (selectedItem) {
-      // Edit existing item
-      setItems(
-        items.map((item) =>
-          item.id === selectedItem.id
-            ? { ...item, ...formData, itemName: formData.name }
-            : item
-        )
-      );
-    } else {
-      // Add new item
-      setItems([
-        ...items,
-        {
-          id: Date.now(),
-          ...formData,
-          itemName: formData.name,
-        },
-      ]);
+  const confirmSave = async () => {
+    if (!formData.name || formData.name.trim().length < 3) {
+      alert('Item name must be at least 3 characters');
+      return;
     }
-    setShowEditModal(false);
-    setSelectedItem(null);
+
+    if (formData.dropRate < 0 || formData.dropRate > 100) {
+      alert('Drop rate must be between 0 and 100');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await axios.put(`/api/admin/items/${selectedItem.itemId}`, {
+        name: formData.name.trim(),
+        imageUrl: formData.imageUrl || null,
+        rarity: formData.rarity,
+        dropRate: parseFloat(formData.dropRate),
+        active: formData.active
+      });
+
+      // Refresh items list
+      await fetchItems();
+      setShowEditModal(false);
+      setSelectedItem(null);
+      alert('Item updated successfully!');
+    } catch (error) {
+      console.error('Error updating item:', error);
+      if (error.response?.status === 401) {
+        alert('Session expired. Please log in again.');
+        window.location.href = '/login';
+      } else if (error.response?.status === 403) {
+        alert('Access denied. Admin privileges required.');
+      } else {
+        alert(error.response?.data?.error || 'Failed to update item');
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const confirmDelete = () => {
-    setItems(items.filter((item) => item.id !== selectedItem.id));
-    setShowDeleteModal(false);
-    setSelectedItem(null);
+  const handleAddItem = async () => {
+    if (!formData.name || formData.name.trim().length < 3) {
+      alert('Item name must be at least 3 characters');
+      return;
+    }
+
+    if (formData.dropRate < 0 || formData.dropRate > 100) {
+      alert('Drop rate must be between 0 and 100');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const newItem = {
+        name: formData.name.trim(),
+        imageUrl: formData.imageUrl || null,
+        rarity: formData.rarity,
+        dropRate: parseFloat(formData.dropRate),
+        active: formData.active,
+      };
+
+      await axios.post('/api/admin/items', newItem);
+
+      // Refresh items list
+      await fetchItems();
+      setShowEditModal(false);
+      setFormData({
+        name: "",
+        rarity: "Common",
+        dropRate: 0,
+        imageUrl: "",
+        active: true,
+      });
+      alert('Item added successfully!');
+    } catch (error) {
+      console.error('Error adding item:', error);
+      if (error.response?.status === 401) {
+        alert('Session expired. Please log in again.');
+        window.location.href = '/login';
+      } else if (error.response?.status === 403) {
+        alert('Access denied. Admin privileges required.');
+      } else {
+        alert(error.response?.data?.error || 'Failed to add item');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageSelect = (imageUrl) => {
+    setFormData({ ...formData, imageUrl });
   };
 
   return (
@@ -154,6 +164,36 @@ export default function ItemManagement() {
       <div className="admin-page-header">
         <h1 className="admin-page-header__title">Quản lý vật phẩm</h1>
         <div className="admin-page-header__actions">
+          <button 
+            className="admin-btn admin-btn--primary" 
+            onClick={() => {
+              setSelectedItem(null);
+              setFormData({
+                name: "",
+                rarity: "Common",
+                dropRate: 0,
+                imageUrl: "",
+                active: true,
+              });
+              setShowEditModal(true);
+            }}
+          >
+            Thêm vật phẩm mới
+          </button>
+          <button 
+            className="admin-btn admin-btn--secondary" 
+            onClick={async () => {
+              try {
+                const response = await axios.post('/api/admin/populate-drop-pool');
+                alert(response.data.message || 'Drop pool populated successfully!');
+              } catch (error) {
+                console.error('Error populating drop pool:', error);
+                alert(error.response?.data?.error || 'Failed to populate drop pool.');
+              }
+            }}
+          >
+            Populate Drop Pool
+          </button>
           <select
             className="admin-form-select"
             value={filterRarity}
@@ -161,10 +201,9 @@ export default function ItemManagement() {
             style={{ width: "150px" }}
           >
             <option value="all">Tất cả</option>
-            <option value="common">Common</option>
-            <option value="rare">Rare</option>
-            <option value="epic">Epic</option>
-            <option value="legendary">Legendary</option>
+            <option value="Common">Common</option>
+            <option value="Rare">Rare</option>
+            <option value="Legendary">Legendary</option>
           </select>
           <div className="admin-search">
             <svg className="admin-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -179,84 +218,92 @@ export default function ItemManagement() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="admin-btn admin-btn--primary" onClick={handleAddNew}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Thêm vật phẩm
-          </button>
         </div>
       </div>
 
-      <div className="admin-card">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Vật phẩm</th>
-              <th>Độ hiếm</th>
-              <th>Drop Rate (%)</th>
-              <th>Level yêu cầu</th>
-              <th>Mô tả</th>
-              <th>Hành động</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.map((item) => (
-              <tr key={item.id}>
-                <td data-label="Vật phẩm">
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontSize: "2rem" }}>{item.image}</span>
-                    <span style={{ fontWeight: 600 }}>{item.name}</span>
-                  </div>
-                </td>
-                <td data-label="Độ hiếm">
-                  <span className={`admin-badge admin-badge--${item.rarity}`}>
-                    {item.rarity.toUpperCase()}
-                  </span>
-                </td>
-                <td data-label="Drop Rate">{item.dropRate.toFixed(2)}%</td>
-                <td data-label="Level yêu cầu">Level {item.level}</td>
-                <td data-label="Mô tả" style={{ maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {item.description}
-                </td>
-                <td data-label="Hành động">
-                  <div className="admin-actions">
-                    <button
-                      className="admin-btn admin-btn--secondary admin-btn--small"
-                      onClick={() => handleEdit(item)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      Sửa
-                    </button>
-                    <button
-                      className="admin-btn admin-btn--danger admin-btn--small"
-                      onClick={() => handleDelete(item)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      Xóa
-                    </button>
-                  </div>
-                </td>
+      {loading ? (
+        <div className="admin-card" style={{ padding: '3rem', textAlign: 'center' }}>
+          <p>Đang tải dữ liệu...</p>
+        </div>
+      ) : (
+        <div className="admin-card">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Vật phẩm</th>
+                <th>Độ hiếm</th>
+                <th>Drop Rate (%)</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                    Không tìm thấy vật phẩm nào
+                  </td>
+                </tr>
+              ) : (
+                filteredItems.map((item) => {
+                  const safeDropRate = item.dropRate !== null && item.dropRate !== undefined ? item.dropRate.toFixed(2) : 'N/A';
+                  const safeActive = item.active !== null && item.active !== undefined ? item.active : true;
 
-      {/* Edit/Add Modal */}
+                  return (
+                    <tr key={item.itemId}>
+                      <td data-label="Vật phẩm">
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          {item.imageUrl && (
+                            <img
+                              src={`${API_BASE_URL}${item.imageUrl}`}
+                              alt={item.name}
+                              style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
+                            />
+                          )}
+                          <span style={{ fontWeight: 600 }}>{item.name}</span>
+                        </div>
+                      </td>
+                      <td data-label="Độ hiếm">
+                        <span className={`admin-badge admin-badge--${item.rarity.toLowerCase()}`}>
+                          {item.rarity.toUpperCase()}
+                        </span>
+                      </td>
+                      <td data-label="Drop Rate">{safeDropRate}%</td>
+                      <td data-label="Trạng thái">
+                        <span className={`admin-badge admin-badge--${safeActive ? 'success' : 'warning'}`}>
+                          {safeActive ? 'Hoạt động' : 'Tắt'}
+                        </span>
+                      </td>
+                      <td data-label="Hành động">
+                        <div className="admin-actions">
+                          <button
+                            className="admin-btn admin-btn--secondary admin-btn--small"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                            Sửa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Add/Edit Modal */}
       {showEditModal && (
-        <div className="admin-modal-overlay" onClick={() => setShowEditModal(false)}>
+        <div className="admin-modal-overlay" onClick={() => !saving && setShowEditModal(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal__header">
-              <h3 className="admin-modal__title">
-                {selectedItem ? "Chỉnh sửa vật phẩm" : "Thêm vật phẩm mới"}
-              </h3>
-              <button className="admin-modal__close" onClick={() => setShowEditModal(false)}>
+              <h3 className="admin-modal__title">{selectedItem ? 'Chỉnh sửa vật phẩm' : 'Thêm vật phẩm mới'}</h3>
+              <button className="admin-modal__close" onClick={() => !saving && setShowEditModal(false)} disabled={saving}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -264,114 +311,88 @@ export default function ItemManagement() {
             </div>
             <div className="admin-modal__body">
               <div className="admin-form-group">
-                <label className="admin-form-label">Tên vật phẩm</label>
+                <label className="admin-form-label">Tên vật phẩm *</label>
                 <input
                   type="text"
                   className="admin-form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nhập tên vật phẩm"
+                  placeholder="Nhập tên vật phẩm (tối thiểu 3 ký tự)"
+                  disabled={saving}
                 />
               </div>
 
               <div className="admin-form-group">
-                <label className="admin-form-label">Hình ảnh (Emoji)</label>
-                <input
-                  type="text"
-                  className="admin-form-input"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="Nhập emoji (⚔️, 🛡️, 🧪...)"
+                <label className="admin-form-label">Hình ảnh</label>
+                <MediaPicker
+                  value={formData.imageUrl}
+                  onSelect={handleImageSelect}
+                  placeholder="Chọn hình ảnh"
+                  disabled={saving}
                 />
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div className="admin-form-group">
-                  <label className="admin-form-label">Độ hiếm</label>
+                  <label className="admin-form-label">Độ hiếm *</label>
                   <select
                     className="admin-form-select"
                     value={formData.rarity}
                     onChange={(e) => setFormData({ ...formData, rarity: e.target.value })}
+                    disabled={saving}
                   >
-                    <option value="common">Common</option>
-                    <option value="rare">Rare</option>
-                    <option value="epic">Epic</option>
-                    <option value="legendary">Legendary</option>
+                    <option value="Common">Common</option>
+                    <option value="Rare">Rare</option>
+                    <option value="Legendary">Legendary</option>
                   </select>
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-form-label">Drop Rate (%)</label>
+                  <label className="admin-form-label">Drop Rate (%) *</label>
                   <input
                     type="number"
                     step="0.1"
+                    min="0"
+                    max="100"
                     className="admin-form-input"
                     value={formData.dropRate}
-                    onChange={(e) => setFormData({ ...formData, dropRate: parseFloat(e.target.value) })}
-                    placeholder="0.0"
+                    onChange={(e) => setFormData({ ...formData, dropRate: parseFloat(e.target.value) || 0 })}
+                    placeholder="0.0 - 100.0"
+                    disabled={saving}
                   />
                 </div>
               </div>
 
               <div className="admin-form-group">
-                <label className="admin-form-label">Level yêu cầu</label>
-                <input
-                  type="number"
-                  className="admin-form-input"
-                  value={formData.level}
-                  onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) })}
-                  placeholder="1"
-                />
-              </div>
-
-              <div className="admin-form-group">
-                <label className="admin-form-label">Mô tả</label>
-                <textarea
-                  className="admin-form-textarea"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Nhập mô tả vật phẩm"
-                />
+                <label className="admin-form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.active}
+                    onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    disabled={saving}
+                    style={{ width: 'auto' }}
+                  />
+                  Kích hoạt vật phẩm (có thể rơi trong game)
+                </label>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  Bỏ chọn để tạm thời vô hiệu hóa vật phẩm này khỏi drop pool
+                </p>
               </div>
             </div>
             <div className="admin-modal__footer">
-              <button className="admin-btn admin-btn--secondary" onClick={() => setShowEditModal(false)}>
+              <button 
+                className="admin-btn admin-btn--secondary" 
+                onClick={() => setShowEditModal(false)}
+                disabled={saving}
+              >
                 Hủy
               </button>
-              <button className="admin-btn admin-btn--primary" onClick={confirmSave}>
-                {selectedItem ? "Lưu thay đổi" : "Thêm vật phẩm"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Modal */}
-      {showDeleteModal && selectedItem && (
-        <div className="admin-modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px" }}>
-            <div className="admin-modal__header">
-              <h3 className="admin-modal__title">Xóa vật phẩm</h3>
-              <button className="admin-modal__close" onClick={() => setShowDeleteModal(false)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-            <div className="admin-modal__body">
-              <p style={{ color: "var(--text-primary)", marginBottom: "1rem" }}>
-                Bạn có chắc chắn muốn xóa vật phẩm "{selectedItem.name}"?
-              </p>
-              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem" }}>
-                Hành động này không thể hoàn tác.
-              </p>
-            </div>
-            <div className="admin-modal__footer">
-              <button className="admin-btn admin-btn--secondary" onClick={() => setShowDeleteModal(false)}>
-                Hủy
-              </button>
-              <button className="admin-btn admin-btn--danger" onClick={confirmDelete}>
-                Xóa
+              <button 
+                className="admin-btn admin-btn--primary" 
+                onClick={selectedItem ? confirmSave : handleAddItem}
+                disabled={saving}
+              >
+                {saving ? 'Đang lưu...' : (selectedItem ? 'Lưu thay đổi' : 'Thêm vật phẩm')}
               </button>
             </div>
           </div>

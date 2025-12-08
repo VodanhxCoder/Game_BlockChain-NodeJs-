@@ -24,6 +24,7 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
+  const [requiresCaptcha, setRequiresCaptcha] = useState(false);
   const recaptchaRef = useRef(null);
 
   // Redirect to home if already authenticated
@@ -41,12 +42,33 @@ export default function SignIn() {
     }
   }, [isDark]);
 
+  // Check if CAPTCHA is required on mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
+        const res = await fetch(`${API_BASE}/api/auth/check-status`, {
+          headers: { 'ngrok-skip-browser-warning': 'true' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.requiresCaptcha) {
+            setRequiresCaptcha(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check auth status:", err);
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
     setError("");
     
-    if (!captchaToken) {
+    if (requiresCaptcha && !captchaToken) {
       setError("Please complete the reCAPTCHA verification.");
       return;
     }
@@ -62,12 +84,27 @@ export default function SignIn() {
       // Hash the password on the client before sending to the login handler.
       // NOTE: Ensure your backend expects the hashed password; otherwise adapt accordingly.
       const hashed = await hashTextSHA256(sanitizedPassword);
-      await login(sanitizedEmail, hashed);
+      await login(sanitizedEmail, hashed, captchaToken);
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign in failed.");
+      // Handle specific error cases
+      if (err?.isBanned) {
+        setError("Your account has been banned. Please contact support for assistance.");
+      } else if (err?.isInactive) {
+        setError("Your account is inactive. Please contact support to reactivate your account.");
+      } else {
+        setError(err?.message || "Sign in failed.");
+      }
+      
+      if (err?.requiresCaptcha) {
+        setRequiresCaptcha(true);
+      }
     } finally {
       setLoading(false);
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setCaptchaToken(null);
+      }
     }
   };
 
@@ -208,16 +245,18 @@ export default function SignIn() {
               <Link to="/forgot" className="auth-link">Forgot password?</Link>
             </div>
 
-            <div className="recaptcha-container">
-              <ReCAPTCHA
-                key={isDark ? "dark" : "light"}
-                ref={recaptchaRef}
-                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                onChange={(token) => setCaptchaToken(token)}
-                onExpired={() => setCaptchaToken(null)}
-                theme={isDark ? "dark" : "light"}
-              />
-            </div>
+            {requiresCaptcha && (
+              <div className="recaptcha-container">
+                <ReCAPTCHA
+                  key={isDark ? "dark" : "light"}
+                  ref={recaptchaRef}
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  onChange={(token) => setCaptchaToken(token)}
+                  onExpired={() => setCaptchaToken(null)}
+                  theme={isDark ? "dark" : "light"}
+                />
+              </div>
+            )}
 
             <div className="auth-actions">
               <button type="submit" className="btn primary" disabled={loading}>

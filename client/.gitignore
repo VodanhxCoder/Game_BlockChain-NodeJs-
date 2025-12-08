@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env 
 .env.*.local
+/node_modules
+
+

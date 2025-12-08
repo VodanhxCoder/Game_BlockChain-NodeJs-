@@ -1,21 +1,20 @@
 // Displays featured NFT drops, power-up bundles, and recent on-chain marketplace activity.
 import React, { useEffect, useState } from "react";
 import axios from 'axios';
+import { ethers } from 'ethers';
 import { useAuth } from '../../../context/AuthContext';
 import WalletConnect from '../../../components/WalletConnect';
 import { useWeb3 } from '../../../context/Web3Context';
+import { useTheme } from '../../../context/ThemeContext';
 
-const featuredDrops = [
-  { id: 1, name: "Nebula Phantom", rarity: "Legendary", price: "1200 ZEN", stock: "25 / 50", accent: "#fee2ff" },
-  { id: 2, name: "Aurora Core Pack", rarity: "Epic", price: "680 ZEN", stock: "80 / 200", accent: "#e0f2fe" },
-  { id: 3, name: "Chrono Blade", rarity: "Mythic", price: "2.3 BNB", stock: "4 / 12", accent: "#fef3c7" },
-];
-
-const bundles = [
-  { id: "booster", title: "XP Booster 3x", desc: "Tăng kinh nghiệm sau mỗi trận trong 24h", price: "320 ZEN" },
-  { id: "shield", title: "Quantum Shield", desc: "Khiên hấp thụ 2 đòn chí mạng", price: "0.12 BNB" },
-  { id: "pass", title: "Battle Pass S4", desc: "Mở khóa 60 cấp phần thưởng và skin độc quyền", price: "900 ZEN" },
-];
+// Vite-friendly API base URL and helper to build full image URLs
+const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env) ? (import.meta.env.VITE_API_BASE_URL || '') : '';
+const getFullImageUrl = (imgPath) => {
+  if (!imgPath) return null;
+  if (imgPath.startsWith('http')) return imgPath;
+  if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
+  return `${API_BASE_URL}/${imgPath}`.replace(/\/\/+/, '/');
+};
 
 const activities = [
   { player: "Raven", item: "Chrono Blade", time: "1 phút trước", tx: "#7F9D...1A9" },
@@ -26,6 +25,7 @@ const activities = [
 export default function Shop() {
   const { user } = useAuth();
   const { account, isConnected } = useWeb3();
+  const { isDark } = useTheme();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [viewModal, setViewModal] = useState({ open: false, itemHash: '', itemName: '' });
@@ -77,30 +77,133 @@ export default function Shop() {
     }
     
     try {
-      console.log('🔄 Starting blockchain trade...');
-      
-      // Step 1: Ask user to sign a message to approve the trade
-      console.log('🦊 Requesting user signature for trade approval...');
-      
-      if (!window.ethereum) {
-        throw new Error('MetaMask not installed');
+      console.log('🔄 Starting trade flow — preparing calldata from backend...');
+
+      // Call backend to prepare calldata and get seller signature (if seller provided one)
+      const prep = await axios.post('/api/market/prepare-trade', {
+        listingId: tradeModal.listing.listingId,
+        buyer: user.username,
+        buyerInventoryItemId: tradeModal.selectedItemId,
+        buyerWallet: account
+      });
+
+      const prepData = prep.data || {};
+      const { contractAddress, sellerSignature, sellerItemHash, buyerItemHash, listingId, sellerWallet, buyerWallet, sellerSignatureTimestamp } = prepData;
+
+      console.log('📦 Prepared trade data:', { contractAddress, sellerSignature: sellerSignature ? 'present' : 'missing', sellerSignatureTimestamp, listingId });
+
+      // If seller provided an off-chain signature that allows buyer-initiated on-chain execution,
+      // call the contract method `executeTradeByParticipants` from the buyer's wallet so buyer pays gas.
+      if (sellerSignature && contractAddress && window.ethereum && sellerWallet && sellerSignatureTimestamp) {
+        try {
+          console.log('⛓️  Seller signature present — invoking on-chain trade via MetaMask');
+
+          const sellerAddr = sellerWallet;
+          const buyerAddr = account;
+
+          const sellerHashBytes = sellerItemHash ? ('0x' + sellerItemHash) : ('0x' + (tradeModal.listing.itemHash || '0'.repeat(64)));
+          const buyerHashBytes = buyerItemHash ? ('0x' + buyerItemHash) : ('0x' + '0'.repeat(64));
+
+          console.log('📝 Transaction parameters:');
+          console.log('   Seller item:', sellerHashBytes);
+          console.log('   Buyer item:', buyerHashBytes);
+          console.log('   Seller addr:', sellerAddr);
+          console.log('   Buyer addr:', buyerAddr);
+          console.log('   Listing ID:', listingId || tradeModal.listing.listingId);
+          console.log('   Timestamp:', sellerSignatureTimestamp);
+          console.log('   Contract:', contractAddress);
+
+          // Create the contract-compatible signature
+          // Contract expects: keccak256(sellerItemHash, listingId, timestamp, contractAddress)
+          // We need to recreate this message and have the seller sign it via MetaMask
+          const messageHash = ethers.solidityPackedKeccak256(
+            ['bytes32', 'uint256', 'uint256', 'address'],
+            [sellerHashBytes, listingId || tradeModal.listing.listingId, sellerSignatureTimestamp, contractAddress]
+          );
+          
+          console.log('   Expected message hash:', messageHash);
+          console.log('   Seller signature:', sellerSignature.substring(0, 20) + '...');
+          
+          // Verify signature matches
+          try {
+            const recoveredAddr = ethers.verifyMessage(ethers.getBytes(messageHash), sellerSignature);
+            console.log('   Recovered address:', recoveredAddr);
+            console.log('   Matches seller?', recoveredAddr.toLowerCase() === sellerAddr.toLowerCase());
+            
+            if (recoveredAddr.toLowerCase() !== sellerAddr.toLowerCase()) {
+              throw new Error('Signature verification failed - recovered address does not match seller');
+            }
+          } catch (verifyErr) {
+            console.error('❌ Signature verification failed:', verifyErr);
+            throw new Error('Invalid seller signature: ' + verifyErr.message);
+          }
+          
+          // Minimal ABI for the buyer-executed function
+          const abi = [
+            'function executeTradeByParticipants(bytes32,bytes32,address,address,bytes,uint256,uint256)'
+          ];
+
+          const provider = new ethers.BrowserProvider(window.ethereum);
+          const signerLocal = await provider.getSigner();
+          const contract = new ethers.Contract(contractAddress, abi, signerLocal);
+
+          console.log('📤 Sending transaction to contract...');
+          const tx = await contract.executeTradeByParticipants(
+            sellerHashBytes,
+            buyerHashBytes,
+            sellerAddr,
+            buyerAddr,
+            sellerSignature,
+            listingId || tradeModal.listing.listingId,
+            sellerSignatureTimestamp,
+            { gasLimit: 800000 }
+          );
+
+          console.log('🔄 Waiting for MetaMask tx to be mined...', tx.hash);
+          const receipt = await tx.wait();
+
+          console.log('✅ On-chain trade mined:', receipt.transactionHash || receipt.hash);
+          
+          // Calculate gas fee paid by buyer
+          const gasUsed = receipt.gasUsed;
+          const effectiveGasPrice = receipt.gasPrice || receipt.effectiveGasPrice;
+          let gasFeeEth = '0';
+          if (gasUsed && effectiveGasPrice) {
+            const gasFeeWei = gasUsed * effectiveGasPrice;
+            gasFeeEth = ethers.formatEther(gasFeeWei);
+          }
+
+          // Notify backend to finalize DB swap and record gas usage
+          await axios.post('/api/market/confirm-trade', {
+            txHash: receipt.transactionHash || receipt.hash,
+            listingId: tradeModal.listing.listingId,
+            buyer: user.username,
+            buyerInventoryItemId: tradeModal.selectedItemId
+          });
+
+          alert(`✅ Trade successful!\n\nTransaction: ${(receipt.transactionHash || receipt.hash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
+          window.dispatchEvent(new Event('market:updated'));
+          fetchListings();
+          closeTradeModal();
+          return;
+        } catch (onchainErr) {
+          console.error('On-chain execution failed, falling back to server flow:', onchainErr);
+          // fall through to server fallback below
+        }
       }
 
-      const sellerName = typeof tradeModal.listing.seller === 'string' 
-        ? tradeModal.listing.seller 
+      // Fallback: ask buyer to sign a small approval message and POST to server so backend (owner) executes the trade
+      console.log('🦊 Requesting user signature for server-executed trade approval...');
+      if (!window.ethereum) throw new Error('MetaMask not installed');
+
+      const sellerName = typeof tradeModal.listing.seller === 'string'
+        ? tradeModal.listing.seller
         : (tradeModal.listing.seller?.username || tradeModal.listing.seller?.playername || 'Unknown');
-      
+
       const message = `Approve trade:\nListing ID: ${tradeModal.listing.listingId}\nSeller: ${sellerName}\nBuyer: ${user.username}\nTimestamp: ${Date.now()}`;
-      
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, account],
-      });
-      
-      console.log('✅ User approved trade with signature');
-      
-      // Step 2: Send approval to backend - backend will execute the trade
-      console.log('📡 Submitting trade to blockchain...');
+      const signature = await window.ethereum.request({ method: 'personal_sign', params: [message, account] });
+
+      console.log('📡 Submitting trade to backend for execution (backend pays gas)');
       const tradeResp = await axios.post('/api/market/execute-trade', {
         listingId: tradeModal.listing.listingId,
         buyer: user.username,
@@ -109,13 +212,11 @@ export default function Shop() {
         signature,
         message
       });
-      
-      const { txHash, success } = tradeResp.data;
-      console.log('✅ Trade executed:', txHash);
-      
-      alert(`Trade successful!\nTransaction: ${txHash.substring(0, 10)}...\n\nCheck your inventory!`);
-      
-      // notify other parts of the app and refresh
+
+      const { txHash } = tradeResp.data || {};
+      console.log('✅ Server-executed trade response:', txHash);
+
+      alert(`Trade successful!\nTransaction: ${txHash ? (txHash.substring ? txHash.substring(0,10)+'...' : txHash) : 'pending'}`);
       window.dispatchEvent(new Event('market:updated'));
       fetchListings();
       closeTradeModal();
@@ -175,26 +276,6 @@ export default function Shop() {
         </div>
       )}
 
-      <section className="page-grid stagger">
-        {featuredDrops.map((drop) => (
-          <article
-            key={drop.id}
-            className="page-card item-card"
-            style={{ "--card-accent": drop.accent }}
-          >
-            <div className="item-card__meta">
-              <span className="chip chip--accent">{drop.rarity}</span>
-              <span className="chip">Kho: {drop.stock}</span>
-            </div>
-            <h3>{drop.name}</h3>
-            <div className="metric-value">{drop.price}</div>
-            <button type="button" className="ui-btn ui-btn--primary">
-              Thêm vào giỏ
-            </button>
-          </article>
-        ))}
-      </section>
-
       <section className="page-grid">
         <div className="page-card">
           <h3>Marketplace</h3>
@@ -208,42 +289,43 @@ export default function Shop() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
                 {listings.map(l => (
                   <article key={l.listingId} className="page-card" style={{ padding: 12 }}>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                      <div style={{ width: 72, height: 72, background: '#0b1220', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {l.inventoryItem?.item?.itemImage ? (
-                          <img src={l.inventoryItem.item.itemImage} alt="item" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6 }} />
-                        ) : (
-                          <div style={{ color: '#fff', fontSize: 12 }}>{l.inventoryItem?.item?.itemName?.slice(0,2) || '—'}</div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                          <strong>{l.inventoryItem?.item?.itemName || l.itemHash.slice(0,12) + '…'}</strong>
-                          <span style={{ fontSize: 12, color: '#666' }}>
-                            {l.inventoryItem?.item?.itemTier || l.tier || '—'}
-                          </span>
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        {/* image / placeholder adapts to theme */}
+                        <div style={{ width: 72, height: 72, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? '#0b1220' : '#f3f4f6' }}>
+                          {getFullImageUrl(l.inventoryItem?.item?.itemImage) ? (
+                              <img src={getFullImageUrl(l.inventoryItem.item.itemImage)} alt="item" loading="lazy" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 6 }} />
+                            ) : (
+                              <div style={{ color: isDark ? '#fff' : '#111827', fontSize: 12 }}>{l.inventoryItem?.item?.itemName?.slice(0,2) || '—'}</div>
+                            )}
                         </div>
-                        <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
-                        {!l.seller?.walletAddress && (
-                          <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            ⚠️ Seller wallet not connected
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                            <strong style={{ color: isDark ? '#fff' : '#111827' }}>{l.inventoryItem?.item?.itemName || l.itemHash.slice(0,12) + '…'}</strong>
+                            <span style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280' }}>
+                              {l.inventoryItem?.item?.itemTier || l.tier || '—'}
+                            </span>
                           </div>
-                        )}
-                        <div style={{ fontSize: 12, color: '#444', marginTop: 8 }}>
-                          Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
-                        </div>
-                        <div style={{ marginTop: 8, fontSize: 11, color: '#666', display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <span style={{ fontFamily: 'monospace', opacity: 0.85 }}>{(l.itemHash || '').substring(0, 16)}{(l.itemHash || '').length > 16 ? '…' : ''}</span>
-                          <button
-                            className="ui-btn ui-btn--ghost"
-                            style={{ fontSize: 11, padding: '4px 8px' }}
-                            onClick={() => setViewModal({ open: true, itemHash: l.itemHash || '', itemName: l.inventoryItem?.item?.itemName || '' })}
-                          >
-                            View
-                          </button>
+                          <div style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
+                          {!l.seller?.walletAddress && (
+                            <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              ⚠️ Seller wallet not connected
+                            </div>
+                          )}
+                          <div style={{ fontSize: 12, color: isDark ? '#d1d5db' : '#374151', marginTop: 8 }}>
+                            Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
+                          </div>
+                          <div style={{ marginTop: 8, fontSize: 11, color: isDark ? '#9ca3af' : '#6b7280', display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontFamily: 'monospace', opacity: 0.85 }}>{(l.itemHash || '').substring(0, 16)}{(l.itemHash || '').length > 16 ? '…' : ''}</span>
+                            <button
+                              className="ui-btn ui-btn--ghost"
+                              style={{ fontSize: 11, padding: '4px 8px' }}
+                              onClick={() => setViewModal({ open: true, itemHash: l.itemHash || '', itemName: l.inventoryItem?.item?.itemName || '' })}
+                            >
+                              View
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
                     <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
                           <button
                             className="ui-btn ui-btn--primary"
@@ -282,29 +364,6 @@ export default function Shop() {
 
       <section className="page-grid">
         <div className="page-card">
-          <h3>Gói tăng tốc</h3>
-          <p className="page-hero__text">Kết hợp booster và buff giúp bạn leo rank nhanh hơn.</p>
-          <div className="stagger">
-            {bundles.map((bundle) => (
-              <div key={bundle.id} className="settings-item">
-                <div>
-                  <strong>{bundle.title}</strong>
-                  <p>{bundle.desc}</p>
-                </div>
-                <div>
-                  <div className="metric-value" style={{ fontSize: "1.2rem" }}>
-                    {bundle.price}
-                  </div>
-                  <button type="button" className="ui-btn ui-btn--ghost" style={{ marginTop: 8 }}>
-                    Mua gói
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="page-card">
           <h3>Hoạt động on-chain</h3>
           <p className="page-hero__text">Giao dịch mới nhất từ cộng đồng.</p>
           <div className="list-card" style={{ border: "none", boxShadow: "none" }}>
@@ -335,10 +394,10 @@ export default function Shop() {
       </section>
       {viewModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
-          <div style={{ width: 520, background: '#fff', borderRadius: 8, padding: 20 }}>
+          <div style={{ width: 520, background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
             <h3 style={{ marginTop: 0 }}>{viewModal.itemName || 'Item details'}</h3>
-            <p style={{ fontSize: 12, color: '#444' }}>Full item hash (copy to clipboard):</p>
-            <div style={{ fontFamily: 'monospace', background: '#f6f6f8', padding: 12, borderRadius: 6, wordBreak: 'break-all' }}>{viewModal.itemHash}</div>
+            <p style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#444' }}>Full item hash (copy to clipboard):</p>
+            <div style={{ fontFamily: 'monospace', background: isDark ? '#071022' : '#f6f6f8', padding: 12, borderRadius: 6, wordBreak: 'break-all' }}>{viewModal.itemHash}</div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <button className="ui-btn ui-btn--ghost" onClick={closeViewModal}>Close</button>
               <button className="ui-btn ui-btn--primary" onClick={handleCopyHash}>{copySuccess ? 'Copied!' : 'Copy'}</button>
@@ -348,9 +407,9 @@ export default function Shop() {
       )}
       {tradeModal.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}>
-          <div style={{ width: 720, maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, padding: 20 }}>
+          <div style={{ width: 720, maxHeight: '80vh', overflowY: 'auto', background: isDark ? '#0b1220' : '#fff', borderRadius: 8, padding: 20, color: isDark ? '#e5e7eb' : '#111827' }}>
             <h3 style={{ marginTop: 0 }}>Choose an item to trade</h3>
-            <p style={{ fontSize: 13, color: '#444' }}>{tradeModal.listing?.inventoryItem?.item?.itemName} — select one of your items to offer in exchange.</p>
+            <p style={{ fontSize: 13, color: isDark ? '#9ca3af' : '#444' }}>{tradeModal.listing?.inventoryItem?.item?.itemName} — select one of your items to offer in exchange.</p>
             <div style={{ marginTop: 12 }}>
               {tradeModal.loading ? (
                 <div>Loading your inventory…</div>
@@ -362,8 +421,8 @@ export default function Shop() {
                     <label key={ii.inventoryItemId} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: 8, border: tradeModal.selectedItemId === ii.inventoryItemId ? '1px solid #0b74de' : '1px solid #eee', borderRadius: 6 }}>
                       <input type="radio" name="trade-item" checked={tradeModal.selectedItemId === ii.inventoryItemId} onChange={() => setTradeModal(prev => ({ ...prev, selectedItemId: ii.inventoryItemId }))} />
                       <div style={{ width: 56, height: 56, background: '#0b1220', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {ii.item?.itemImage ? (
-                          <img src={ii.item.itemImage} alt="item" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} />
+                        {getFullImageUrl(ii.item?.itemImage) ? (
+                          <img src={getFullImageUrl(ii.item.itemImage)} alt="item" loading="lazy" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 4 }} />
                         ) : (
                           <div style={{ color: '#fff' }}>{ii.item?.itemName?.slice(0,2) || '—'}</div>
                         )}
@@ -378,6 +437,25 @@ export default function Shop() {
                 </div>
               )}
             </div>
+            {tradeModal.selectedItemId && isConnected && (
+              <div style={{ 
+                marginTop: 16, 
+                padding: 12, 
+                background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: 6,
+                fontSize: 12,
+                color: isDark ? '#93c5fd' : '#1e40af'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span>⛽</span>
+                  <strong>Gas Fee Notice</strong>
+                </div>
+                <div>
+                  You will pay the blockchain gas fee for this transaction from your MetaMask wallet. Estimated: ~0.001-0.003 ETH
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
               <button className="ui-btn ui-btn--ghost" onClick={closeTradeModal}>Cancel</button>
               <button className="ui-btn ui-btn--primary" disabled={!tradeModal.selectedItemId} onClick={confirmTrade}>Confirm trade</button>

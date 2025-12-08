@@ -2,12 +2,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const divisions = [
-  { title: "Mythic", players: 124, color: "#fef3c7" },
-  { title: "Nova", players: 884, color: "#e0f2fe" },
-  { title: "Vanguard", players: 2120, color: "#ede9fe" },
-];
-
 export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState([]);
@@ -39,19 +33,6 @@ export default function Leaderboard() {
         <p className="page-hero__text">
           Theo dõi realtime điểm Space Raiders. Bảng xếp hạng được cập nhật sau mỗi trận đấu.
         </p>
-      </section>
-
-      <section className="page-grid">
-        {divisions.map((division) => (
-          <article key={division.title} className="page-card" style={{ background: `linear-gradient(135deg, ${division.color}, transparent)` }}>
-            <h3>{division.title}</h3>
-            <div className="metric-value">{division.players}</div>
-            <div className="metric-label">Phi công đang cạnh tranh</div>
-            <div className="ui-progress">
-              <div className="ui-progress__bar" style={{ width: `${Math.min(100, (division.players / 2500) * 100)}%` }} />
-            </div>
-          </article>
-        ))}
       </section>
 
       <section className="list-card fade-in-up">

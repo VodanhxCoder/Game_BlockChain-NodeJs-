@@ -1,4 +1,5 @@
 import db from '../models/index.js';
+import { ethers } from 'ethers';
 
 const { sequelize, MarketListing, InventoryItem, Item, User } = db;
 
@@ -84,12 +85,44 @@ const createListing = async (req, res) => {
   const item = await Item.findOne({ where: { itemId: ii.itemId } });
   const tier = item && item.rarity ? item.rarity : 'Common';
 
+    // Allow optional sellerSignature (signed by seller wallet) and verify if present
+    const sellerSignature = req.body.sellerSignature || null;
+
+    const sellerSignatureTs = req.body.sellerSignatureTimestamp || req.body.sellerSignatureTs || null;
+    if (sellerSignature) {
+      // Verify signature matches seller's linked wallet (if available)
+      const sellerUser = await User.findOne({ where: { username } });
+      if (!sellerUser || !sellerUser.walletAddress) {
+        await t.rollback();
+        return res.status(400).json({ error: 'Seller wallet address required to accept on-chain buyer-initiated trades' });
+      }
+      try {
+        if (!sellerSignatureTs) {
+          await t.rollback();
+          return res.status(400).json({ error: 'sellerSignatureTimestamp required alongside sellerSignature' });
+        }
+        // Seller signs a simple approval message (not contract-specific yet)
+        const message = `Approve listing for item ${ii.itemHash} - timestamp: ${sellerSignatureTs}`;
+        const recovered = ethers.verifyMessage(message, sellerSignature);
+        if (recovered.toLowerCase() !== sellerUser.walletAddress.toLowerCase()) {
+          await t.rollback();
+          return res.status(400).json({ error: 'Invalid seller signature' });
+        }
+      } catch (sigErr) {
+        await t.rollback();
+        console.error('Signature verification error:', sigErr && sigErr.message ? sigErr.message : sigErr);
+        return res.status(400).json({ error: 'Failed to verify seller signature' });
+      }
+    }
+
     const listing = await MarketListing.create({
       itemHash: ii.itemHash,
       wantedItemId: wantedItemId || null,
       seller: username,
       tier,
-      createdAt: new Date()
+      createdAt: new Date(),
+      sellerSignature: sellerSignature,
+      sellerSignatureTimestamp: sellerSignatureTs
     }, { transaction: t });
 
     // mark inventory item as in_market
@@ -262,5 +295,28 @@ export default {
   },
   createListing,
   buyListing,
-  cancelListing
+  cancelListing,
+  updateSignature: async (req, res) => {
+    const { listingId, sellerSignature, sellerSignatureTimestamp } = req.body;
+    if (!listingId || !sellerSignature || !sellerSignatureTimestamp) {
+      return res.status(400).json({ error: 'listingId, sellerSignature, and sellerSignatureTimestamp required' });
+    }
+    
+    try {
+      const listing = await MarketListing.findOne({ where: { listingId } });
+      if (!listing) {
+        return res.status(404).json({ error: 'Listing not found' });
+      }
+      
+      // Update the listing with signature
+      listing.sellerSignature = sellerSignature;
+      listing.sellerSignatureTimestamp = sellerSignatureTimestamp;
+      await listing.save();
+      
+      return res.json({ success: true, listingId });
+    } catch (err) {
+      console.error('Error updating signature', err);
+      return res.status(500).json({ error: 'Failed to update signature' });
+    }
+  }
 };

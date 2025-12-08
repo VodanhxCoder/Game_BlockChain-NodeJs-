@@ -1,6 +1,7 @@
 // src/routes/inventory.js
 import express from 'express';
 import InventoryController from '../controllers/InventoryController.js';
+import authJwt from '../middleware/authJwt.js';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/inventory/:username', InventoryController.getUserInventory);
  * @desc Simulate an item drop for a user
  * @body { username: string, level?: number }
  */
-router.post('/drop', InventoryController.simulateItemDrop);
+router.post('/drop', authJwt.verifyToken, InventoryController.simulateItemDrop);
 
 /**
  * @route GET /api/drop-pool

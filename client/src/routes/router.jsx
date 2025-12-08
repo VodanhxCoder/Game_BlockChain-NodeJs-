@@ -13,6 +13,8 @@ import Dashboard from "../pages/Admin/Dashboard/Dashboard";
 import UserManagement from "../pages/Admin/Users/UserManagement";
 import ItemManagement from "../pages/Admin/Items/ItemManagement";
 import GameLayoutEditor from "../pages/Admin/GameLayout/GameLayoutEditor";
+import RoleBasedRedirect from "../components/RoleBasedRedirect";
+import OAuthCallback from "../components/OAuthCallback";
 
 /**
  * Public routes show the split sign-in/sign-up experience.
@@ -22,10 +24,15 @@ import GameLayoutEditor from "../pages/Admin/GameLayout/GameLayoutEditor";
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<SignIn />} />
+      {/* Public routes */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/auth/callback" element={<OAuthCallback />} />
 
+      {/* Root redirects based on role after login */}
+      <Route path="/" element={<RoleBasedRedirect />} />
+
+      {/* User routes - only accessible by players */}
       <Route element={<AppLayout />}>
         <Route path="/H" element={<Homepage />} />
         <Route path="/shop" element={<Shop />} />
@@ -34,6 +41,7 @@ export default function AppRouter() {
         <Route path="/settings" element={<Settings />} />
       </Route>
 
+      {/* Admin routes - only accessible by admins */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="users" element={<UserManagement />} />
@@ -41,7 +49,8 @@ export default function AppRouter() {
         <Route path="layout" element={<GameLayoutEditor />} />
       </Route>
 
-      <Route path="*" element={<SignIn />} />
+      {/* Catch-all fallback */}
+      <Route path="*" element={<RoleBasedRedirect />} />
     </Routes>
   );
 }

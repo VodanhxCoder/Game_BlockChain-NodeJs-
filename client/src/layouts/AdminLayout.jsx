@@ -34,11 +34,11 @@ export default function AdminLayout() {
     return <Navigate to="/signin" replace />;
   }
 
-  // TODO: Add role check when backend is ready
-  // For now, allow all authenticated users to access admin
-  // if (user?.role !== "admin") {
-  //   return <Navigate to="/H" replace />;
-  // }
+  // Only admins can access admin panel
+  if (user?.role !== "admin") {
+    console.log('[AdminLayout] Non-admin user detected, redirecting to /H');
+    return <Navigate to="/H" replace />;
+  }
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
