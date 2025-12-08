@@ -38,7 +38,12 @@ const httpServer = createServer(app);
 // Initialize Socket.IO with CORS configuration
 const io = new Server(httpServer, {
   cors: {
-    origin: [process.env.CLIENT_URL || 'http://localhost:5173', "https://front-end-game-blockchain.vercel.app"],
+    origin: [
+      process.env.CLIENT_URL,
+      'http://localhost:5173', 
+      "https://front-end-game-blockchain.vercel.app",
+      "https://game-block-chain-node-js.vercel.app"
+    ].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST"]
   }
@@ -135,8 +140,12 @@ app.use((req, res, next) => {
 
 // Enable CORS for all routes
 app.use(cors({
-    origin:[ process.env.CLIENT_URL || 'http://localhost:5173',
-        "https://front-end-game-blockchain.vercel.app"],
+    origin:[ 
+        process.env.CLIENT_URL,
+        'http://localhost:5173',
+        "https://front-end-game-blockchain.vercel.app",
+        "https://game-block-chain-node-js.vercel.app"
+    ].filter(Boolean),
     credentials: true
 }));
 
