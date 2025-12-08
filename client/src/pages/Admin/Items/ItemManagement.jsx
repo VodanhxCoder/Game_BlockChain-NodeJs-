@@ -255,7 +255,7 @@ export default function ItemManagement() {
                         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                           {item.imageUrl && (
                             <img
-                              src={`${API_BASE_URL}${item.imageUrl}`}
+                              src={`${API_BASE_URL.replace(/\/+$/, '')}/${item.imageUrl.replace(/^\/+/, '')}`}
                               alt={item.name}
                               style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }}
                             />

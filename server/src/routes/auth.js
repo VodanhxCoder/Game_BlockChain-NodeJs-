@@ -43,6 +43,7 @@ router.get('/me', authJwt.verifyToken, (req, res) => {
       highScore: user.highScore || 0,
       userImage: user.userImage,
       walletAddress: user.walletAddress || null,
+      createdAt: user.createdAt
     }
   });
 });
@@ -226,6 +227,24 @@ router.post('/login',
       });
     }
 
+    // Check if user account is banned
+    if (user.status === 'banned') {
+      console.log(`[Auth] 🚫 Banned user attempted login: ${username} from IP: ${clientIp}`);
+      return res.status(403).json({ 
+        error: `Your account has been banned. Time: ${new Date().toLocaleString()}. Please contact support for assistance.`,
+        isBanned: true
+      });
+    }
+
+    // Check if user account is inactive
+    if (user.status === 'inactive') {
+      console.log(`[Auth] ⚠️ Inactive user attempted login: ${username} from IP: ${clientIp}`);
+      return res.status(403).json({ 
+        error: 'Your account is inactive. Please contact support to reactivate your account.',
+        isInactive: true
+      });
+    }
+
     // Compare the SHA-256 hex string directly with stored value
     const isValid = user.validPassword(passwordHash);
 
@@ -258,6 +277,7 @@ router.post('/login',
         highScore: user.highScore,
         userImage: user.userImage,
         walletAddress: user.walletAddress || null,
+        createdAt: user.createdAt
       },
     });
   } catch (error) {
@@ -344,6 +364,7 @@ router.post('/signup',
         role: newUser.role,
         status: newUser.status,
         highScore: newUser.highScore,
+        createdAt: newUser.createdAt
       },
     });
   } catch (error) {

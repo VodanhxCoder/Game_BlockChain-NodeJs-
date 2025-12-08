@@ -24,4 +24,16 @@ router.get('/user/leaderboard', UserController.getLeaderboard);
 router.post('/user/wallet/challenge', authJwt.verifyToken, WalletController.createChallenge);
 router.post('/user/wallet/verify', authJwt.verifyToken, WalletController.verifySignatureAndSave);
 
+/**
+ * @route PUT /api/user/profile
+ * @desc Update user profile
+ */
+router.put('/user/profile', authJwt.verifyToken, UserController.updateProfile);
+
+/**
+ * @route PUT /api/user/password
+ * @desc Change user password
+ */
+router.put('/user/password', authJwt.verifyToken, UserController.changePassword);
+
 export default router;

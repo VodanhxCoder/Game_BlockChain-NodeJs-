@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
+import { useLanguage } from "../../../context/LanguageContext";
 import { sanitizeInput } from "../../../utils/sanitizer";
 import EmailVerificationPopup from "../../../components/EmailVerificationPopup";
 import "../../../assets/css/auth.css";
@@ -14,6 +15,7 @@ const TRANSITION_MS = 420;
 export default function SignUp() {
   const { register, sendVerificationEmail, verifyEmail, resendVerificationEmail, checkAvailability } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
@@ -56,7 +58,7 @@ export default function SignUp() {
     setVerificationUsername("");
     
     if (!captchaToken) {
-      setError("Please complete the reCAPTCHA verification.");
+      setError(t("auth.errorCaptcha"));
       return;
     }
     
@@ -66,7 +68,7 @@ export default function SignUp() {
     const sanitizedConfirm = sanitizeInput(confirm);
     
     if (!sanitizedName || !sanitizedEmail || sanitizedPassword.length < 6 || sanitizedPassword !== sanitizedConfirm) {
-      setError("Please enter valid details.");
+      setError(t("auth.errorFillAll"));
       return;
     }
     
@@ -94,7 +96,7 @@ export default function SignUp() {
       
     } catch (err) {
       // Don't show popup if any pre-check fails
-      setError(err?.message || "Could not proceed with registration.");
+      setError(err?.message || t("auth.errorSignUp"));
     } finally {
       setLoading(false);
     }
@@ -112,9 +114,9 @@ export default function SignUp() {
     } catch (err) {
       console.error('Registration error:', err);
       if (err.message === 'EMAIL_VERIFICATION_REQUIRED') {
-        setError("Please verify your email first.");
+        setError(t("auth.errorVerifyEmail"));
       } else {
-        setError(err?.message || "Could not create account.");
+        setError(err?.message || t("auth.errorCreateAccount"));
       }
       setShowEmailVerification(false);
     } finally {
@@ -125,7 +127,7 @@ export default function SignUp() {
 
   const handleResendVerification = async () => {
     if (!verificationEmail) {
-      throw new Error("No verification email");
+      throw new Error(t("auth.errorNoEmail"));
     }
     
     return resendVerificationEmail(verificationEmail);
@@ -151,8 +153,8 @@ export default function SignUp() {
               <div className="auth-brand">
                 <div className="auth-logo" aria-hidden>BLK</div>
                 <div className="auth-title">
-                  <h2 id="signup-title">Create your hangar</h2>
-                  <div className="auth-sub">Reserve a callsign and mint your first loadout.</div>
+                  <h2 id="signup-title">{t("auth.createHangar")}</h2>
+                  <div className="auth-sub">{t("auth.createHangarSub")}</div>
                 </div>
               </div>
               <button
@@ -177,7 +179,7 @@ export default function SignUp() {
             )}
 
               <label className="auth-field">
-                <span className="field-label">Display name</span>
+                <span className="field-label">{t("auth.displayName")}</span>
                 <input
                   className="field-input"
                   value={name}
@@ -189,7 +191,7 @@ export default function SignUp() {
               </label>
 
               <label className="auth-field">
-                <span className="field-label">Email</span>
+                <span className="field-label">{t("auth.email")}</span>
                 <input
                   className="field-input"
                   type="email"
@@ -202,14 +204,14 @@ export default function SignUp() {
               </label>
 
               <label className="auth-field">
-                <span className="field-label">Password</span>
+                <span className="field-label">{t("auth.password")}</span>
                 <div className="password-input-container">
                   <input
                     className="field-input"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
+                    placeholder={t("auth.passwordPlaceholder")}
                     required
                     autoComplete="new-password"
                   />
@@ -217,7 +219,7 @@ export default function SignUp() {
                     type="button"
                     className={`password-toggle ${isDark ? 'dark' : 'light'}`}
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("auth.hidePass") : t("auth.showPass")}
                   >
                     {showPassword ? (
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -235,14 +237,14 @@ export default function SignUp() {
               </label>
 
               <label className="auth-field">
-                <span className="field-label">Confirm password</span>
+                <span className="field-label">{t("auth.confirmPassword")}</span>
                 <div className="password-input-container">
                   <input
                     className="field-input"
                     type={showPassword ? "text" : "password"}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Repeat password"
+                    placeholder={t("auth.repeatPassword")}
                     required
                     autoComplete="new-password"
                   />
@@ -250,7 +252,7 @@ export default function SignUp() {
                     type="button"
                     className={`password-toggle ${isDark ? 'dark' : 'light'}`}
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("auth.hidePass") : t("auth.showPass")}
                   >
                     {showPassword ? (
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -280,32 +282,31 @@ export default function SignUp() {
 
               <div className="auth-actions">
                 <button type="submit" className="btn primary" disabled={loading}>
-                  {loading ? "Sending verification..." : "Create account"}
+                  {loading ? t("auth.sendingVerification") : t("auth.createAccount")}
                 </button>
                 <button type="button" className="btn btn-outline" onClick={swapToSignin} disabled={isSwapping}>
-                  I already have an account
+                  {t("auth.alreadyHaveAccount")}
                 </button>
               </div>
             </form>
           </section>
 
           <aside className="auth-panel auth-panel--preview is-alt">
-            <p className="auth-eyebrow">Returning Raider?</p>
-            <h3>Jump back in with your existing credentials.</h3>
+            <p className="auth-eyebrow">{t("auth.returningRaider")}</p>
+            <h3>{t("auth.jumpBackIn")}</h3>
             <p className="auth-preview-copy">
-              Sync progress across devices, restore purchases, and keep your streak alive with
-              multi-factor security baked in.
+              {t("auth.syncProgress")}
             </p>
             <ul className="auth-preview-list">
-              <li>Instant wallet binding after verification.</li>
-              <li>Layer-2 ready inventory for faster trades.</li>
-              <li>Seasonal rewards delivered automatically.</li>
+              <li>{t("auth.feature4")}</li>
+              <li>{t("auth.feature5")}</li>
+              <li>{t("auth.feature6")}</li>
             </ul>
             <button type="button" className="auth-preview-btn" onClick={swapToSignin} disabled={isSwapping}>
-              Slide to sign in
+              {t("auth.slideToSignIn")}
             </button>
             <div className="auth-preview-meta">
-              <span>Need help?</span>
+              <span>{t("auth.needHelp")}</span>
               <a className="auth-link" href="mailto:support@blockverse.gg">support@blockverse.gg</a>
             </div>
           </aside>

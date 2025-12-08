@@ -1,167 +1,23 @@
 import React, { useRef, useEffect, useState } from "react";
-import axios from "axios";
+import { io } from "socket.io-client";
 import { useAuth } from "../context/AuthContext";
 
-// Fetch loot from backend - uses drop_pool table exclusively
-async function fetchLootFromBackend(level, username) {
-  try {
-    console.log(`🎲 Requesting drop for user: ${username}, level: ${level}`);
-    const response = await axios.post("/api/drop", { level, username });
-    console.log("📦 Backend response:", response.data);
-    
-    if (response.data && response.data.dropped) {
-      // Transform backend response to match expected format and include hash
-      const item = response.data.item || {};
-      console.log("✅ Item dropped:", item.itemName || item.name || response.data);
-      return {
-        itemId: item.itemId || item.id,
-        // keep backwards-compatible 'name' keys for older UI code and add canonical keys
-        name: item.itemName || item.name,
-        itemName: item.itemName || item.name,
-        rarity: item.itemTier || item.rarity,
-        itemTier: item.itemTier || item.rarity,
-        itemImage: item.itemImage || item.image,
-        itemHash: response.data.itemHash || item.itemHash || item.hash || null,
-        quantity: item.quantity || 1,
-        id: response.data.userItemId || `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        level,
-        timestamp: response.data.timestamp || new Date().toISOString(),
-        timeLabel: new Date(response.data.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        dropped: true,
-      };
-    }
-    console.log("❌ No drop this time");
-    return null;
-  } catch (error) {
-    console.error("❌ Failed to fetch loot from backend:", error);
-    console.error("Error details:", error.response?.data || error.message);
-    return null;
-  }
-}
-
-function generateBlockadesForLevel(lvl, g) {
-  const blocks = [];
-  if (lvl >= 5) return blocks;
-
-  const clusterCount = 3;
-  const cellW = 27;
-  const cellH = 18;
-  const cols = 5;
-  const rows = 3;
-  const clusterWidth = cols * cellW;
-  const spacing = (g.w - clusterCount * clusterWidth) / (clusterCount + 1);
-  const baseY = g.h - 140;
-
-  const fullPattern = [
-    [1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1],
-    [0, 1, 1, 1, 0],
-  ];
-  const reducedPattern = [
-    [0, 1, 1, 1, 0],
-    [0, 1, 1, 1, 0],
-    [0, 0, 1, 0, 0],
-  ];
-  const pattern = lvl <= 2 ? fullPattern : reducedPattern;
-
-  for (let c = 0; c < clusterCount; c++) {
-    const clusterX = spacing * (c + 1) + c * clusterWidth + (clusterWidth - cols * cellW) / 2;
-    for (let r = 0; r < rows; r++) {
-      for (let cc = 0; cc < cols; cc++) {
-        if (!pattern[r][cc]) continue;
-        blocks.push({
-          x: clusterX + cc * cellW,
-          y: baseY + r * cellH,
-          w: cellW - 3,
-          h: cellH - 3,
-          hp: 3,
-        });
-      }
-    }
-  }
-  return blocks;
-}
-
-// Return invader configuration (rows, cols, base speed) for a given level.
-function getInvaderConfig(lvl) {
-  // Keep gentle growth for early levels, but from level 3 onward
-  // increase enemy counts more aggressively to ramp difficulty.
-  if (lvl < 3) {
-    // rows grow slowly with level, cols also increase; cap to keep layout reasonable
-    const rows = Math.min(8, 3 + Math.floor((lvl - 1) / 2));
-    const cols = Math.min(12, 8 + Math.floor((lvl - 1) / 2));
-    // base speed increases with level but in a controlled way
-    const speed = 0.25 + lvl * 0.08;
-    return { rows, cols, speed };
-  }
-
-  // Level 3+ will add more rows/cols to increase challenge.
-  // We cap to avoid layout overflow but make levels feel more packed.
-  const rows = Math.min(10, 4 + (lvl - 3));
-  const cols = Math.min(14, 8 + (lvl - 3));
-  const speed = 0.25 + lvl * 0.09;
-  return { rows, cols, speed };
-}
-
-// Generate a boolean pattern matrix [rows][cols] that controls which invader slots are occupied.
-// We vary patterns by level to produce more interesting formations.
-function generateInvaderPattern(rows, cols, lvl) {
-  const pattern = Array.from({ length: rows }, () => Array(cols).fill(true));
-
-  // For level 2 and onwards we pick a random formation mode so games feel varied.
-  // For level 1 keep deterministic behavior (based on level) so tutorial feels stable.
-  let mode;
-  if (lvl >= 2) {
-    mode = Math.floor(Math.random() * 4); // 0..3 random
-  } else {
-    mode = lvl % 4;
-  }
-  const center = (cols - 1) / 2;
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      switch (mode) {
-        case 0:
-          // Full block on easy/standard levels
-          pattern[r][c] = true;
-          break;
-        case 1:
-          // Reduced edges: leave outermost columns empty on top rows
-          if (r < Math.floor(rows / 3) && (c === 0 || c === cols - 1)) pattern[r][c] = false;
-          else pattern[r][c] = true;
-          break;
-        case 2:
-          // Checkerboard for mid difficulty
-          pattern[r][c] = (r + c) % 2 === 0;
-          break;
-        case 3:
-          // Centered V / mountain shape that widens toward the bottom
-          const span = Math.max(0, Math.floor((r / Math.max(1, rows - 1)) * (cols / 2)));
-          pattern[r][c] = Math.abs(c - center) <= span;
-          break;
-        default:
-          pattern[r][c] = true;
-      }
-    }
-  }
-
-  return pattern;
-}
-
-const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, onKillsChange }) => {
+const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange }) => {
   const canvasRef = useRef(null);
   const rafRef = useRef(null);
   const keys = useRef({});
-  const state = useRef({});
+  const socketRef = useRef(null);
+  const gameState = useRef(null);
+  
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);
   const [gameOver, setGameOver] = useState(false);
-  const [running, setRunning] = useState(false);
-  const runningRef = useRef(running);
+  const [paused, setPaused] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   const { user } = useAuth();
 
-  // Callback helpers to notify parent of state changes
+  // Update parent components when state changes
   const updateScore = (newScore) => {
     setScore(newScore);
     if (onScoreChange) onScoreChange(newScore);
@@ -177,118 +33,152 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     if (onLevelChange) onLevelChange(newLevel);
   };
 
+  // Initialize WebSocket connection
   useEffect(() => {
-    runningRef.current = running;
-  }, [running]);
+    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+    const socket = io(serverUrl, {
+      withCredentials: true,
+      transports: ['websocket', 'polling']
+    });
 
-  const rectHit = (x, y, w, h, rx, ry, rw, rh) => {
-    return x < rx + rw && x + w > rx && y < ry + rh && y + h > ry;
-  };
+    socketRef.current = socket;
 
-  const tryShoot = () => {
-    const s = state.current;
-    const now = Date.now();
-    if (!s || s.player.reload > 0) return;
-    if (now - s.lastShotTime < s.shotCooldown) return;
-    s.lastShotTime = now;
-    s.player.reload = 12;
-    s.bullets.push({ x: s.player.x, y: s.player.y - 20, speed: 6 });
-  };
+    // Handle connection
+    socket.on('connect', () => {
+      console.log('🔌 Connected to game server');
+      console.log('Socket ID:', socket.id);
+    });
 
-  const initGame = (lvl = 1) => {
-    const w = 1600;
-    const h = 900;
-    state.current = {
-      w,
-      h,
-      player: { x: w / 2, y: h - 40, w: 60, h: 15, speed: 5, reload: 0 },
-      bullets: [],
-      enemyBullets: [],
-      invaders: [],
-      droppedItems: [], // Falling items from defeated enemies
-      invaderRows: 4,
-      invaderCols: 8,
-      invaderW: 54,
-      invaderH: 30,
-      invaderPadding: 18,
-      invaderOffsetY: 40,
-      invaderDir: 1,
-      invaderSpeed: 0.3 + lvl * 0.1,
-      lastShotTime: 0,
-      shotCooldown: 300,
-      tick: 0,
-      gameOver: false,
-      level: lvl,
-      lastEnemyShot: Date.now(),
-      enemyShotInterval: Math.max(700 - lvl * 60, 350),
-      blockades: [],
-      started: false,
-    };
+    socket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error.message);
+    });
 
-    setGameOver(false);
+    socket.on('disconnect', (reason) => {
+      console.log('🔌 Disconnected:', reason);
+    });
 
-    const s = state.current;
-    // configure invaders based on level
-    const cfg = getInvaderConfig(lvl);
-    s.invaderRows = cfg.rows;
-    s.invaderCols = cfg.cols;
-    s.invaderSpeed = cfg.speed;
-    const pattern = generateInvaderPattern(s.invaderRows, s.invaderCols, lvl);
-    for (let r = 0; r < s.invaderRows; r++) {
-      for (let c = 0; c < s.invaderCols; c++) {
-        if (!pattern[r][c]) continue;
-        const x =
-          c * (s.invaderW + s.invaderPadding) +
-          (s.w - (s.invaderCols * (s.invaderW + s.invaderPadding) - s.invaderPadding)) / 2;
-        const y = r * (s.invaderH + 8) + s.invaderOffsetY;
-        s.invaders.push({ x, y, alive: true, row: r, col: c });
+    // Handle game state updates from server
+    socket.on('game:state', (state) => {
+      gameState.current = state;
+      
+      // Update UI state
+      if (state.score !== score) updateScore(state.score);
+      if (state.lives !== lives) updateLives(state.lives);
+      if (state.level !== level) updateLevel(state.level);
+      if (state.gameOver !== gameOver) setGameOver(state.gameOver);
+      if (state.paused !== paused) setPaused(state.paused);
+      if (state.sessionId !== sessionId) setSessionId(state.sessionId);
+    });
+
+    // Handle item collection
+    socket.on('game:item_collected', (item) => {
+      if (onLootDrop) {
+        onLootDrop({
+          ...item,
+          timestamp: item.timestamp || new Date().toISOString(),
+          timeLabel: item.timeLabel || new Date().toLocaleTimeString([], { 
+            hour: "2-digit", 
+            minute: "2-digit" 
+          }),
+        });
       }
-    }
+    });
 
-    s.blockades = generateBlockadesForLevel(lvl, s);
+    // Handle game over
+    socket.on('game:over', (data) => {
+      console.log(`💀 Game Over - Score: ${data.score}`);
+      setGameOver(true);
+    });
 
-    updateScore(0);
-    updateLives(3);
-    updateLevel(lvl);
-  };
+    // Handle level complete
+    socket.on('game:level_complete', (data) => {
+      console.log(`🎉 Level ${data.level} Complete!`);
+    });
 
+    // Handle pause state
+    socket.on('game:paused', (data) => {
+      console.log('⏸️ Pause state changed:', data.paused);
+      setPaused(data.paused);
+      if (gameState.current) {
+        gameState.current.paused = data.paused;
+      }
+    });
+
+    // Handle errors
+    socket.on('game:error', (error) => {
+      console.error('❌ Game error:', error.message);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.disconnect();
+      cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Handle keyboard input
   useEffect(() => {
-    initGame(level);
-
     const onKeyDown = (e) => {
-      keys.current[e.code] = true;
+      const socket = socketRef.current;
+      const state = gameState.current;
+
       if (e.code === "Space") {
         e.preventDefault();
-        if (state.current && state.current.gameOver) {
-          initGame(1);
-          state.current.started = true;
-          updateLevel(1);
-          updateScore(0);
-          updateLives(3);
+        
+        if (state && state.gameOver) {
+          // Restart game
+          socket.emit('game:reset', { 
+            sessionId: sessionId, 
+            username: user?.username || 'guest' 
+          });
           setGameOver(false);
-          setRunning(true);
-          keys.current["Space"] = false;
           return;
         }
 
-        if (state.current && !state.current.started) {
-          state.current.started = true;
-          setRunning(true);
+        if (!state || (state && !state.started)) {
+          // Calculate responsive dimensions based on the actual canvas element size
+          const canvas = canvasRef.current;
+          let width = 1600;
+          let height = 900;
+
+          if (canvas) {
+            const rect = canvas.getBoundingClientRect();
+            width = rect.width;
+            height = rect.height;
+            console.log('📏 Detected canvas size:', width, 'x', height);
+          }
+
+          // Start game - allow starting even if state is null
+          socket.emit('game:start', { 
+            username: user?.username || 'guest', 
+            level: 1,
+            width: Math.floor(width),
+            height: Math.floor(height)
+          });
           return;
         }
 
-        if (state.current && state.current.started && !runningRef.current) {
-          setRunning(true);
-          keys.current["Space"] = false;
-          return;
+        // Shoot
+        if (state && state.started) {
+          socket.emit('game:shoot', { sessionId: sessionId });
         }
       }
+
       if (e.code === "KeyP") {
         e.preventDefault();
-        if (state.current.started) setRunning((r) => !r);
+        console.log('🎮 Pause key pressed, current state:', state?.started, state?.paused);
+        if (state && state.started) {
+          socket.emit('game:pause', { sessionId: sessionId });
+        }
       }
+
+      keys.current[e.code] = true;
     };
-    const onKeyUp = (e) => (keys.current[e.code] = false);
+
+    const onKeyUp = (e) => {
+      keys.current[e.code] = false;
+    };
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -296,228 +186,63 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      cancelAnimationFrame(rafRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sessionId, user]);
 
+  // Send movement commands to server
+  useEffect(() => {
+    const movementInterval = setInterval(() => {
+      const socket = socketRef.current;
+      const state = gameState.current;
+      
+      if (!socket || !state || state.gameOver || state.paused || !state.started) return;
+
+      if (keys.current["ArrowLeft"] || keys.current["KeyA"]) {
+        socket.emit('game:move', { sessionId: sessionId, direction: 'left' });
+      }
+      if (keys.current["ArrowRight"] || keys.current["KeyD"]) {
+        socket.emit('game:move', { sessionId: sessionId, direction: 'right' });
+      }
+    }, 16); // ~60 FPS
+
+    return () => clearInterval(movementInterval);
+  }, [sessionId]);
+
+  // Rendering loop - only renders, no game logic
   useEffect(() => {
     const loop = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
+      
       const ctx = canvas.getContext("2d");
-      const s = state.current;
-      if (!s) return;
+      const s = gameState.current;
 
+      if (!s) {
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
+
+      // Set canvas dimensions (resolution)
+      // We don't set style.width/height here to allow CSS to handle responsive scaling
       if (canvas.width !== s.w || canvas.height !== s.h) {
         canvas.width = s.w;
         canvas.height = s.h;
-        canvas.style.width = s.w + "px";
-        canvas.style.height = s.h + "px";
       }
 
+      // Clear canvas
       ctx.fillStyle = "#07101a";
       ctx.fillRect(0, 0, s.w, s.h);
 
-      if (keys.current["ArrowLeft"] || keys.current["KeyA"]) {
-        s.player.x -= s.player.speed;
-      }
-      if (keys.current["ArrowRight"] || keys.current["KeyD"]) {
-        s.player.x += s.player.speed;
-      }
-      if (keys.current["Space"]) {
-        tryShoot();
-      }
-
-      s.player.x = Math.max(s.player.w / 2, Math.min(s.w - s.player.w / 2, s.player.x));
-
-      if (s.player.reload > 0) s.player.reload--;
-
-      for (let i = s.bullets.length - 1; i >= 0; i--) {
-        const b = s.bullets[i];
-        b.y -= b.speed;
-        if (b.y < -10) {
-          s.bullets.splice(i, 1);
-          continue;
-        }
-        for (const inv of s.invaders) {
-          if (!inv.alive) continue;
-          if (b.x > inv.x && b.x < inv.x + s.invaderW && b.y > inv.y && b.y < inv.y + s.invaderH) {
-            inv.alive = false;
-            s.bullets.splice(i, 1);
-            updateScore((p) => p + 10);
-            
-            // Request item drop from backend (backend controls drop chance via drop pool)
-            const username = user?.username || 'guest';
-            const enemyX = inv.x + s.invaderW / 2;
-            const enemyY = inv.y + s.invaderH / 2;
-            
-            console.log("💥 Enemy killed! Requesting drop...");
-            fetchLootFromBackend(s.level, username).then((loot) => {
-              if (loot && loot.dropped) {
-                console.log("🎁 Creating falling item:", loot.itemName);
-                // Create falling item
-                s.droppedItems.push({
-                  ...loot,
-                  x: enemyX,
-                  y: enemyY,
-                  velocityY: 0,
-                  gravity: 0.06, // slower fall
-                  maxFallSpeed: 2,
-                  collected: false,
-                  size: 28,
-                });
-              } else {
-                console.log("🚫 No drop received from backend");
-              }
-            }).catch(err => {
-              console.error("❌ Drop request failed:", err);
-            });
-            break;
-          }
-        }
-        if (!s.bullets[i]) continue;
-        for (let bi = s.blockades.length - 1; bi >= 0; bi--) {
-          const blk = s.blockades[bi];
-          if (rectHit(b.x - 2, b.y - 8, 4, 8, blk.x, blk.y, blk.w, blk.h)) {
-            blk.hp--;
-            s.bullets.splice(i, 1);
-            if (blk.hp <= 0) s.blockades.splice(bi, 1);
-            break;
-          }
-        }
-      }
-
-      for (let i = s.enemyBullets.length - 1; i >= 0; i--) {
-        const eb = s.enemyBullets[i];
-        eb.y += eb.speed;
-        if (eb.y > s.h + 10) {
-          s.enemyBullets.splice(i, 1);
-          continue;
-        }
-        if (
-          rectHit(eb.x - 2, eb.y - 6, 4, 8, s.player.x - s.player.w / 2, s.player.y - 12, s.player.w, s.player.h + 12)
-        ) {
-          s.enemyBullets.splice(i, 1);
-          updateLives((l) => {
-            const nl = l - 1;
-            if (nl <= 0) {
-              s.gameOver = true;
-            } else {
-              s.player.x = s.w / 2;
-            }
-            return nl;
-          });
-          continue;
-        }
-        for (let bi = s.blockades.length - 1; bi >= 0; bi--) {
-          const blk = s.blockades[bi];
-          if (rectHit(eb.x - 2, eb.y - 6, 4, 8, blk.x, blk.y, blk.w, blk.h)) {
-            blk.hp--;
-            s.enemyBullets.splice(i, 1);
-            if (blk.hp <= 0) s.blockades.splice(bi, 1);
-            break;
-          }
-        }
-      }
-
-      let hitSide = false;
-      for (const inv of s.invaders) {
-        if (!inv.alive) continue;
-        inv.x += s.invaderDir * s.invaderSpeed;
-        if (inv.x < 6 || inv.x + s.invaderW > s.w - 6) hitSide = true;
-      }
-      if (hitSide) {
-        s.invaderDir *= -1;
-        for (const inv of s.invaders) {
-          inv.y += 12;
-        }
-      }
-
-      for (const inv of s.invaders) {
-        if (!inv.alive) continue;
-        if (inv.y + s.invaderH >= s.player.y) {
-          s.gameOver = true;
-        }
-      }
-
-      // Update falling items
-      for (let i = s.droppedItems.length - 1; i >= 0; i--) {
-        const item = s.droppedItems[i];
-        if (item.collected) continue;
-
-  // Apply gravity with max fall speed to slow drops
-  item.velocityY = Math.min((item.velocityY || 0) + (item.gravity || 0.06), item.maxFallSpeed || 2);
-  item.y += item.velocityY;
-
-        // Check collision with player
-        const playerLeft = s.player.x - s.player.w / 2;
-        const playerRight = s.player.x + s.player.w / 2;
-        const playerTop = s.player.y - 12;
-        const playerBottom = s.player.y + 10;
-
-        const itemLeft = item.x - item.size / 2;
-        const itemRight = item.x + item.size / 2;
-        const itemTop = item.y - item.size / 2;
-        const itemBottom = item.y + item.size / 2;
-
-        if (
-          itemLeft < playerRight &&
-          itemRight > playerLeft &&
-          itemTop < playerBottom &&
-          itemBottom > playerTop
-        ) {
-          // Player collected the item!
-          item.collected = true;
-          s.droppedItems.splice(i, 1);
-          
-          // Notify parent component
-          if (onLootDrop) {
-            onLootDrop({
-              ...item,
-              timestamp: item.timestamp || new Date().toISOString(),
-              timeLabel: item.timeLabel || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            });
-          }
-          continue;
-        }
-
-        // Remove items that fall off screen
-        if (item.y > s.h + 50) {
-          s.droppedItems.splice(i, 1);
-        }
-      }
-
-      const now = Date.now();
-      if (now - s.lastEnemyShot > s.enemyShotInterval && s.invaders.some((i) => i.alive)) {
-        const byCol = {};
-        for (const inv of s.invaders) {
-          if (!inv.alive) continue;
-          const col = inv.col;
-          if (!byCol[col] || inv.y > byCol[col].y) byCol[col] = inv;
-        }
-        const cols = Object.keys(byCol);
-        const shooter = byCol[cols[Math.floor(Math.random() * cols.length)]];
-        if (shooter) {
-          s.enemyBullets.push({
-            x: shooter.x + s.invaderW / 2,
-            y: shooter.y + s.invaderH + 6,
-            speed: 3 + s.level * 0.2,
-          });
-        }
-        s.lastEnemyShot = now;
-        s.enemyShotInterval = Math.max(300, 600 + Math.random() * 500 - s.level * 40);
-      }
-
-      for (const inv of s.invaders) {
-        if (!inv.alive) continue;
+      // Draw invaders
+      for (const inv of s.invaders || []) {
         ctx.fillStyle = "#78c0ff";
         ctx.fillRect(inv.x, inv.y, s.invaderW, s.invaderH);
         ctx.fillStyle = "#0b1220";
         ctx.fillRect(inv.x + 6, inv.y + 6, s.invaderW - 12, s.invaderH - 8);
       }
 
-      for (const blk of s.blockades) {
+      // Draw blockades
+      for (const blk of s.blockades || []) {
         const shade = Math.max(0.12, blk.hp / 3);
         ctx.fillStyle = `rgba(160,200,255,${shade})`;
         ctx.fillRect(blk.x, blk.y, blk.w, blk.h);
@@ -525,27 +250,33 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
         ctx.strokeRect(blk.x, blk.y, blk.w, blk.h);
       }
 
+      // Draw player bullets
       ctx.fillStyle = "#ffd166";
-      for (const b of s.bullets) ctx.fillRect(b.x - 3, b.y - 12, 6, 12);
+      for (const b of s.bullets || []) {
+        ctx.fillRect(b.x - 3, b.y - 12, 6, 12);
+      }
 
+      // Draw enemy bullets
       ctx.fillStyle = "#ff8b8b";
-      for (const eb of s.enemyBullets) ctx.fillRect(eb.x - 3, eb.y - 9, 6, 12);
+      for (const eb of s.enemyBullets || []) {
+        ctx.fillRect(eb.x - 3, eb.y - 9, 6, 12);
+      }
 
-      ctx.fillStyle = "#4ad994";
-      const px = s.player.x;
-      const py = s.player.y;
-      ctx.beginPath();
-      ctx.moveTo(px, py - 18);
-      ctx.lineTo(px - s.player.w / 2, py + 15);
-      ctx.lineTo(px + s.player.w / 2, py + 15);
-      ctx.closePath();
-      ctx.fill();
+      // Draw player
+      if (s.player) {
+        ctx.fillStyle = "#4ad994";
+        const px = s.player.x;
+        const py = s.player.y;
+        ctx.beginPath();
+        ctx.moveTo(px, py - 18);
+        ctx.lineTo(px - s.player.w / 2, py + 15);
+        ctx.lineTo(px + s.player.w / 2, py + 15);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Draw falling items
-      for (const item of s.droppedItems) {
-        if (item.collected) continue;
-
-        // Rarity colors - check both rarity and itemTier fields
+      for (const item of s.droppedItems || []) {
         let itemColor = "#9CA3AF"; // Common - gray
         let glowColor = "rgba(156, 163, 175, 0.5)";
         
@@ -558,11 +289,9 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
           glowColor = "rgba(255, 215, 0, 0.7)";
         }
 
-        // Draw glow effect
         ctx.shadowBlur = 12;
         ctx.shadowColor = glowColor;
         
-        // Draw item as a glowing gem/crystal
         ctx.fillStyle = itemColor;
         ctx.beginPath();
         ctx.arc(item.x, item.y, item.size / 2, 0, Math.PI * 2);
@@ -583,32 +312,15 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
         ctx.shadowBlur = 0;
       }
 
+      // Draw UI
       ctx.fillStyle = "#ffffff";
       ctx.font = "16px Inter, sans-serif";
-      ctx.fillText(`Score: ${score}`, 12, 20);
-      ctx.fillText(`Lives: ${lives}`, s.w - 100, 20);
-      ctx.fillText(`Level: ${level}`, s.w / 2 - 24, 20);
+      ctx.fillText(`Score: ${s.score}`, 12, 20);
+      ctx.fillText(`Lives: ${s.lives}`, s.w - 100, 20);
+      ctx.fillText(`Level: ${s.level}`, s.w / 2 - 24, 20);
 
+      // Draw game over screen
       if (s.gameOver) {
-        if (!gameOver) {
-          setGameOver(true);
-          setRunning(false);
-
-          // Report high score to server when the game ends (only once)
-          // Only submit for authenticated users (avoid creating guest users)
-          if (user && user.username) {
-            (async () => {
-              try {
-                console.log(`🏁 Game over - submitting highscore for ${user.username}: ${score}`);
-                const r = await axios.post('/api/user/highscore', { username: user.username, score });
-                console.log('📤 Highscore submission result:', r.data);
-              } catch (err) {
-                console.error('❌ Failed to submit highscore:', err.response?.data || err.message);
-              }
-            })();
-          }
-        }
-
         ctx.fillStyle = "rgba(0,0,0,0.6)";
         ctx.fillRect(0, 0, s.w, s.h);
         ctx.fillStyle = "#ff6b6b";
@@ -619,81 +331,40 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
         ctx.fillStyle = "#ffffff";
         ctx.fillText("Press Space to play again", s.w / 2, s.h / 2 + 22);
         ctx.textAlign = "start";
-
-        return;
       }
 
-      if (!s.invaders.some((i) => i.alive)) {
-        const next = Math.min(10, level + 1);
-        updateLevel(next);
-        s.level = next;
-        // reconfigure invaders for new level
-        const cfgNext = getInvaderConfig(next);
-        s.invaderRows = cfgNext.rows;
-        s.invaderCols = cfgNext.cols;
-        s.invaderSpeed = cfgNext.speed;
-        s.invaders = [];
-        const patternNext = generateInvaderPattern(s.invaderRows, s.invaderCols, next);
-        for (let r = 0; r < s.invaderRows; r++) {
-          for (let c = 0; c < s.invaderCols; c++) {
-            if (!patternNext[r][c]) continue;
-            const x =
-              c * (s.invaderW + s.invaderPadding) +
-              (s.w - (s.invaderCols * (s.invaderW + s.invaderPadding) - s.invaderPadding)) / 2;
-            const y = r * (s.invaderH + 8) + s.invaderOffsetY;
-            s.invaders.push({ x, y, alive: true, row: r, col: c });
-          }
-        }
-        s.blockades = generateBlockadesForLevel(next, s);
-        s.lastEnemyShot = Date.now();
-        s.enemyShotInterval = Math.max(700 - next * 60, 300);
+      // Draw pause screen
+      if (s.paused && s.started && !s.gameOver) {
+        console.log('🎨 Drawing pause overlay');
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillRect(0, 0, s.w, s.h);
+        ctx.fillStyle = "#4ad994";
+        ctx.font = "36px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("PAUSED", s.w / 2, s.h / 2 - 10);
+        ctx.font = "18px Inter, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("Press P to continue", s.w / 2, s.h / 2 + 22);
+        ctx.textAlign = "start";
       }
 
-      s.tick++;
+      // Draw start screen
+      if (!s.started && !s.gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillRect(0, 0, s.w, s.h);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "36px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Press Space to Start", s.w / 2, s.h / 2);
+        ctx.textAlign = "start";
+      }
+
       rafRef.current = requestAnimationFrame(loop);
     };
 
-    if (running) {
-      const canvas = canvasRef.current;
-      const s = state.current;
-      if (canvas && s) {
-        canvas.width = s.w;
-        canvas.height = s.h;
-      }
-      rafRef.current = requestAnimationFrame(loop);
-    } else {
-      cancelAnimationFrame(rafRef.current);
-
-      // Draw a one-time pause overlay so the user sees the paused state even
-      // though the RAF loop is stopped. We only draw when the game has been
-      // started and is not game over.
-      try {
-        const canvas = canvasRef.current;
-        const s = state.current;
-        if (canvas && s && s.started && !s.gameOver) {
-          const ctx = canvas.getContext("2d");
-          // semi-opaque dark overlay
-          ctx.fillStyle = "rgba(0,0,0,0.45)";
-          ctx.fillRect(0, 0, s.w, s.h);
-
-          // Paused text
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "48px Inter, sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText("PAUSED", s.w / 2, s.h / 2 - 10);
-          ctx.font = "18px Inter, sans-serif";
-          ctx.fillText("Press P to continue", s.w / 2, s.h / 2 + 26);
-          ctx.textAlign = "start";
-        }
-      } catch (e) {
-        // Drawing overlay is non-critical — swallow errors
-        // console.warn('Pause overlay draw failed', e);
-      }
-    }
-
+    rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running, score, lives, level, gameOver]);
+  }, []);
 
   return (
     <div className="game-frame">

@@ -6,6 +6,7 @@ export default (sequelize) => {
       // Trade involves an item
       TradeLog.belongsTo(models.InventoryItem, {
         foreignKey: "itemHash",
+        targetKey: "itemHash",
         as: "Item",
       });
       

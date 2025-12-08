@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useAuth } from "../../../context/AuthContext";
 import { useTheme } from "../../../context/ThemeContext";
+import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
 import { sanitizeInput } from "../../../utils/sanitizer";
 import "../../../assets/css/auth.css";
@@ -13,6 +14,7 @@ const TRANSITION_MS = 420;
 export default function SignIn() {
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = location.state?.from?.pathname || "/H";
@@ -69,14 +71,14 @@ export default function SignIn() {
     setError("");
     
     if (requiresCaptcha && !captchaToken) {
-      setError("Please complete the reCAPTCHA verification.");
+      setError(t("auth.errorCaptcha"));
       return;
     }
     
     const sanitizedEmail = sanitizeInput(email);
     const sanitizedPassword = sanitizeInput(password);
     if (!sanitizedEmail || !sanitizedPassword) {
-      setError("Please enter valid email and password.");
+      setError(t("auth.errorFillAll"));
       return;
     }
     setLoading(true);
@@ -87,7 +89,15 @@ export default function SignIn() {
       await login(sanitizedEmail, hashed, captchaToken);
       navigate(returnTo, { replace: true });
     } catch (err) {
-      setError(err?.message || "Sign in failed.");
+      // Handle specific error cases
+      if (err?.isBanned) {
+        setError(t("auth.errorBanned"));
+      } else if (err?.isInactive) {
+        setError(t("auth.errorInactive"));
+      } else {
+        setError(err?.message || t("auth.errorSignIn"));
+      }
+      
       if (err?.requiresCaptcha) {
         setRequiresCaptcha(true);
       }
@@ -109,7 +119,7 @@ export default function SignIn() {
   const socialProviders = [
     {
       id: "google",
-      label: "Continue with Google",
+      label: t("auth.continueGoogle"),
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -133,7 +143,7 @@ export default function SignIn() {
     },
     {
       id: "github",
-      label: "Continue with GitHub",
+      label: t("auth.continueGithub"),
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
@@ -159,8 +169,8 @@ export default function SignIn() {
             <div className="auth-brand">
               <div className="auth-logo" aria-hidden>BLK</div>
               <div className="auth-title">
-                <h2 id="signin-title">Welcome back, Raider</h2>
-                <div className="auth-sub">Plug in and resume your on-chain run.</div>
+                <h2 id="signin-title">{t("auth.welcomeBack")}</h2>
+                <div className="auth-sub">{t("auth.welcomeSub")}</div>
               </div>
             </div>
             <button
@@ -185,7 +195,7 @@ export default function SignIn() {
             )}
 
             <label className="auth-field">
-              <span className="field-label">Email</span>
+              <span className="field-label">{t("auth.email")}</span>
               <input
                 className="field-input"
                 type="email"
@@ -198,7 +208,7 @@ export default function SignIn() {
             </label>
 
             <label className="auth-field">
-              <span className="field-label">Password</span>
+              <span className="field-label">{t("auth.password")}</span>
               <div className="password-input-container">
                 <input
                   className="field-input"
@@ -213,7 +223,7 @@ export default function SignIn() {
                   type="button"
                   className={`password-toggle ${isDark ? 'dark' : 'light'}`}
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? t("auth.hidePass") : t("auth.showPass")}
                 >
                   {showPassword ? (
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -232,9 +242,9 @@ export default function SignIn() {
 
             <div className="auth-row">
               <label className="auth-remember">
-                <input type="checkbox" defaultChecked /> Remember device
+                <input type="checkbox" defaultChecked /> {t("auth.rememberMe")}
               </label>
-              <Link to="/forgot" className="auth-link">Forgot password?</Link>
+              <Link to="/forgot" className="auth-link">{t("auth.forgotPass")}</Link>
             </div>
 
             {requiresCaptcha && (
@@ -252,16 +262,16 @@ export default function SignIn() {
 
             <div className="auth-actions">
               <button type="submit" className="btn primary" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? t("auth.signingIn") : t("auth.signIn")}
               </button>
               <button type="button" className="btn btn-outline" onClick={swapToSignup} disabled={isSwapping}>
-                Create account
+                {t("auth.createAccount")}
               </button>
             </div>
           </form>
 
           <div className="auth-social-block">
-            <small>Prefer social login?</small>
+            <small>{t("auth.socialLogin")}</small>
             <div className="auth-social-buttons">
               {socialProviders.map((provider) => (
                 <button
@@ -280,15 +290,15 @@ export default function SignIn() {
         </section>
 
         <aside className="auth-panel auth-panel--preview">
-          <p className="auth-eyebrow">New pilot?</p>
-          <h3>Forge a new identity in seconds.</h3>
+          <p className="auth-eyebrow">{t("auth.newPilot")}</p>
+          <h3>{t("auth.forgeIdentity")}</h3>
           <ul className="auth-preview-list">
-            <li>Receive a starter NFT hangar and cosmetics.</li>
-            <li>Secure wallet linkage & biometric prompts.</li>
-            <li>Cross-device cloud saves backed by chain data.</li>
+            <li>{t("auth.feature1")}</li>
+            <li>{t("auth.feature2")}</li>
+            <li>{t("auth.feature3")}</li>
           </ul>
           <button type="button" className="auth-preview-btn" onClick={swapToSignup} disabled={isSwapping}>
-            Slide to sign up
+            {t("auth.slideToSignUp")}
           </button>
         </aside>
       </div>
