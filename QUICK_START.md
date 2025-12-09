@@ -1,4 +1,4 @@
-# Quick Start: Hardhat + MetaMask + Trade Logging
+cd# Quick Start: Hardhat + MetaMask + Trade Logging
 
 ## Step 1: Install Dependencies
 
