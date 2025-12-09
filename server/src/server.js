@@ -35,15 +35,35 @@ const __dirname = path.dirname(__filename);
 let app = express();
 const httpServer = createServer(app);
 
+// CORS Configuration - MUST be first, before any other middleware
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  "https://front-end-game-blockchain.vercel.app",
+  "https://game-block-chain-node-js.vercel.app"
+].filter(Boolean);
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'ngrok-skip-browser-warning'],
+    exposedHeaders: ['Content-Length', 'X-JSON']
+}));
+
 // Initialize Socket.IO with CORS configuration
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      process.env.CLIENT_URL,
-      'http://localhost:5173', 
-      "https://front-end-game-blockchain.vercel.app",
-      "https://game-block-chain-node-js.vercel.app"
-    ].filter(Boolean),
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST"]
   }
@@ -57,7 +77,6 @@ io.on('connection', (socket) => {
   gameController.initializeSocketHandlers(socket);
 });
 
-// Security Middleware
 // Security Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow images from other origins
@@ -137,17 +156,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
-// Enable CORS for all routes
-app.use(cors({
-    origin:[ 
-        process.env.CLIENT_URL,
-        'http://localhost:5173',
-        "https://front-end-game-blockchain.vercel.app",
-        "https://game-block-chain-node-js.vercel.app"
-    ].filter(Boolean),
-    credentials: true
-}));
 
 // Serve uploaded files from /server/uploads at client path /uploads
 const uploadsPath = path.join(__dirname, '..', 'uploads');

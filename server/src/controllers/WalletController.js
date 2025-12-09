@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import db from '../models/index.js';
+import { Op } from 'sequelize';
 
 // In-memory challenge store: username -> nonce
 const challenges = new Map();
@@ -54,6 +55,22 @@ const WalletController = {
       if (recovered.toLowerCase() !== address.toLowerCase()) {
         console.error('❌ Address mismatch - recovered:', recovered, 'claimed:', address);
         return res.status(400).json({ error: 'signature does not match address' });
+      }
+
+      // Check if this wallet is already linked to another user
+      const existingUser = await db.User.findOne({
+        where: { 
+          walletAddress: address,
+          username: { [Op.ne]: username } // Not the current user
+        }
+      });
+
+      if (existingUser) {
+        console.error('❌ Wallet already linked to another user:', existingUser.username);
+        challenges.delete(username);
+        return res.status(409).json({ 
+          error: 'This wallet is already linked to another account. Please use a different wallet.'
+        });
       }
 
       // Update user's walletAddress in DB

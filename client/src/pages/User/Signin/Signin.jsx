@@ -119,7 +119,7 @@ export default function SignIn() {
   const socialProviders = [
     {
       id: "google",
-      label: t("auth.continueGoogle"),
+      label: t("Tiêp tục với Google"),
       icon: (
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path

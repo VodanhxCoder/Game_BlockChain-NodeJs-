@@ -25,11 +25,20 @@ export function Web3Provider({ children }) {
     try {
       console.log('🔗 Starting wallet link for user:', username, 'wallet:', walletAddress);
       
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        throw new Error('Authentication required. Please login first.');
+      }
+      
       // 1. Get challenge from backend
       console.log('📡 Requesting challenge from backend...');
       const challengeResp = await fetch(`${API_BASE_URL}/api/user/wallet/challenge`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include',
         body: JSON.stringify({ username })
       });
@@ -50,7 +59,10 @@ export function Web3Provider({ children }) {
       console.log('📡 Sending signature to backend for verification...');
       const verifyResp = await fetch(`${API_BASE_URL}/api/user/wallet/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include',
         body: JSON.stringify({ username, address: walletAddress, signature })
       });
@@ -106,16 +118,12 @@ export function Web3Provider({ children }) {
       // If user is logged in and has a saved wallet, check if it matches
       if (user && user.walletAddress) {
         if (user.walletAddress.toLowerCase() !== selectedAccount.toLowerCase()) {
-          const shouldSwitch = confirm(
-            `This account (${user.username}) is linked to wallet ${user.walletAddress.substring(0, 8)}...\n` +
-            `You connected ${selectedAccount.substring(0, 8)}...\n\n` +
-            `Do you want to switch MetaMask to the linked wallet?`
+          setError(
+            `This account (${user.username}) is linked to wallet ${user.walletAddress.substring(0, 10)}...\n` +
+            `Please switch MetaMask to the correct account and try again.`
           );
-          if (shouldSwitch) {
-            setError(`Please switch MetaMask to account ${user.walletAddress.substring(0, 10)}...`);
-            setConnecting(false);
-            return false;
-          }
+          setConnecting(false);
+          return false;
         }
       }
 
@@ -145,7 +153,24 @@ export function Web3Provider({ children }) {
       if (user && !user.walletAddress) {
         try {
           console.log('🔗 Auto-linking wallet to user account...');
-          alert('Please sign the message in MetaMask to link your wallet to your account.');
+          
+          const shouldLink = confirm(
+            `Link Wallet to Account\n\n` +
+            `Account: ${user.username}\n` +
+            `Wallet: ${selectedAccount}\n\n` +
+            `This will permanently link this wallet to your account.\n` +
+            `You can switch wallets in MetaMask before confirming.\n\n` +
+            `Click OK to proceed with linking, or Cancel to use a different wallet.`
+          );
+          
+          if (!shouldLink) {
+            console.log('❌ User cancelled wallet linking');
+            disconnectWallet();
+            setConnecting(false);
+            return false;
+          }
+          
+          alert('Please sign the message in MetaMask to verify wallet ownership.');
           
           // Use the web3Signer directly instead of state variable
           await linkWalletToUserWithSigner(selectedAccount, user.username, web3Signer);
@@ -153,7 +178,14 @@ export function Web3Provider({ children }) {
           alert(`✅ Wallet linked successfully!\n\nYour wallet ${selectedAccount.substring(0, 10)}... is now linked to ${user.username}`);
         } catch (err) {
           console.error('❌ Auto-link failed:', err);
+          console.error('Error details:', {
+            message: err.message,
+            stack: err.stack,
+            name: err.name
+          });
+          disconnectWallet();
           alert(`Failed to link wallet: ${err.message}\n\nYou can try again later from your account settings.`);
+          return false;
         }
       } else if (user && user.walletAddress) {
         console.log('✅ Wallet already linked to user:', user.username);
@@ -251,17 +283,34 @@ export function Web3Provider({ children }) {
     };
   }, [account, provider, user]);
 
-  // Auto-connect if previously connected
+  // Auto-connect only if user is logged in and has a linked wallet
   useEffect(() => {
-    if (isMetaMaskInstalled()) {
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then(accounts => {
-          if (accounts.length > 0) {
-            connectWallet();
-          }
-        });
+    // Only attempt auto-connect if:
+    // 1. User is logged in
+    // 2. User has a saved wallet address
+    // 3. MetaMask is installed
+    if (!user || !user.walletAddress || !isMetaMaskInstalled()) {
+      return;
     }
-  }, []);
+
+    const attemptAutoConnect = async () => {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        
+        // Only auto-connect if the currently selected MetaMask account matches the user's saved wallet
+        if (accounts.length > 0 && accounts[0].toLowerCase() === user.walletAddress.toLowerCase()) {
+          console.log('🔄 Auto-connecting to saved wallet...');
+          await connectWallet();
+        } else if (accounts.length > 0) {
+          console.log('⚠️ MetaMask account does not match saved wallet. Skipping auto-connect.');
+        }
+      } catch (err) {
+        console.error('Auto-connect failed:', err);
+      }
+    };
+
+    attemptAutoConnect();
+  }, [user?.walletAddress]); // Re-run when user login state or wallet changes
 
   const value = {
     provider,
