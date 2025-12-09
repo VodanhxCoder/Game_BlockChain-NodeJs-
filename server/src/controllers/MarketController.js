@@ -66,6 +66,13 @@ const createListing = async (req, res) => {
 
   const t = await sequelize.transaction();
   try {
+    // Verify seller has wallet linked
+    const sellerUser = await User.findOne({ where: { username } });
+    if (!sellerUser || !sellerUser.walletAddress) {
+      await t.rollback();
+      return res.status(400).json({ error: 'You must link your wallet before listing items.' });
+    }
+
     // locate inventory item and verify owner
     const ii = await InventoryItem.findOne({ where: { itemHash } });
     if (!ii) {

@@ -1,5 +1,6 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
+import crypto from 'crypto';
 const DropPool = db.DropPool;
 const InventoryItem = db.InventoryItem;
 const Inventory = db.Inventory;
@@ -109,12 +110,19 @@ async function saveCollectedItem(username, itemId) {
       console.log(`✅ Created new inventory for user: ${username}`);
     }
 
+    // Generate item hash manually since DB trigger might be missing
+    const timestamp = Date.now();
+    const random = Math.random().toString();
+    const rawString = `${username}:${itemId}:${timestamp}:${random}`;
+    const itemHash = crypto.createHash('sha256').update(rawString).digest('hex');
+
     // Insert the collected item
     const newItem = await InventoryItem.create({
       inventoryId: inventory.inventoryId,
       itemId: itemId,
       owner: username,
-      obtainedAt: new Date()
+      obtainedAt: new Date(),
+      itemHash: itemHash
     });
 
     // Reload to get trigger-populated fields
@@ -196,13 +204,19 @@ async function simulateDrop(username, forcedItemId = null) {
       console.log(`✅ Created new inventory for user: ${username}`);
     }
 
-    // Insert the dropped item row WITHOUT setting itemHash. The DB trigger
-    // will compute and populate the `item_hash` column.
+    // Generate item hash manually since DB trigger might be missing
+    const timestamp = Date.now();
+    const random = Math.random().toString();
+    const rawString = `${username}:${droppedItemId}:${timestamp}:${random}`;
+    const itemHash = crypto.createHash('sha256').update(rawString).digest('hex');
+
+    // Insert the dropped item row
     const newItem = await InventoryItem.create({
       inventoryId: inventory.inventoryId,
       itemId: droppedItemId,
       owner: username,
-      obtainedAt: new Date()
+      obtainedAt: new Date(),
+      itemHash: itemHash
     });
 
     // Reload the instance so trigger-populated fields (item_hash) are present

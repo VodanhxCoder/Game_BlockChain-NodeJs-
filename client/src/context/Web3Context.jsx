@@ -25,11 +25,21 @@ export function Web3Provider({ children }) {
     try {
       console.log('🔗 Starting wallet link for user:', username, 'wallet:', walletAddress);
       
+      // Get token from localStorage
+      const token = localStorage.getItem('auth_token');
+      const headers = { 
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       // 1. Get challenge from backend
       console.log('📡 Requesting challenge from backend...');
       const challengeResp = await fetch(`${API_BASE_URL}/api/user/wallet/challenge`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         credentials: 'include',
         body: JSON.stringify({ username })
       });
@@ -50,7 +60,7 @@ export function Web3Provider({ children }) {
       console.log('📡 Sending signature to backend for verification...');
       const verifyResp = await fetch(`${API_BASE_URL}/api/user/wallet/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         credentials: 'include',
         body: JSON.stringify({ username, address: walletAddress, signature })
       });

@@ -35,6 +35,17 @@ const __dirname = path.dirname(__filename);
 let app = express();
 const httpServer = createServer(app);
 
+// Enable CORS for all routes
+app.use(cors({
+    origin:[ 
+        process.env.CLIENT_URL,
+        'http://localhost:5173',
+        "https://front-end-game-blockchain.vercel.app",
+        "https://game-block-chain-node-js.vercel.app"
+    ].filter(Boolean),
+    credentials: true
+}));
+
 // Initialize Socket.IO with CORS configuration
 const io = new Server(httpServer, {
   cors: {
@@ -137,17 +148,6 @@ app.use((req, res, next) => {
     }
     next();
 });
-
-// Enable CORS for all routes
-app.use(cors({
-    origin:[ 
-        process.env.CLIENT_URL,
-        'http://localhost:5173',
-        "https://front-end-game-blockchain.vercel.app",
-        "https://game-block-chain-node-js.vercel.app"
-    ].filter(Boolean),
-    credentials: true
-}));
 
 // Serve uploaded files from /server/uploads at client path /uploads
 const uploadsPath = path.join(__dirname, '..', 'uploads');

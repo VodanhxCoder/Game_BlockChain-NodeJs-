@@ -37,7 +37,7 @@ const prepareTrade = async (req, res) => {
     // Get seller's wallet address from User table
     const sellerUser = await User.findOne({ where: { username: listing.seller } });
     if (!sellerUser || !sellerUser.walletAddress) {
-      return res.status(400).json({ error: 'Seller wallet address not found. Please contact seller to link their wallet.' });
+      return res.status(400).json({ error: `Seller (${listing.seller}) wallet address not found. Please contact seller to link their wallet.` });
     }
 
     // Get buyer's user info for wallet
