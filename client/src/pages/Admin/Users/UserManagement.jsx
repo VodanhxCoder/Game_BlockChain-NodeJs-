@@ -120,6 +120,13 @@ export default function UserManagement() {
     return rarityMap[rarity] || 'common';
   };
 
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+    return `${baseUrl}${path}`;
+  };
+
   return (
     <div>
       {message && (
@@ -186,7 +193,7 @@ export default function UserManagement() {
                       <div className="admin-user-info">
                         <div className="admin-user-avatar">
                           {user.userImage ? (
-                            <img src={user.userImage} alt={user.playername} />
+                            <img src={getImageUrl(user.userImage)} alt={user.playername} />
                           ) : (
                             user.playername?.charAt(0) || user.username.charAt(0)
                           )}
@@ -280,7 +287,7 @@ export default function UserManagement() {
                           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                             {item.imageUrl ? (
                               <img 
-                                src={item.imageUrl} 
+                                src={getImageUrl(item.imageUrl)} 
                                 alt={item.name}
                                 style={{ 
                                   width: "40px", 

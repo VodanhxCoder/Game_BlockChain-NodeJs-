@@ -30,7 +30,7 @@ export function Web3Provider({ children }) {
       if (!token) {
         throw new Error('Authentication required. Please login first.');
       }
-      
+
       // 1. Get challenge from backend
       console.log('📡 Requesting challenge from backend...');
       const challengeResp = await fetch(`${API_BASE_URL}/api/user/wallet/challenge`, {
@@ -285,32 +285,52 @@ export function Web3Provider({ children }) {
 
   // Auto-connect only if user is logged in and has a linked wallet
   useEffect(() => {
-    // Only attempt auto-connect if:
-    // 1. User is logged in
-    // 2. User has a saved wallet address
-    // 3. MetaMask is installed
-    if (!user || !user.walletAddress || !isMetaMaskInstalled()) {
+    // Don't attempt auto-connect if:
+    // 1. User is not logged in
+    // 2. User doesn't have a wallet linked
+    // 3. MetaMask is not installed
+    // 4. Already connecting or connected
+    if (!user || !user.walletAddress || !isMetaMaskInstalled() || connecting || account) {
       return;
     }
 
     const attemptAutoConnect = async () => {
       try {
+        // Get currently connected MetaMask accounts (without prompting)
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         
-        // Only auto-connect if the currently selected MetaMask account matches the user's saved wallet
-        if (accounts.length > 0 && accounts[0].toLowerCase() === user.walletAddress.toLowerCase()) {
-          console.log('🔄 Auto-connecting to saved wallet...');
+        if (accounts.length === 0) {
+          // No accounts connected to this site yet
+          console.log('ℹ️ No MetaMask accounts connected. User must manually connect.');
+          return;
+        }
+
+        const currentMetaMaskAccount = accounts[0];
+        
+        // Only auto-connect if MetaMask account matches user's saved wallet
+        if (currentMetaMaskAccount.toLowerCase() === user.walletAddress.toLowerCase()) {
+          console.log(`🔄 Auto-connecting to ${user.username}'s wallet: ${currentMetaMaskAccount.substring(0, 10)}...`);
           await connectWallet();
-        } else if (accounts.length > 0) {
-          console.log('⚠️ MetaMask account does not match saved wallet. Skipping auto-connect.');
+        } else {
+          console.warn(
+            `⚠️ Wallet mismatch detected!\n` +
+            `   User ${user.username} wallet: ${user.walletAddress.substring(0, 10)}...\n` +
+            `   MetaMask account: ${currentMetaMaskAccount.substring(0, 10)}...\n` +
+            `   Please switch MetaMask to the correct account to auto-connect.`
+          );
+          setError(`MetaMask is connected to ${currentMetaMaskAccount.substring(0, 10)}... but your account uses ${user.walletAddress.substring(0, 10)}...`);
         }
       } catch (err) {
-        console.error('Auto-connect failed:', err);
+        console.error('❌ Auto-connect error:', err.message);
+        // Don't show error to user, just log it
       }
     };
 
-    attemptAutoConnect();
-  }, [user?.walletAddress]); // Re-run when user login state or wallet changes
+    // Small delay to ensure auth is fully loaded
+    const timeoutId = setTimeout(attemptAutoConnect, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [user?.username, user?.walletAddress]); // Re-run when user changes
 
   const value = {
     provider,
