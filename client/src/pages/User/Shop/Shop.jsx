@@ -92,11 +92,19 @@ export default function Shop() {
       const prepData = prep.data || {};
       const { contractAddress, sellerSignature, sellerItemHash, buyerItemHash, listingId, sellerWallet, buyerWallet, sellerSignatureTimestamp } = prepData;
 
-      console.log('📦 Prepared trade data:', { contractAddress, sellerSignature: sellerSignature ? 'present' : 'missing', sellerSignatureTimestamp, listingId });
+      console.log('📦 Prepared trade data:', { 
+        contractAddress, 
+        sellerSignature: sellerSignature ? 'present' : 'missing', 
+        sellerSignatureTimestamp, 
+        listingId,
+        sellerWallet: sellerWallet ? 'present' : 'missing',
+        hasMetaMask: !!window.ethereum
+      });
 
       // If seller provided an off-chain signature that allows buyer-initiated on-chain execution,
       // call the contract method `executeTradeByParticipants` from the buyer's wallet so buyer pays gas.
       if (sellerSignature && contractAddress && window.ethereum && sellerWallet && sellerSignatureTimestamp) {
+        console.log('✅ All conditions met for buyer-initiated on-chain trade');
         try {
           console.log('⛓️  Seller signature present — invoking on-chain trade via MetaMask');
 
@@ -127,10 +135,11 @@ export default function Shop() {
           console.log('   Seller signature:', sellerSignature.substring(0, 20) + '...');
           
           // Verify signature matches
-          // Note: The seller signed the messageHash using signMessage(), which internally hashes it again with eth_sign prefix
-          // So we need to recover using recoverAddress from the signature and raw message hash
+          // Note: The seller signed the messageHash using signMessage(getBytes(messageHash))
+          // This adds the Ethereum signed message prefix, so we must verify using verifyMessage with the same bytes
           try {
-            const recoveredAddr = ethers.recoverAddress(messageHash, sellerSignature);
+            const messageHashBytes = ethers.getBytes(messageHash);
+            const recoveredAddr = ethers.verifyMessage(messageHashBytes, sellerSignature);
             console.log('   Recovered address:', recoveredAddr);
             console.log('   Matches seller?', recoveredAddr.toLowerCase() === sellerAddr.toLowerCase());
             
@@ -191,9 +200,21 @@ export default function Shop() {
           closeTradeModal();
           return;
         } catch (onchainErr) {
-          console.error('On-chain execution failed, falling back to server flow:', onchainErr);
+          console.error('❌ On-chain execution failed:', onchainErr);
+          console.error('   Error code:', onchainErr.code);
+          console.error('   Error message:', onchainErr.message);
+          console.error('   Falling back to server-executed trade...');
           // fall through to server fallback below
         }
+      } else {
+        console.log('⚠️ Seller signature not available - will use server-executed trade');
+        console.log('   Conditions check:', {
+          hasSellerSignature: !!sellerSignature,
+          hasContractAddress: !!contractAddress,
+          hasMetaMask: !!window.ethereum,
+          hasSellerWallet: !!sellerWallet,
+          hasTimestamp: !!sellerSignatureTimestamp
+        });
       }
 
       // Fallback: ask buyer to sign a small approval message and POST to server so backend (owner) executes the trade
