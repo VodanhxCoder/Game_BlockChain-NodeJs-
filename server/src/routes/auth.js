@@ -298,7 +298,8 @@ router.post('/signup',
     body('username').trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
     body('email').trim().isEmail().withMessage('Invalid email address'),
     body('passwordHash').notEmpty().withMessage('Password is required')
-      .isLength({ min: 8, max: 50 }).withMessage('Password must be between 8 and 50 characters')
+      // SHA-256 hash is 64 characters. Client validates original length (8-50).
+      .isLength({ min: 64, max: 64 }).withMessage('Invalid password format')
   ],
   validate,
   async (req, res) => {
