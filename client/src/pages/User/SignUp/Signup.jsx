@@ -68,8 +68,14 @@ export default function SignUp() {
     const sanitizedPassword = sanitizeInput(password);
     const sanitizedConfirm = sanitizeInput(confirm);
     
-    if (!sanitizedName || !sanitizedEmail || sanitizedPassword.length < 6 || sanitizedPassword !== sanitizedConfirm) {
-      setError(t("auth.errorFillAll"));
+    if (!sanitizedName || !sanitizedEmail || sanitizedPassword.length < 8 || sanitizedPassword.length > 50 || sanitizedPassword !== sanitizedConfirm) {
+      if (sanitizedPassword.length < 8 || sanitizedPassword.length > 50) {
+        setError(t("auth.errorPasswordLength"));
+      } else if (sanitizedPassword !== sanitizedConfirm) {
+        setError(t("auth.errorPasswordMismatch"));
+      } else {
+        setError(t("auth.errorFillAll"));
+      }
       return;
     }
     
@@ -188,6 +194,7 @@ export default function SignUp() {
                   placeholder="Captain Nova"
                   required
                   autoComplete="nickname"
+                  maxLength={30}
                 />
               </label>
 
@@ -201,6 +208,7 @@ export default function SignUp() {
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
+                  maxLength={100}
                 />
               </label>
 
@@ -215,6 +223,7 @@ export default function SignUp() {
                     placeholder={t("auth.passwordPlaceholder")}
                     required
                     autoComplete="new-password"
+                    maxLength={50}
                   />
                   <button
                     type="button"
@@ -248,6 +257,7 @@ export default function SignUp() {
                     placeholder={t("auth.repeatPassword")}
                     required
                     autoComplete="new-password"
+                    maxLength={50}
                   />
                   <button
                     type="button"
@@ -308,7 +318,9 @@ export default function SignUp() {
             </button>
             <div className="auth-preview-meta">
               <span>{t("auth.needHelp")}</span>
-              <a className="auth-link" href="mailto:support@blockverse.gg">support@blockverse.gg</a>
+              <a className="auth-link" href="mailto:khuenm22810310322@epu.edu.vn">khuenm22810310322@epu.edu.vn</a>
+              
+
             </div>
           </aside>
         </div>

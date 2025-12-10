@@ -331,6 +331,7 @@ export default function ItemManagement() {
                   onSelect={handleImageSelect}
                   placeholder="Chọn hình ảnh"
                   disabled={saving}
+                  baseUrl={API_BASE_URL}
                 />
               </div>
 

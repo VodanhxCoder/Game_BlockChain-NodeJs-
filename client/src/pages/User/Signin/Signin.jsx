@@ -82,6 +82,12 @@ export default function SignIn() {
       setError(t("auth.errorFillAll"));
       return;
     }
+
+    if (sanitizedPassword.length > 50) {
+      setError(t("auth.errorPasswordTooLong"));
+      return;
+    }
+
     setLoading(true);
     try {
       // Hash the password on the client before sending to the login handler.
@@ -205,6 +211,7 @@ export default function SignIn() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 required
+                maxLength={100}
               />
             </label>
 
@@ -219,6 +226,7 @@ export default function SignIn() {
                   placeholder="********"
                   autoComplete="current-password"
                   required
+                  maxLength={50}
                 />
                 <button
                   type="button"
@@ -245,7 +253,7 @@ export default function SignIn() {
               <label className="auth-remember">
                 <input type="checkbox" defaultChecked /> {t("auth.rememberMe")}
               </label>
-              <Link to="/forgot" className="auth-link">{t("auth.forgotPass")}</Link>
+              <Link to="/forgot-password" className="auth-link">{t("auth.forgotPass")}</Link>
             </div>
 
             {requiresCaptcha && (

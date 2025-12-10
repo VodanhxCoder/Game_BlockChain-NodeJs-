@@ -6,10 +6,13 @@ require('dotenv').config();
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
-  secure: false, // true for 465, false for other ports
+  secure: process.env.EMAIL_PORT == 465, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -168,6 +171,7 @@ const sendEmail = async (to, subject, htmlContent) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${to}. Message ID: ${result.messageId}`);
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('Error sending email:', error);
@@ -175,8 +179,56 @@ const sendEmail = async (to, subject, htmlContent) => {
   }
 };
 
+/**
+ * Gửi email chứa mật khẩu mới
+ * @param {string} to - Email người nhận
+ * @param {string} newPassword - Mật khẩu mới
+ * @param {string} username - Tên người dùng
+ */
+const sendNewPasswordEmail = async (to, newPassword, username) => {
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Cấp lại mật khẩu</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header { background: #2d3748; color: #ffffff; padding: 20px; text-align: center; }
+        .content { padding: 30px; color: #4a5568; line-height: 1.6; }
+        .password-box { background: #edf2f7; padding: 15px; border-radius: 6px; text-align: center; font-family: monospace; font-size: 24px; letter-spacing: 2px; color: #2d3748; margin: 20px 0; border: 2px dashed #cbd5e0; }
+        .footer { background: #f7fafc; padding: 15px; text-align: center; font-size: 12px; color: #718096; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin:0; font-size: 24px;">Cấp Lại Mật Khẩu</h1>
+        </div>
+        <div class="content">
+          <p>Xin chào <strong>${username}</strong>,</p>
+          <p>Chúng tôi đã nhận được yêu cầu cấp lại mật khẩu cho tài khoản của bạn.</p>
+          <p>Đây là mật khẩu mới của bạn:</p>
+          <div class="password-box">${newPassword}</div>
+          <p>Vui lòng đăng nhập và đổi mật khẩu ngay lập tức để đảm bảo an toàn.</p>
+          <p>Nếu bạn không yêu cầu thay đổi này, vui lòng liên hệ với bộ phận hỗ trợ ngay lập tức.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} Game BlockChain. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(to, 'Cấp lại mật khẩu - Game BlockChain', htmlTemplate);
+};
+
 module.exports = {
   sendVerificationEmail,
   generateVerificationCode,
-  sendEmail
+  sendEmail,
+  sendNewPasswordEmail
 };

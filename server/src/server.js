@@ -162,7 +162,10 @@ const uploadsPath = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsPath)) {  
     fs.mkdirSync(uploadsPath, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsPath));
+app.use('/uploads', (req, res, next) => {
+    console.log(`[Static] Request: ${req.path}`);
+    next();
+}, express.static(uploadsPath));
 
 // Note: Fail2Ban middleware is applied only to auth routes to reduce noise.
 

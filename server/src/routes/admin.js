@@ -59,7 +59,16 @@ router.use([authJwt.verifyToken, requireAdmin]);
  * POST /api/admin/upload
  * Upload a single image file and save to server/uploads
  */
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ error: `Upload error: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const publicUrl = `/uploads/${req.file.filename}`;

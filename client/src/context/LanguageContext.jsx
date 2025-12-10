@@ -92,7 +92,16 @@ const dictionaries = {
       codeExpiresIn: "Mã hết hạn sau: {time}",
       notReceived: "Chưa nhận được mã?",
       resendIn: "Gửi lại sau",
-      errorBanned: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên."
+      errorBanned: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+      errorFillAll: "Vui lòng điền đầy đủ thông tin.",
+      errorCaptcha: "Vui lòng hoàn thành CAPTCHA.",
+      errorSignUp: "Đăng ký thất bại. Vui lòng thử lại.",
+      errorSignIn: "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
+      errorInactive: "Tài khoản chưa được kích hoạt.",
+      errorPasswordLength: "Mật khẩu phải từ 8 đến 50 ký tự",
+      errorPasswordMismatch: "Mật khẩu không khớp",
+      errorPasswordTooLong: "Mật khẩu phải dưới 50 ký tự",
+      username: "Tên đăng nhập"
     },
     shop: {
       title: "Cửa hàng",
@@ -345,7 +354,16 @@ const dictionaries = {
       codeExpiresIn: "Code expires in {time}",
       notReceived: "Didn't receive the code?",
       resendIn: "Resend in",
-      errorBanned: "Your account has been banned. Please contact support."
+      errorBanned: "Your account has been banned. Please contact support.",
+      errorFillAll: "Please fill in all fields.",
+      errorCaptcha: "Please complete the CAPTCHA.",
+      errorSignUp: "Sign up failed. Please try again.",
+      errorSignIn: "Sign in failed. Please check your credentials.",
+      errorInactive: "Account is inactive.",
+      errorPasswordLength: "Password must be between 8 and 50 characters",
+      errorPasswordMismatch: "Passwords do not match",
+      errorPasswordTooLong: "Password must be less than 50 characters",
+      username: "Username"
     },
     shop: {
       title: "Marketplace",

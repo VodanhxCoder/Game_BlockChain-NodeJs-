@@ -7,6 +7,7 @@ import Leaderboards from "../pages/User/Leaderboards/Leaderboard";
 import Settings from "../pages/User/Settings/Settings";
 import SignIn from "../pages/User/Signin/Signin";
 import SignUp from "../pages/User/SignUp/Signup";
+import ForgotPassword from "../pages/User/ForgotPassword/ForgotPassword";
 import AppLayout from "../layouts/AppLayout";
 import AdminLayout from "../layouts/AdminLayout";
 import Dashboard from "../pages/Admin/Dashboard/Dashboard";
@@ -27,6 +28,7 @@ export default function AppRouter() {
       {/* Public routes */}
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/callback" element={<OAuthCallback />} />
 
       {/* Root redirects based on role after login */}

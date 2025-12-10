@@ -7,6 +7,7 @@ import marketRoutes from "../routes/market.js";
 import adminRoutes from "../routes/admin.js";
 import dashboardRoutes from "../routes/dashboard.js";
 import configRoutes from "../routes/config.js";
+import passwordRoutes from "../routes/password.js";
 import fail2ban from "../middleware/fail2ban.js";
 import RecaptchaController from "../controllers/RecaptchaController.js";
 
@@ -20,6 +21,7 @@ let initWebRoutes = (app) => {
     
     // Auth routes (apply Fail2Ban middleware only to login/signup, not OAuth)
     app.use("/api/auth", authRoutes);
+    app.use("/api/auth", passwordRoutes); // Mount password routes under /api/auth
     
     // User routes (highscore and user-related endpoints)
     app.use("/api", userRoutes);

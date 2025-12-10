@@ -298,6 +298,7 @@ router.post('/signup',
     body('username').trim().isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
     body('email').trim().isEmail().withMessage('Invalid email address'),
     body('passwordHash').notEmpty().withMessage('Password is required')
+      .isLength({ min: 8, max: 50 }).withMessage('Password must be between 8 and 50 characters')
   ],
   validate,
   async (req, res) => {

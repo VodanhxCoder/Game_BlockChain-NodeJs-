@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 
-const MediaPicker = ({ value, onSelect, placeholder, disabled }) => {
+const MediaPicker = ({ value, onSelect, placeholder, disabled, baseUrl }) => {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(value); // Added state for preview URL
@@ -15,6 +15,13 @@ const MediaPicker = ({ value, onSelect, placeholder, disabled }) => {
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Client-side validation
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.');
+      return;
+    }
+
     setError(null);
     setUploading(true);
     try {
@@ -40,6 +47,16 @@ const MediaPicker = ({ value, onSelect, placeholder, disabled }) => {
     }
   };
 
+  // Helper to construct the full image URL
+  const getDisplayUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http') || url.startsWith('blob:')) return url;
+    if (baseUrl) {
+      return `${baseUrl.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
+    }
+    return url;
+  };
+
   return (
     <div className="media-picker">
       <input
@@ -54,7 +71,11 @@ const MediaPicker = ({ value, onSelect, placeholder, disabled }) => {
       {previewUrl && (
         <div style={{ marginTop: '0.5rem' }}>
           {/* GIFs are supported by the browser in an <img> tag and will play automatically */}
-          <img src={previewUrl} alt="selected" style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: 6 }} />
+          <img 
+            src={getDisplayUrl(previewUrl)} 
+            alt="selected" 
+            style={{ maxWidth: '120px', maxHeight: '120px', borderRadius: 6 }} 
+          />
         </div>
       )}
     </div>
@@ -66,6 +87,7 @@ MediaPicker.propTypes = {
   onSelect: PropTypes.func.isRequired,
   placeholder: PropTypes.string,
   disabled: PropTypes.bool,
+  baseUrl: PropTypes.string,
 };
 
 MediaPicker.defaultProps = {
