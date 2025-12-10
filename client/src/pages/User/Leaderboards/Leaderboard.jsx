@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../../../context/AuthContext";
 import { useLanguage } from "../../../context/LanguageContext";
+import { usePageTitle } from "../../../hooks/usePageTitle";
 
 export default function Leaderboard() {
+  usePageTitle('Leaderboards');
   const { user } = useAuth();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { usePageTitle } from "../../../hooks/usePageTitle";
 
 export default function Dashboard() {
+  usePageTitle('Admin Dashboard');
   const [stats, setStats] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [loading, setLoading] = useState(true);

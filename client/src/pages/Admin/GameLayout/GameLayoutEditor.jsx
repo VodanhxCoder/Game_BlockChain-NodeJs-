@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import GridEditor from "../../../components/GridEditor";
 
 export default function GameLayoutEditor() {
+  usePageTitle('Game Layout Editor');
   const [gameSettings, setGameSettings] = useState({
     playerSpeed: 5,
     enemySpeed: 3,

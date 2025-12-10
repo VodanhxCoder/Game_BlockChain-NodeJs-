@@ -1,6 +1,7 @@
 // Provides profile, notification, and session security controls for the player.
 import React, { useState } from "react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from '../../../context/AuthContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useWeb3 } from "../../../context/Web3Context";
 import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";

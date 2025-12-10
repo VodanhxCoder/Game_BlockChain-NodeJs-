@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useAuth } from "../../../context/AuthContext";
 import axios from "axios";
 

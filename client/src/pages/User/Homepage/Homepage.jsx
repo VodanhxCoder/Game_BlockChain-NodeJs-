@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from "react";
 import "../../../assets/css/Homepage.css";
 import { useLanguage } from "../../../context/LanguageContext";
+import { usePageTitle } from "../../../hooks/usePageTitle";
 import GameCanvas from "../../../components/GameCanvas";
 
 export default function Homepage() {
+  usePageTitle('Play Game');
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [level, setLevel] = useState(1);

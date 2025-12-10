@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from '../../../context/AuthContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useTheme } from "../../../context/ThemeContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { sanitizeInput } from "../../../utils/sanitizer";

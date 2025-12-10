@@ -1,7 +1,8 @@
 // Shows the player's inventory items fetched from database
 import React, { useState, useEffect, useMemo } from "react";
 import "../../../assets/css/Homepage.css";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from '../../../context/AuthContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useLanguage } from "../../../context/LanguageContext";
 import WalletConnect from '../../../components/WalletConnect';
 import { useTheme } from '../../../context/ThemeContext';

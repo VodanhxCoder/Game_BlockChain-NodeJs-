@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import axios from 'axios';
 import MediaPicker from "../../../components/MediaPicker"; // Import MediaPicker component
 
@@ -6,6 +7,7 @@ import MediaPicker from "../../../components/MediaPicker"; // Import MediaPicker
 const API_BASE_URL = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL || '' : '';
 
 export default function ItemManagement() {
+  usePageTitle('Item Management');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");

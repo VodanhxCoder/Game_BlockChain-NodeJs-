@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from '../../../context/AuthContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useTheme } from "../../../context/ThemeContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
