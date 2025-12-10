@@ -1,6 +1,7 @@
 import db from '../models/index.js';
 import { createRequire } from 'module';
 import crypto from 'crypto';
+import axios from 'axios';
 
 const require = createRequire(import.meta.url);
 const emailService = require('../utils/emailService.js');
@@ -36,25 +37,46 @@ const hashPassword = (password) => {
  */
 export const forgotPassword = async (req, res) => {
   try {
-    const { username, email } = req.body;
+    const { email, recaptchaToken } = req.body;
 
-    if (!username || !email) {
-      return res.status(400).json({ error: 'Vui lòng nhập Username và Email.' });
+    if (!email) {
+      return res.status(400).json({ error: 'Vui lòng nhập Email.' });
     }
 
-    // Find user matching both username and email
+    if (!recaptchaToken) {
+      return res.status(400).json({ error: 'Vui lòng hoàn thành CAPTCHA.' });
+    }
+
+    // Verify CAPTCHA
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    if (secretKey) {
+      try {
+        const verifyRes = await axios.post(
+          'https://www.google.com/recaptcha/api/siteverify',
+          null,
+          { params: { secret: secretKey, response: recaptchaToken } }
+        );
+        if (!verifyRes.data.success) {
+          return res.status(400).json({ error: 'Xác thực CAPTCHA thất bại.' });
+        }
+      } catch (err) {
+        console.error('CAPTCHA verification error:', err);
+        return res.status(500).json({ error: 'Lỗi xác thực CAPTCHA.' });
+      }
+    }
+
+    // Find user matching email
     const user = await User.findOne({
       where: {
-        username: username,
         email: email
       }
     });
 
     if (!user) {
-      // Security: Don't reveal if user exists or not, but for this specific requirement "User must enter exactly", 
-      // we can return a generic error or specific if required. 
-      // "Người chơi cần nhập chính xác username và gmail" implies validation.
-      return res.status(404).json({ error: 'Thông tin tài khoản hoặc email không chính xác.' });
+      // Security: Don't reveal if user exists or not
+      // But for UX we might want to say "If email exists..."
+      // However, to match previous behavior or specific requirement:
+      return res.status(404).json({ error: 'Email không tồn tại trong hệ thống.' });
     }
 
     // Kiểm tra nếu tài khoản đăng ký qua bên thứ 3 (Google, GitHub, ...)
@@ -74,7 +96,7 @@ export const forgotPassword = async (req, res) => {
     await user.save();
 
     // Send email
-    await emailService.sendNewPasswordEmail(email, newPassword, username);
+    await emailService.sendNewPasswordEmail(email, newPassword, user.username);
 
     return res.status(200).json({ message: 'Mật khẩu mới đã được gửi đến email của bạn.' });
 

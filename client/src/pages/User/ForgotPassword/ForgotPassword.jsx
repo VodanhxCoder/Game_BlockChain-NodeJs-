@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useTheme } from "../../../context/ThemeContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { sanitizeInput } from "../../../utils/sanitizer";
@@ -10,11 +11,12 @@ export default function ForgotPassword() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,10 +25,14 @@ export default function ForgotPassword() {
     setError("");
     setMessage("");
 
-    const sanitizedUsername = sanitizeInput(username);
+    if (!captchaToken) {
+      setError(t("auth.errorCaptcha") || "Vui lòng hoàn thành CAPTCHA.");
+      return;
+    }
+
     const sanitizedEmail = sanitizeInput(email);
 
-    if (!sanitizedUsername || !sanitizedEmail) {
+    if (!sanitizedEmail) {
       setError(t("auth.errorFillAll") || "Vui lòng điền đầy đủ thông tin.");
       return;
     }
@@ -41,8 +47,8 @@ export default function ForgotPassword() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: sanitizedUsername,
-          email: sanitizedEmail
+          email: sanitizedEmail,
+          recaptchaToken: captchaToken
         }),
       });
 
@@ -60,6 +66,10 @@ export default function ForgotPassword() {
 
     } catch (err) {
       setError(err.message);
+      if (recaptchaRef.current) {
+        recaptchaRef.current.reset();
+        setCaptchaToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -95,18 +105,6 @@ export default function ForgotPassword() {
             {message && <div className="auth-success" role="alert" style={{color: 'var(--success)', background: 'rgba(0, 255, 0, 0.1)', padding: '10px', borderRadius: '4px', marginBottom: '1rem'}}>{message}</div>}
 
             <label className="auth-field">
-              <span className="field-label">{t("auth.username") || "Tên đăng nhập"}</span>
-              <input
-                className="field-input"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-              />
-            </label>
-
-            <label className="auth-field">
               <span className="field-label">{t("auth.email")}</span>
               <input
                 className="field-input"
@@ -117,6 +115,15 @@ export default function ForgotPassword() {
                 required
               />
             </label>
+
+            <div className="auth-captcha" style={{ margin: "20px 0", display: "flex", justifyContent: "center" }}>
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                onChange={setCaptchaToken}
+                theme={isDark ? "dark" : "light"}
+              />
+            </div>
 
             <div className="auth-actions">
               <button type="submit" className="auth-btn auth-btn--primary" disabled={loading}>
