@@ -112,11 +112,11 @@ const simulateItemDrop = async (req, res) => {
     }
 
     // Independent drop rate system: each item has its own chance to drop
-    // Roll for each item separately
+    // Roll for each item separately, then pick one if any succeeded
     const droppedItems = [];
     
     for (const entry of dropPool) {
-      const dropChance = parseFloat(entry.dropRate); // e.g., 9.09 means 9.09% chance
+      const dropChance = parseFloat(entry.dropRate); // e.g., 25.00 means 25% independent chance
       const roll = Math.random() * 100; // Roll 0-100
       
       if (roll <= dropChance) {
@@ -134,19 +134,17 @@ const simulateItemDrop = async (req, res) => {
       });
     }
 
-    // If multiple items dropped, pick one randomly
+    // If one or more items dropped, pick one randomly
     const droppedEntry = droppedItems[Math.floor(Math.random() * droppedItems.length)];
-    console.log(`✅ Item selected from ${droppedItems.length} drops: ${droppedEntry.Item.name} (${droppedEntry.Item.rarity})`);
+    console.log(`✅ Item selected from ${droppedItems.length} drop(s): ${droppedEntry.Item.name} (${droppedEntry.Item.rarity})`);
 
-    // Delegate the inventory insertion to the DropController implementation
-    // which now uses inventories and inventory_items tables with item_hash generation
+    // Save directly to inventory without using DropController.simulateDrop
+    // to avoid double-rolling with cumulative logic
     try {
-      // Persist the exact selected item to inventory and get its stored record
-      const createdInventoryItem = await DropController.simulateDrop(user.username, droppedEntry.Item.itemId);
+      // Persist the exact selected item to inventory
+      const createdInventoryItem = await DropController.saveCollectedItem(user.username, droppedEntry.Item.itemId);
 
-      // createdInventoryItem may be null if DropController's internal roll decided
-      // not to create an item (defensive check). But we already selected one above,
-      // so prefer to return the selected Item details.
+      // Return the dropped item details
       return res.status(200).json({
         dropped: true,
         item: {

@@ -5,12 +5,13 @@ const Item = db.Item;
 const DropPool = db.DropPool;
 
 const sampleItems = [
-  // COMMON items (higher drop rates) - 70% total
+  // COMMON items (higher drop rates)
+  // Note: Each item has independent drop chance (not cumulative)
   {
     name: "Ion Fragment",
     imageUrl: "ion-fragment.png",
     rarity: "Common",
-    dropRate: 25.00 // 25% chance
+    dropRate: 25.00 // 25% independent chance per kill
   },
   {
     name: "Scrap Metal",
