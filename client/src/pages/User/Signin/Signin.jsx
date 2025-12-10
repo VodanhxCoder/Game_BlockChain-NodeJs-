@@ -28,6 +28,7 @@ export default function SignIn() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [requiresCaptcha, setRequiresCaptcha] = useState(false);
+  const [banTimer, setBanTimer] = useState(0);
   const recaptchaRef = useRef(null);
 
   // Redirect to home if already authenticated
@@ -36,6 +37,33 @@ export default function SignIn() {
       navigate('/H', { replace: true });
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  // Countdown timer for ban
+  useEffect(() => {
+    let interval;
+    if (banTimer > 0) {
+      interval = setInterval(() => {
+        setBanTimer((prev) => {
+          if (prev <= 1) {
+            setError(""); // Clear error when timer ends
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [banTimer]);
+
+  // Update error message when timer changes
+  useEffect(() => {
+    if (banTimer > 0) {
+      const mins = Math.floor(banTimer / 60);
+      const secs = banTimer % 60;
+      const timeStr = mins > 0 ? `${mins} phút ${secs} giây` : `${secs} giây`;
+      setError(`IP của bạn đã bị khóa tạm thời do đăng nhập sai quá nhiều lần. Vui lòng thử lại sau: ${timeStr}`);
+    }
+  }, [banTimer]);
 
   // Reset reCAPTCHA when theme changes
   useEffect(() => {
@@ -98,7 +126,12 @@ export default function SignIn() {
     } catch (err) {
       // Handle specific error cases
       if (err?.isBanned) {
-        setError(t("auth.errorBanned"));
+        // Check if it's an IP ban (has remaining time) or account ban
+        if (err.remaining !== undefined) {
+           setBanTimer(Number(err.remaining));
+        } else {
+           setError(t("auth.errorBanned"));
+        }
       } else if (err?.isInactive) {
         setError(t("auth.errorInactive"));
       } else {

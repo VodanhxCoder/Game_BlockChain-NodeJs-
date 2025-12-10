@@ -94,7 +94,7 @@ const dictionaries = {
       resendIn: "Gửi lại sau",
       errorBanned: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
       errorFillAll: "Vui lòng điền đầy đủ thông tin.",
-      errorCaptcha: "Vui lòng hoàn thành CAPTCHA.",
+      errorCaptcha: "Bạn cần hoàn thành CAPTCHA để tiếp tục.",
       errorSignUp: "Đăng ký thất bại. Vui lòng thử lại.",
       errorSignIn: "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.",
       errorInactive: "Tài khoản chưa được kích hoạt.",

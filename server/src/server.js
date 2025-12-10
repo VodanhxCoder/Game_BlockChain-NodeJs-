@@ -177,49 +177,96 @@ try {
     // environment variable `FAIL2BAN_AUTO_START=false`.
     const AUTO_START = (process.env.FAIL2BAN_AUTO_START || 'true').toLowerCase() === 'true';
     if (AUTO_START) {
-        const pythonCmd = process.env.FAIL2BAN_PYTHON || 'python';
-        const scriptPath = path.resolve(__dirname, '..', 'fail2ban_service', 'app.py');
-        if (fs.existsSync(scriptPath)) {
-            console.log('Auto-starting Fail2Ban Python service:', scriptPath);
-            const child = spawn(pythonCmd, [scriptPath], {
-                stdio: ['ignore', 'pipe', 'pipe'],
-                env: process.env,
-            });
+        let pythonCmd = process.env.FAIL2BAN_PYTHON;
 
-            child.stdout.on('data', (d) => {
-                const s = String(d);
-                s.split(/\r?\n/).forEach(line => {
-                    if (line && line.trim() !== '') process.stdout.write(`[fail2ban] ${line}\n`);
-                });
-            });
-            child.stderr.on('data', (d) => {
-                const s = String(d);
-                s.split(/\r?\n/).forEach(line => {
-                    if (line && line.trim() !== '') process.stderr.write(`[fail2ban-error] ${line}\n`);
-                });
-            });
-
-            child.on('exit', (code, signal) => {
-                console.log(`Fail2Ban service exited with code=${code} signal=${signal}`);
-            });
-
-            // Handle spawn errors (e.g., python not found) so Node doesn't crash
-            child.on('error', (err) => {
-                console.error('[fail2ban-error] Failed to start Fail2Ban service:', err && err.message ? err.message : err);
-            });
-
-            // Ensure the child is killed when the parent exits
-            const killChild = () => {
-                try {
-                    child.kill();
-                } catch (e) {}
-            };
-            process.on('exit', killChild);
-            process.on('SIGINT', () => { killChild(); process.exit(); });
-            process.on('SIGTERM', () => { killChild(); process.exit(); });
-        } else {
-            console.warn('Fail2Ban script not found at', scriptPath, '- skipping auto-start.');
+        // Validate configured path
+        if (pythonCmd && !fs.existsSync(pythonCmd)) {
+             // Check if it's just "python" or "python3" which might be in PATH
+             if (pythonCmd.toLowerCase() !== 'python' && pythonCmd.toLowerCase() !== 'python3') {
+                 console.warn(`[Fail2Ban] ⚠️ Configured Python path not found: "${pythonCmd}". Falling back to auto-detection.`);
+                 pythonCmd = null;
+             }
         }
+
+        // Auto-detection logic
+        if (!pythonCmd) {
+            const venvPython = path.resolve(__dirname, '..', 'fail2ban_service', '.venv', 'Scripts', 'python.exe');
+            if (fs.existsSync(venvPython)) {
+                pythonCmd = venvPython;
+                console.log('[Fail2Ban] ✅ Auto-detected venv python:', pythonCmd);
+            } else {
+                pythonCmd = 'python'; // Fallback to global python
+                console.log('[Fail2Ban] ⚠️ Venv not found, using global "python" command.');
+            }
+        }
+
+        // Verify if python command actually works (handles broken venvs)
+        const verifyPython = (cmd) => {
+            return new Promise((resolve) => {
+                const check = spawn(cmd, ['--version']);
+                check.on('error', () => resolve(false));
+                check.on('close', (code) => resolve(code === 0));
+            });
+        };
+
+        // Async wrapper to start service
+        (async () => {
+            let isValid = await verifyPython(pythonCmd);
+            if (!isValid) {
+                console.warn(`[Fail2Ban] ⚠️ Python at "${pythonCmd}" appears broken. Trying global "python"...`);
+                pythonCmd = 'python';
+                isValid = await verifyPython(pythonCmd);
+            }
+
+            if (!isValid) {
+                console.error('[Fail2Ban] ❌ No working Python found. Fail2Ban service will NOT start.');
+                return;
+            }
+
+            console.log('[Fail2Ban] Starting service with:', pythonCmd);
+            const scriptPath = path.resolve(__dirname, '..', 'fail2ban_service', 'app.py');
+            if (fs.existsSync(scriptPath)) {
+                console.log('Auto-starting Fail2Ban Python service:', scriptPath);
+                const child = spawn(pythonCmd, [scriptPath], {
+                    stdio: ['ignore', 'pipe', 'pipe'],
+                    env: process.env,
+                });
+
+                child.stdout.on('data', (d) => {
+                    const s = String(d);
+                    s.split(/\r?\n/).forEach(line => {
+                        if (line && line.trim() !== '') process.stdout.write(`[fail2ban] ${line}\n`);
+                    });
+                });
+                child.stderr.on('data', (d) => {
+                    const s = String(d);
+                    s.split(/\r?\n/).forEach(line => {
+                        if (line && line.trim() !== '') process.stderr.write(`[fail2ban-error] ${line}\n`);
+                    });
+                });
+
+                child.on('exit', (code, signal) => {
+                    console.log(`Fail2Ban service exited with code=${code} signal=${signal}`);
+                });
+
+                // Handle spawn errors (e.g., python not found) so Node doesn't crash
+                child.on('error', (err) => {
+                    console.error('[fail2ban-error] Failed to start Fail2Ban service:', err && err.message ? err.message : err);
+                });
+
+                // Ensure the child is killed when the parent exits
+                const killChild = () => {
+                    try {
+                        child.kill();
+                    } catch (e) {}
+                };
+                process.on('exit', killChild);
+                process.on('SIGINT', () => { killChild(); process.exit(); });
+                process.on('SIGTERM', () => { killChild(); process.exit(); });
+            } else {
+                console.warn('Fail2Ban script not found at', scriptPath, '- skipping auto-start.');
+            }
+        })();
     }
 } catch (e) {
     console.error('Error while attempting to auto-start Fail2Ban service:', e && e.message);
