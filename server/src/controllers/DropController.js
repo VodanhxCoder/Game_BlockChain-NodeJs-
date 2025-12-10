@@ -15,8 +15,10 @@ const Item = db.Item;
 
 /**
  * Determines if an item should drop without saving to database.
+ * Uses independent drop rates - each item rolled separately, one selected if any succeed.
  * Returns item details if dropped, null otherwise.
  * @param {string} username - The username of the player.
+ * @param {number} forcedItemId - Optional item ID to force drop (skips rolling).
  * @returns {Promise<object>} - The dropped item details or null.
  */
 async function determineDrop(username, forcedItemId = null) {
@@ -31,7 +33,7 @@ async function determineDrop(username, forcedItemId = null) {
       }]
     });
 
-    // If a specific itemId was provided, skip selection and use it
+    // If a specific itemId was provided, skip rolling and use it
     let droppedItemId = null;
     if (forcedItemId) {
       const found = dropPool.find(e => String(e.itemId) === String(forcedItemId));
@@ -40,30 +42,26 @@ async function determineDrop(username, forcedItemId = null) {
       }
       droppedItemId = forcedItemId;
     } else {
-      // Calculate cumulative drop rates
-      const cumulativeRates = [];
-      let cumulativeSum = 0;
-      dropPool.forEach((entry) => {
-        cumulativeSum += parseFloat(entry.dropRate);
-        cumulativeRates.push({
-          itemId: entry.itemId,
-          cumulativeRate: cumulativeSum,
-        });
-      });
-
-      // Generate a random number between 0 and the total cumulative rate
-      const randomRoll = Math.random() * cumulativeSum;
-
-      // Determine which item (if any) is dropped
-      const selected = cumulativeRates.find(
-        (entry) => randomRoll <= entry.cumulativeRate
-      );
-
-      if (!selected) {
-        return null; // No item dropped
+      // Independent drop rate system: roll each item separately
+      const droppedItems = [];
+      
+      for (const entry of dropPool) {
+        const dropChance = parseFloat(entry.dropRate); // e.g., 25.00 means 25% chance
+        const roll = Math.random() * 100; // Roll 0-100
+        
+        if (roll <= dropChance) {
+          droppedItems.push(entry);
+        }
       }
 
-      droppedItemId = selected.itemId;
+      // If no items dropped, return null
+      if (droppedItems.length === 0) {
+        return null;
+      }
+
+      // If one or more items dropped, pick one randomly
+      const droppedEntry = droppedItems[Math.floor(Math.random() * droppedItems.length)];
+      droppedItemId = droppedEntry.itemId;
     }
 
     // Get item details from drop pool entry
@@ -138,18 +136,25 @@ async function saveCollectedItem(username, itemId) {
 }
 
 /**
- * Simulates an item drop based on the drop rate.
+ * Simulates an item drop using independent drop rates.
+ * Each item in the drop pool is rolled independently, then one is selected if any succeed.
  * @param {string} username - The username of the player.
+ * @param {number} forcedItemId - Optional item ID to force drop (skips rolling).
  * @returns {Promise<object>} - The dropped item details or null if no item dropped.
  */
 async function simulateDrop(username, forcedItemId = null) {
   try {
-    // Fetch all active drop pool entries
+    // Fetch all active drop pool entries with item details
     const dropPool = await DropPool.findAll({
       where: { active: true },
+      include: [{
+        model: Item,
+        required: true,
+        attributes: ['itemId', 'name', 'rarity', 'imageUrl']
+      }]
     });
 
-    // If a specific itemId was provided, skip selection and use it
+    // If a specific itemId was provided, skip rolling and use it
     let droppedItemId = null;
     if (forcedItemId) {
       // validate forcedItemId exists in the active drop pool
@@ -159,30 +164,26 @@ async function simulateDrop(username, forcedItemId = null) {
       }
       droppedItemId = forcedItemId;
     } else {
-      // Calculate cumulative drop rates
-      const cumulativeRates = [];
-      let cumulativeSum = 0;
-      dropPool.forEach((entry) => {
-        cumulativeSum += parseFloat(entry.dropRate);
-        cumulativeRates.push({
-          itemId: entry.itemId,
-          cumulativeRate: cumulativeSum,
-        });
-      });
-
-      // Generate a random number between 0 and the total cumulative rate
-      const randomRoll = Math.random() * cumulativeSum;
-
-      // Determine which item (if any) is dropped
-      const selected = cumulativeRates.find(
-        (entry) => randomRoll <= entry.cumulativeRate
-      );
-
-      if (!selected) {
-        return null; // No item dropped
+      // Independent drop rate system: roll each item separately
+      const droppedItems = [];
+      
+      for (const entry of dropPool) {
+        const dropChance = parseFloat(entry.dropRate); // e.g., 25.00 means 25% chance
+        const roll = Math.random() * 100; // Roll 0-100
+        
+        if (roll <= dropChance) {
+          droppedItems.push(entry);
+        }
       }
 
-      droppedItemId = selected.itemId;
+      // If no items dropped, return null
+      if (droppedItems.length === 0) {
+        return null;
+      }
+
+      // If one or more items dropped, pick one randomly
+      const droppedEntry = droppedItems[Math.floor(Math.random() * droppedItems.length)];
+      droppedItemId = droppedEntry.itemId;
     }
 
     // Verify user exists
