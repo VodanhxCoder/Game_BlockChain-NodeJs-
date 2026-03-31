@@ -9,11 +9,20 @@
   "license": "ISC",
   "author": "MinhKhue",
   "type": "module",
-  "main": "server.js",
+  "main": "services/start-all-services.cjs",
   "scripts": {
     "test": "echo \"No tests specified\"",
-    "start": "nodemon --exec node -r @babel/register src/server.js",
-    "dev": "nodemon server"
+    "start": "node services/start-all-services.cjs",
+    "dev": "node services/start-all-services.cjs",
+    "start:auth": "node services/auth-service/index.js",
+    "start:user": "node services/user-service/index.js",
+    "start:inventory": "node services/inventory-service/index.js",
+    "start:marketplace": "node services/marketplace-service/index.js",
+    "start:trade": "node services/trade-service/index.js",
+    "start:blockchain": "node services/blockchain-service/index.js",
+    "start:admin": "node services/admin-service/index.js",
+    "start:game": "node services/game-service/index.js",
+    "start:microservices": "node services/start-all-services.cjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",
