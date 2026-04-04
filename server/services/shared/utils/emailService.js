@@ -1,6 +1,8 @@
 // utils/emailService.js
-const nodemailer = require('nodemailer');
-require('dotenv').config();
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Tạo transporter cho email
 const transporter = nodemailer.createTransport({
@@ -226,7 +228,14 @@ const sendNewPasswordEmail = async (to, newPassword, username) => {
   return sendEmail(to, 'Cấp lại mật khẩu - Game BlockChain', htmlTemplate);
 };
 
-module.exports = {
+export {
+  sendVerificationEmail,
+  generateVerificationCode,
+  sendEmail,
+  sendNewPasswordEmail
+};
+
+export default {
   sendVerificationEmail,
   generateVerificationCode,
   sendEmail,

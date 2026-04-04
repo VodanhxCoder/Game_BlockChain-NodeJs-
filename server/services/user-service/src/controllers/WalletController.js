@@ -1,26 +1,16 @@
-import { ethers } from 'ethers';
-import db from '../../../shared/models/index.js';
-import { Op } from 'sequelize';
-
-// In-memory challenge store: username -> nonce
-const challenges = new Map();
+import walletService from '../services/walletService.js';
 
 const WalletController = {
   // POST /api/user/wallet/challenge
   // Body: { username }
   async createChallenge(req, res) {
     try {
-      const { username } = req.body;
-      console.log('🔐 Challenge requested for user:', username);
-      if (!username) return res.status(400).json({ error: 'username required' });
-
-      const nonce = Math.floor(Math.random() * 1e10).toString();
-      challenges.set(username, nonce);
-
-      const message = `Link wallet to user ${username} - nonce: ${nonce}`;
-      console.log('✅ Challenge created:', message);
-      return res.json({ message, nonce });
+      const result = await walletService.createChallenge(req.body);
+      return res.json(result);
     } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ error: err.message });
+      }
       console.error('❌ createChallenge error', err);
       return res.status(500).json({ error: 'internal error' });
     }
@@ -30,66 +20,12 @@ const WalletController = {
   // Body: { username, address, signature }
   async verifySignatureAndSave(req, res) {
     try {
-      const { username, address, signature } = req.body;
-      console.log('🔐 Verify signature for user:', username, 'address:', address);
-      if (!username || !address || !signature) return res.status(400).json({ error: 'username, address and signature required' });
-
-      const nonce = challenges.get(username);
-      if (!nonce) {
-        console.log('❌ No challenge found for user:', username);
-        return res.status(400).json({ error: 'no challenge for this user' });
-      }
-
-      const message = `Link wallet to user ${username} - nonce: ${nonce}`;
-      console.log('🔍 Verifying message:', message);
-
-      let recovered;
-      try {
-        recovered = ethers.verifyMessage(message, signature);
-        console.log('🔑 Recovered address:', recovered);
-      } catch (e) {
-        console.error('❌ Invalid signature:', e.message);
-        return res.status(400).json({ error: 'invalid signature' });
-      }
-
-      if (recovered.toLowerCase() !== address.toLowerCase()) {
-        console.error('❌ Address mismatch - recovered:', recovered, 'claimed:', address);
-        return res.status(400).json({ error: 'signature does not match address' });
-      }
-
-      // Check if this wallet is already linked to another user
-      const existingUser = await db.User.findOne({
-        where: { 
-          walletAddress: address,
-          username: { [Op.ne]: username } // Not the current user
-        }
-      });
-
-      if (existingUser) {
-        console.error('❌ Wallet already linked to another user:', existingUser.username);
-        challenges.delete(username);
-        return res.status(409).json({ 
-          error: 'This wallet is already linked to another account. Please use a different wallet.'
-        });
-      }
-
-      // Update user's walletAddress in DB
-      console.log('💾 Updating database for user:', username, 'wallet:', address);
-      const [updated] = await db.User.update(
-        { walletAddress: address },
-        { where: { username } }
-      );
-
-      challenges.delete(username);
-
-      if (updated === 0) {
-        console.error('❌ User not found in database:', username);
-        return res.status(404).json({ error: 'user not found' });
-      }
-
-      console.log('✅ Wallet linked successfully for user:', username, 'wallet:', address);
-      return res.json({ success: true, walletAddress: address });
+      const result = await walletService.verifySignatureAndSave(req.body);
+      return res.json(result);
     } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ error: err.message });
+      }
       console.error('❌ verifySignatureAndSave error', err);
       return res.status(500).json({ error: 'internal error' });
     }

@@ -2,9 +2,7 @@
  * Email Verification Middleware
  * Handles email verification using in-memory storage instead of database
  */
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const { sendEmail } = require('../utils/emailService.js');
+import { sendEmail } from '../utils/emailService.js';
 
 // In-memory store for verification codes
 // In production, consider using Redis or another cache solution
