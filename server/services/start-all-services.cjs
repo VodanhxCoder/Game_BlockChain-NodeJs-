@@ -2,21 +2,19 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const serviceCommands = [
-  { name: 'auth-service', cmd: 'npm run start:auth' },
-  { name: 'user-service', cmd: 'npm run start:user' },
-  { name: 'inventory-service', cmd: 'npm run start:inventory' },
-  { name: 'marketplace-service', cmd: 'npm run start:marketplace' },
-  { name: 'trade-service', cmd: 'npm run start:trade' },
-  { name: 'blockchain-service', cmd: 'npm run start:blockchain' },
-  { name: 'admin-service', cmd: 'npm run start:admin' },
-  { name: 'game-service', cmd: 'npm run start:game' }
+  { name: 'auth-service', cwd: path.resolve(__dirname, 'auth-service') },
+  { name: 'user-service', cwd: path.resolve(__dirname, 'user-service') },
+  { name: 'inventory-service', cwd: path.resolve(__dirname, 'inventory-service') },
+  { name: 'marketplace-service', cwd: path.resolve(__dirname, 'marketplace-service') },
+  { name: 'trade-service', cwd: path.resolve(__dirname, 'trade-service') },
+  { name: 'blockchain-service', cwd: path.resolve(__dirname, 'blockchain-service') },
+  { name: 'admin-service', cwd: path.resolve(__dirname, 'admin-service') },
+  { name: 'game-service', cwd: path.resolve(__dirname, 'game-service') }
 ];
 
-const cwd = path.resolve(__dirname, '..');
-
 for (const service of serviceCommands) {
-  const child = spawn(service.cmd, {
-    cwd,
+  const child = spawn('npm', ['run', 'start'], {
+    cwd: service.cwd,
     shell: true,
     stdio: 'inherit',
     env: process.env

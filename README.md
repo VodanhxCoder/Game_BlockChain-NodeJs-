@@ -14,7 +14,7 @@ The system uses a React + Vite client and a Node.js backend that has been split 
 
 ### Backend Microservices
 
-Services are started from server/services and currently run on these default ports:
+Each service now has its own package.json (inside its service folder) and runs on a dedicated default port:
 
 - auth-service: 4001
 - user-service: 4002
@@ -24,6 +24,17 @@ Services are started from server/services and currently run on these default por
 - blockchain-service: 4006
 - admin-service: 4007
 - game-service (Socket.IO): 4008
+
+Service package locations:
+
+- server/services/auth-service/package.json
+- server/services/user-service/package.json
+- server/services/inventory-service/package.json
+- server/services/marketplace-service/package.json
+- server/services/trade-service/package.json
+- server/services/blockchain-service/package.json
+- server/services/admin-service/package.json
+- server/services/game-service/package.json
 
 Current decomposition follows handler/controller/service separation and is intended to evolve toward fully isolated service ownership.
 
@@ -97,15 +108,26 @@ npm run start:microservices
 You can also run each service independently:
 
 ```bash
-npm run start:auth
-npm run start:user
-npm run start:inventory
-npm run start:marketplace
-npm run start:trade
-npm run start:blockchain
-npm run start:admin
-npm run start:game
+cd server/services/auth-service && npm run start
+cd server/services/user-service && npm run start
+cd server/services/inventory-service && npm run start
+cd server/services/marketplace-service && npm run start
+cd server/services/trade-service && npm run start
+cd server/services/blockchain-service && npm run start
+cd server/services/admin-service && npm run start
+cd server/services/game-service && npm run start
 ```
+
+Port environment variables per service:
+
+- AUTH_SERVICE_PORT (default 4001)
+- USER_SERVICE_PORT (default 4002)
+- INVENTORY_SERVICE_PORT (default 4003)
+- MARKETPLACE_SERVICE_PORT (default 4004)
+- TRADE_SERVICE_PORT (default 4005)
+- BLOCKCHAIN_SERVICE_PORT (default 4006)
+- ADMIN_SERVICE_PORT (default 4007)
+- GAME_SERVICE_PORT (default 4008)
 
 ## Environment Configuration
 
