@@ -1,107 +1,147 @@
 # Game_BlockChain-NodeJs-
-```markdown
-# Game_BlockChain-NodeJs-
 
-A full-stack demo project combining a React (Vite) client with an Express server and blockchain tooling (Hardhat/OpenZeppelin). It includes authentication helpers, file uploads, and integration with Ethereum-compatible libraries for smart contract interaction.
+Full-stack game platform with blockchain-enabled trading.
 
-This README gives quick setup steps, useful scripts and notes to run the project locally on Windows or macOS/Linux.
+The system uses a React + Vite client and a Node.js backend that has been split into microservices. Smart contract workflows are supported through Hardhat and OpenZeppelin.
 
-## Prerequisites
+## System Architecture
 
-- Node.js (recommended >= 18). Verify with `node -v`.
-- npm (comes with Node.js) or Yarn.
-- (Optional) Docker if you prefer containerized databases or services.
+### Frontend
 
-## Quick start
+- client app: React 19 + Vite
+- API consumption: REST + Socket.IO
+- key areas: auth, profile, inventory, market, realtime gameplay
 
-Clone the repository and switch to the project folder:
+### Backend Microservices
 
-```bash
-git clone <REMOTE_URL>
-cd <repo-folder>
+Services are started from server/services and currently run on these default ports:
+
+- auth-service: 4001
+- user-service: 4002
+- inventory-service: 4003
+- marketplace-service: 4004
+- trade-service: 4005
+- blockchain-service: 4006
+- admin-service: 4007
+- game-service (Socket.IO): 4008
+
+Current decomposition follows handler/controller/service separation and is intended to evolve toward fully isolated service ownership.
+
+### Blockchain Layer
+
+- smart contract source: server/contracts/ItemTradingNFT.sol
+- deployment/testing scripts: server/scripts
+- toolchain: Hardhat, Ethers, OpenZeppelin
+
+## Project Structure
+
+```text
+.
+├─ client/
+│  ├─ src/components
+│  ├─ src/context
+│  ├─ src/pages
+│  └─ src/routes
+├─ server/
+│  ├─ services/
+│  │  ├─ auth-service/
+│  │  ├─ user-service/
+│  │  ├─ inventory-service/
+│  │  ├─ marketplace-service/
+│  │  ├─ trade-service/
+│  │  ├─ blockchain-service/
+│  │  ├─ admin-service/
+│  │  ├─ game-service/
+│  │  └─ shared/
+│  ├─ contracts/
+│  ├─ scripts/
+│  └─ fail2ban_service/
+└─ ARCHETYPE.md
 ```
 
-### 1) Client (frontend)
+## Quick Start
 
-The frontend is built with Vite + React.
+### Prerequisites
+
+- Node.js 18+
+- npm
+- MySQL or PostgreSQL (depending on your environment configuration)
+- optional: Python 3 (for fail2ban_service)
+
+### Install Dependencies
+
+```bash
+# frontend
+cd client
+npm install
+
+# backend
+cd ../server
+npm install
+```
+
+### Run Frontend
 
 ```bash
 cd client
-npm install
-npm run dev   # starts Vite dev server (usually at http://localhost:5173)
+npm run dev
 ```
 
-Available scripts (see `client/package.json`):
-- `dev` — start dev server
-- `build` — build production bundle
-- `preview` — preview built bundle
-
-### 2) Server (backend)
-
-The server is an Express app and contains project-specific APIs, authentication, and DB integration.
+### Run Backend Microservices
 
 ```bash
 cd server
-npm install
-npm run dev   
+npm run start:microservices
 ```
 
-Available scripts (see `server/package.json`):
-- `start` — start server (nodemon with Babel register)
-- `dev` — development start (nodemon)
+You can also run each service independently:
 
-## Environment variables
-
-Create a `.env` file in the `server/` directory with the values your app needs. Example variables (adjust for your setup):
-
+```bash
+npm run start:auth
+npm run start:user
+npm run start:inventory
+npm run start:marketplace
+npm run start:trade
+npm run start:blockchain
+npm run start:admin
+npm run start:game
 ```
+
+## Environment Configuration
+
+Create server/.env and configure values for your setup.
+
+Common variables:
+
+```env
 PORT=3000
-DATABASE_URL=mysql://user:password@localhost:3306/dbname
-JWT_SECRET=your_jwt_secret_here
+JWT_SECRET=replace_me
 EMAIL_USER=you@example.com
-EMAIL_PASS=supersecret
+EMAIL_PASS=app_password
+DATABASE_URL=mysql://user:password@localhost:3306/dbname
 ```
 
-If you use Sequelize, run migrations (if available) to prepare the database.
+For microservice-specific setup, use server/.env.microservices.example as a base if present in your local branch.
 
-## Smart contracts & Hardhat
+## Documentation Index
 
-The server `package.json` includes dev dependencies for Hardhat and related tooling. Smart contract development and tests can be run from the `server/` (or a dedicated `contracts/`) location using Hardhat commands. Check the `server/` scripts and the project folders for a Hardhat setup.
+Core architecture and operations:
 
-## Project structure (high level)
+- ARCHETYPE.md: target architecture blueprint and layering rules
+- server/MICROSERVICES_RUNBOOK.md: service startup and split status
+- server/BACKEND_HTTP_FUNCTION_SEPARATION.md: HTTP vs business-layer separation status
 
-- `client/` — React + Vite frontend
-- `server/` — Express backend, APIs, DB models, smart contract tooling
-- `server/fail2ban_service/` — auxiliary service README (if used)
+Feature-specific references:
 
-Explore each folder for specific README files and instructions.
+- server/WALLET_MANAGEMENT.md: wallet linking and operational commands
+- server/fail2ban_service/README.md: local fail2ban-like service for abuse control
 
-## Notes & tips (Windows)
+## Current State Notes
 
-- If PowerShell blocks npm scripts, run them using `npm.cmd` or temporarily lift execution policy:
-
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force
-```
-
-- On Windows, use `cmd` or PowerShell depending on your preference. The commands in this README are cross-platform shell examples.
-
-## Contributing
-
-If you'd like to contribute:
-
-1. Fork the repo and create a feature branch.
-2. Open a pull request with a clear description of your changes.
+- monolith compatibility is still partially preserved during migration
+- several routes are already split by service, while some flows still need deeper extraction
+- next phase: stronger per-service data ownership and event-driven integration where needed
 
 ## License
 
-This project currently lists `ISC` in `server/package.json`. Add or change license text here as needed.
-
-## Contact
-
-Author in `server/package.json`: MinhKhue
-
----
-
-
-```
+ISC (as declared in server/package.json)
