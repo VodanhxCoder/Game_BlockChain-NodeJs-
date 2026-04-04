@@ -4,6 +4,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { useTheme } from "../../../context/ThemeContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { sanitizeInput } from "../../../utils/sanitizer";
+import { mapLegacyApiUrl } from "../../../services/backendHosts";
 import "../../../assets/css/auth.css";
 
 export default function ForgotPassword() {
@@ -40,8 +41,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-      const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

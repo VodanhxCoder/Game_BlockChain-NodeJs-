@@ -8,6 +8,7 @@ import { useTheme } from "../../../context/ThemeContext";
 import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
 import { sanitizeInput } from "../../../utils/sanitizer";
+import { mapLegacyApiUrl } from "../../../services/backendHosts";
 import "../../../assets/css/auth.css";
 
 const TRANSITION_MS = 420;
@@ -77,8 +78,7 @@ export default function SignIn() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-        const res = await fetch(`${API_BASE}/api/auth/check-status`, {
+        const res = await fetch(mapLegacyApiUrl('/api/auth/check-status'), {
           headers: { 'ngrok-skip-browser-warning': 'true' }
         });
         if (res.ok) {
@@ -197,8 +197,7 @@ export default function SignIn() {
 
   const handleProvider = (providerId) => {
     // Redirect to OAuth endpoint
-    const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
-    window.location.href = `${API_BASE}/api/auth/${providerId}`;
+    window.location.href = mapLegacyApiUrl(`/api/auth/${providerId}`);
   };
 
   return (

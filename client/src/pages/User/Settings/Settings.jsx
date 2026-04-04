@@ -5,8 +5,7 @@ import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useWeb3 } from "../../../context/Web3Context";
 import { useLanguage } from "../../../context/LanguageContext";
 import { hashTextSHA256 } from "../../../utils/Passwordhasher";
-
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081') + "/api";
+import { mapLegacyApiUrl } from "../../../services/backendHosts";
 
 export default function Settings() {
   const { user, setUser } = useAuth();
@@ -30,7 +29,7 @@ export default function Settings() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/user/profile`, {
+      const res = await fetch(mapLegacyApiUrl('/api/user/profile'), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -66,7 +65,7 @@ export default function Settings() {
       const newHash = await hashTextSHA256(passData.new);
       
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(`${API_BASE}/user/password`, {
+      const res = await fetch(mapLegacyApiUrl('/api/user/password'), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

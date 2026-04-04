@@ -10,6 +10,7 @@ import { useWeb3 } from '../../../context/Web3Context';
 import ProtectedImage from '../../../components/ProtectedImage';
 import axios from "axios";
 import { ethers } from 'ethers';
+import { mapLegacyApiUrl } from '../../../services/backendHosts';
 
 const rarityColors = {
   Legendary: "#FFD700",
@@ -24,17 +25,12 @@ const rarityLabels = {
 };
 
 export default function Inventory() {
-  // Build API base URL for server-hosted uploads.
-  // Vite exposes env via import.meta.env.VITE_API_BASE_URL; fallback to empty string
-  const API_BASE_URL = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_API_BASE_URL || '' : '';
-
   const getFullImageUrl = (imgPath) => {
     if (!imgPath) return null;
     if (imgPath.startsWith('http')) return imgPath;
-    
-    const base = API_BASE_URL.replace(/\/+$/, '');
-    const path = imgPath.replace(/^\/+/, '');
-    return `${base}/${path}`;
+
+    if (imgPath.startsWith('/')) return mapLegacyApiUrl(imgPath);
+    return mapLegacyApiUrl(`/${imgPath}`);
   };
   const { user } = useAuth();
   const { t } = useLanguage();

@@ -35,7 +35,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
   // Initialize WebSocket connection
   useEffect(() => {
-    const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:8080';
+    const serverUrl = import.meta.env.VITE_GAME_SERVICE_URL || import.meta.env.VITE_SERVER_URL || 'http://localhost:4008';
     const socket = io(serverUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']

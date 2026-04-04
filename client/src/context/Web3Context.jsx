@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useAuth } from './AuthContext';
+import { mapLegacyApiUrl } from '../services/backendHosts';
 
 const Web3Context = createContext(null);
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 
 export function Web3Provider({ children }) {
   const { user, setUser } = useAuth();
@@ -33,7 +33,7 @@ export function Web3Provider({ children }) {
 
       // 1. Get challenge from backend
       console.log('📡 Requesting challenge from backend...');
-      const challengeResp = await fetch(`${API_BASE_URL}/api/user/wallet/challenge`, {
+      const challengeResp = await fetch(mapLegacyApiUrl('/api/user/wallet/challenge'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export function Web3Provider({ children }) {
 
       // 3. Verify and save on backend
       console.log('📡 Sending signature to backend for verification...');
-      const verifyResp = await fetch(`${API_BASE_URL}/api/user/wallet/verify`, {
+      const verifyResp = await fetch(mapLegacyApiUrl('/api/user/wallet/verify'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
