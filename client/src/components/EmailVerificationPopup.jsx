@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
+import { mapLegacyApiUrl } from '../services/backendHosts';
 
 const EmailVerificationPopup = ({ 
   isOpen, 
@@ -126,7 +127,7 @@ const EmailVerificationPopup = ({
     setError('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}/api/auth/verify-email`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/verify-email'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

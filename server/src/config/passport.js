@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import db from '../models/index.js';
+import db from '../../services/shared/models/index.js';
 const { User } = db;
 
 // Serialize user for session

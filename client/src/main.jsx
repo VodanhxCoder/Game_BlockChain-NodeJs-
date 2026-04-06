@@ -9,14 +9,17 @@ import { Web3Provider } from "./context/Web3Context";
 import "./assets/css/ui.css";
 import "./assets/css/AuthSlider.css";
 import axios from 'axios';
+import { mapLegacyApiUrl } from './services/backendHosts';
 
 // Configure axios defaults
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 axios.defaults.withCredentials = true;
 
 // Add a request interceptor to attach the JWT token
 axios.interceptors.request.use(
   (config) => {
+    if (typeof config.url === 'string') {
+      config.url = mapLegacyApiUrl(config.url);
+    }
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;

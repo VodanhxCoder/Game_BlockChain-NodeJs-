@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePageTitle } from '../../../hooks/usePageTitle';
 import { useAuth } from "../../../context/AuthContext";
 import axios from "axios";
+import { mapLegacyApiUrl } from '../../../services/backendHosts';
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -124,8 +125,7 @@ export default function UserManagement() {
   const getImageUrl = (path) => {
     if (!path) return null;
     if (path.startsWith("http")) return path;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
-    return `${baseUrl}${path}`;
+    return mapLegacyApiUrl(path);
   };
 
   return (

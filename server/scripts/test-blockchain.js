@@ -1,5 +1,6 @@
-const blockchainService = require('./src/services/HardhatBlockchainService');
-const db = require('./src/models');
+import db from '../services/shared/models/index.js';
+import blockchainService from '../services/shared/blockchain/HardhatBlockchainService.js';
+
 
 async function testBlockchainIntegration() {
   console.log('🧪 Testing Blockchain Integration\n');

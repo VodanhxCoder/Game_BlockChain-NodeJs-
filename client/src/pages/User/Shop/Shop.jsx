@@ -7,14 +7,13 @@ import WalletConnect from '../../../components/WalletConnect';
 import { useWeb3 } from '../../../context/Web3Context';
 import { useTheme } from '../../../context/ThemeContext';
 import { usePageTitle } from '../../../hooks/usePageTitle';
+import { mapLegacyApiUrl } from '../../../services/backendHosts';
 
-// Vite-friendly API base URL and helper to build full image URLs
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env) ? (import.meta.env.VITE_API_BASE_URL || '') : '';
 const getFullImageUrl = (imgPath) => {
   if (!imgPath) return null;
   if (imgPath.startsWith('http')) return imgPath;
-  if (imgPath.startsWith('/')) return `${API_BASE_URL}${imgPath}`;
-  return `${API_BASE_URL}/${imgPath}`.replace(/\/\/+/, '/');
+  if (imgPath.startsWith('/')) return mapLegacyApiUrl(imgPath);
+  return mapLegacyApiUrl(`/${imgPath}`);
 };
 
 const activities = [

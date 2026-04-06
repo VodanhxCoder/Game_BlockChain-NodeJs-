@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { mapLegacyApiUrl } from "../services/backendHosts";
 
 const TOKEN_KEY = "auth_token";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081';
 export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -22,7 +22,7 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async (token) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/me'), {
         headers: {
           'Authorization': `Bearer ${token}`,
           'ngrok-skip-browser-warning': 'true'
@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password, recaptchaToken) => {
     try {
       // Regular credential-based login
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export function AuthProvider({ children }) {
       // Optional: Call backend to blacklist token
       const token = localStorage.getItem(TOKEN_KEY);
       if (token) {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        await fetch(mapLegacyApiUrl('/api/auth/logout'), {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -148,7 +148,7 @@ export function AuthProvider({ children }) {
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/signup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -184,7 +184,7 @@ export function AuthProvider({ children }) {
   // Keep existing helper functions
   const sendVerificationEmail = async (email, username) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/send-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username }),
@@ -203,7 +203,7 @@ export function AuthProvider({ children }) {
 
   const verifyEmail = async (email, code) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/verify-email'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code }),
@@ -222,7 +222,7 @@ export function AuthProvider({ children }) {
 
   const resendVerificationEmail = async (email) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/resend-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -241,7 +241,7 @@ export function AuthProvider({ children }) {
 
   const checkAvailability = async (email, username) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/check-availability`, {
+      const response = await fetch(mapLegacyApiUrl('/api/auth/check-availability'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, username }),
