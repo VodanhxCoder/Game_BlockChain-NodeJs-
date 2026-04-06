@@ -1,4 +1,4 @@
-import passport from 'passport';
+import passport from '../config/passportJwt.js';
 
 const verifyToken = (req, res, next) => {
   passport.authenticate('jwt', { session: false }, (err, user, info) => {
