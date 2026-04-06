@@ -1,5 +1,5 @@
-Fail2Ban-like microservice (Flask)
-=================================
+Fail2Ban-like microservice (Node.js)
+====================================
 
 Purpose
 -------
@@ -9,44 +9,28 @@ This service is intentionally lightweight and in-memory for development and test
 
 Files
 -----
-- `app.py` - Flask application implementing `/check`, `/attempt`, and `/status` endpoints.
-- `requirements.txt` - Python dependencies (Flask).
+- `index.js` - Node/Express application implementing `/check`, `/attempt`, and `/status` endpoints.
+- `package.json` - Node dependencies and scripts.
 
-Quick start (Windows - cmd)
---------------------------
-1. Create and activate a virtual environment (recommended):
+Quick start
+-----------
 
-```cmd
-cd server\fail2ban_service
-python -m venv .venv
-.venv\Scripts\activate
-```
-
-2. Install dependencies and run the service:
-
-```cmd
-pip install -r requirements.txt
-python app.py
-```
-
-The service will bind to `127.0.0.1:5000` by default.
-
-Quick start (Linux / macOS)
----------------------------
 ```bash
 cd server/fail2ban_service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python app.py
+npm install
+npm start
 ```
+
+The service binds to `127.0.0.1:5000` by default.
 
 Configuration
 -------------
-`app.py` defines three constants at top of file you can adjust directly:
-- `FAILURE_WINDOW` (seconds) — how far back to count failures (default 300s)
-- `FAILURE_THRESHOLD` — number of failures within the window that triggers a ban (default 5)
-- `BAN_TIME` (seconds) — how long to ban the IP (default 600s)
+Environment variables:
+- `FAILURE_WINDOW` (seconds) — how far back to count failures (default `300`)
+- `FAILURE_THRESHOLD` — failures within the window before ban (default `5`)
+- `BAN_TIME` (seconds) — how long to ban the IP (default `600`)
+- `FAIL2BAN_HOST` — bind host (default `127.0.0.1`)
+- `FAIL2BAN_PORT` — bind port (default `5000`)
 
 Integration with Node backend
 -----------------------------
@@ -67,22 +51,22 @@ curl "http://127.0.0.1:5000/check?ip=127.0.0.1"
 # -> { "banned": false, "remaining": 0 }
 ```
 
-Auto-start from Node server
---------------------------
+Auto-start with other Node services
+-----------------------------------
 
-The main Node server (`server/src/server.js`) can optionally auto-start this Flask service when it boots. This is controlled by the environment variable `FAIL2BAN_AUTO_START` (default: `true`).
+The root server starter `server/services/start-all-services.cjs` now includes this service as `fail2ban-service`.
 
-- To disable auto-start, set `FAIL2BAN_AUTO_START=false` in your `.env` or environment.
-- To use a specific Python executable, set `FAIL2BAN_PYTHON` to the full command/path (e.g. `python3` or `C:\Python39\python.exe`).
+From `server/`:
 
-Example (.env):
-
-```
-FAIL2BAN_AUTO_START=true
-FAIL2BAN_PYTHON=python
+```bash
+npm run start:fail2ban
 ```
 
-When enabled, the Node process will spawn the Flask script `server/fail2ban_service/app.py` and pipe its stdout/stderr to the Node process output. If the script isn't present or the spawn fails, Node will continue to run and log a warning.
+or start all microservices:
+
+```bash
+npm run start
+```
 
 Notes & Recommendations
 -----------------------
@@ -98,7 +82,7 @@ Notes & Recommendations
 
 Testing
 -------
-1. Start the Flask service.
+1. Start the Fail2Ban Node service.
 2. From another terminal, call `/attempt` with `success:false` multiple times from the same IP until you reach the threshold. Then call `/check` and verify `banned:true`.
 3. Call `/attempt` with `success:true` to clear failures and verify `/check` returns not banned.
 
