@@ -14,7 +14,7 @@
     "test": "echo \"No tests specified\"",
     "start": "node services/start-all-services.cjs",
     "dev": "node services/start-all-services.cjs",
-    "start:fail2ban": "npm --prefix fail2ban_service start",
+    "start:fail2ban": "npm --prefix services/fail2ban_service start",
     "start:auth": "node services/auth-service/index.js",
     "start:user": "node services/user-service/index.js",
     "start:inventory": "node services/inventory-service/index.js",
