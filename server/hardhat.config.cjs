@@ -32,3 +32,5 @@ module.exports = {
     artifacts: "./artifacts"
   }
 };
+
+// This file has been relocated to the blockchain-service directory.

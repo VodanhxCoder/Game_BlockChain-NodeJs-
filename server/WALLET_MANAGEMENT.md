@@ -19,7 +19,7 @@ First, ensure the `walletAddress` column exists in your database:
 
 ```bash
 cd server
-node run-wallet-migration.cjs
+node services/wallet-service/run-wallet-migration.cjs
 ```
 
 **What this does:**
@@ -58,12 +58,12 @@ The `manage-wallets.cjs` script provides a complete wallet management interface.
 #### Link a Wallet
 
 ```bash
-node manage-wallets.cjs link <username> <walletAddress>
+node services/wallet-service/manage-wallets.cjs link <username> <walletAddress>
 ```
 
 **Example:**
 ```bash
-node manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+node services/wallet-service/manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
 **Output:**
@@ -78,18 +78,18 @@ node manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 #### Unlink a Wallet
 
 ```bash
-node manage-wallets.cjs unlink <username>
+node services/wallet-service/manage-wallets.cjs unlink <username>
 ```
 
 **Example:**
 ```bash
-node manage-wallets.cjs unlink alice
+node services/wallet-service/manage-wallets.cjs unlink alice
 ```
 
 #### List All Linked Wallets
 
 ```bash
-node manage-wallets.cjs list
+node services/wallet-service/manage-wallets.cjs list
 ```
 
 **Output:**
@@ -107,12 +107,12 @@ node manage-wallets.cjs list
 #### Verify User's Wallet
 
 ```bash
-node manage-wallets.cjs verify <username>
+node services/wallet-service/manage-wallets.cjs verify <username>
 ```
 
 **Example:**
 ```bash
-node manage-wallets.cjs verify alice
+node services/wallet-service/manage-wallets.cjs verify alice
 ```
 
 **Output:**
@@ -144,7 +144,7 @@ Create a JSON file with wallet mappings:
 
 Then run:
 ```bash
-node manage-wallets.cjs bulk wallets.json
+node services/wallet-service/manage-wallets.cjs bulk wallets.json
 ```
 
 **Output:**
@@ -328,7 +328,7 @@ WHERE walletAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 **Solution:** Run the migration first
 ```bash
-node run-wallet-migration.cjs
+node services/wallet-service/run-wallet-migration.cjs
 ```
 
 #### 2. "Wallet is already linked to another user"
@@ -337,8 +337,8 @@ node run-wallet-migration.cjs
 
 **Solution:** Unlink the wallet from the other user first
 ```bash
-node manage-wallets.cjs unlink other_username
-node manage-wallets.cjs link new_username 0x...
+node services/wallet-service/manage-wallets.cjs unlink other_username
+node services/wallet-service/manage-wallets.cjs link new_username 0x...
 ```
 
 #### 3. "Invalid wallet address format"
@@ -354,7 +354,7 @@ node manage-wallets.cjs link new_username 0x...
 
 **Solution:** Create the user first or verify the username
 ```bash
-node manage-wallets.cjs list  # Check existing users
+node services/wallet-service/manage-wallets.cjs list  # Check existing users
 ```
 
 #### 5. Database connection errors
@@ -426,24 +426,24 @@ walletAddress: {
 
 ```bash
 cd server
-node manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-node manage-wallets.cjs link bob 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-node manage-wallets.cjs list
+node services/wallet-service/manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+node services/wallet-service/manage-wallets.cjs link bob 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+node services/wallet-service/manage-wallets.cjs list
 ```
 
 ### Example 2: Verify before trading
 
 ```bash
-node manage-wallets.cjs verify seller_username
-node manage-wallets.cjs verify buyer_username
+node services/wallet-service/manage-wallets.cjs verify seller_username
+node services/wallet-service/manage-wallets.cjs verify buyer_username
 ```
 
 ### Example 3: Bulk setup for testing
 
 ```bash
 # Create wallets.json with your test users
-node manage-wallets.cjs bulk wallets.json
-node manage-wallets.cjs list
+node services/wallet-service/manage-wallets.cjs bulk wallets.json
+node services/wallet-service/manage-wallets.cjs list
 ```
 
 ---
@@ -459,3 +459,4 @@ node manage-wallets.cjs list
 ---
 
 **✅ You're all set!** Your database now supports wallet linking with full Sequelize integration.
+
