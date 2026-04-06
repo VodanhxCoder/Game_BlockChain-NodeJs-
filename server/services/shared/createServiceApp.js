@@ -3,9 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import hpp from 'hpp';
 import bodyParser from 'body-parser';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import './config/loadEnv.js';
 
 export function createServiceApp(serviceName) {
   const app = express();

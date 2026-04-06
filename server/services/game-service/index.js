@@ -1,10 +1,7 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 import GameController from './src/controllers/GameController.js';
 import { createServiceApp } from '../shared/createServiceApp.js';
-
-dotenv.config();
 
 const app = createServiceApp('game-service');
 const httpServer = createServer(app);
