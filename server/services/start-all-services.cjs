@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 const serviceCommands = [
+  { name: 'fail2ban-service', cmd: 'npm run start:fail2ban' },
   { name: 'auth-service', cmd: 'npm run start:auth' },
   { name: 'user-service', cmd: 'npm run start:user' },
   { name: 'inventory-service', cmd: 'npm run start:inventory' },
