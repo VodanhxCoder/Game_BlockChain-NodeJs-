@@ -107,6 +107,42 @@ npm run start:admin
 npm run start:game
 ```
 
+### Run Split Microservices With Docker
+
+This repository now includes a compose setup that runs each backend service in its own container,
+plus MySQL and a Hardhat node.
+
+```bash
+# from repository root
+docker compose -f docker-compose.microservices.yml up --build
+```
+
+Services exposed on host:
+
+- auth-service: 4001
+- user-service: 4002
+- inventory-service: 4003
+- marketplace-service: 4004
+- trade-service: 4005
+- blockchain-service: 4006
+- admin-service: 4007
+- game-service: 4008
+- fail2ban-service: 5000
+- hardhat RPC: 8545
+- mysql: 3306
+
+To stop and remove containers:
+
+```bash
+docker compose -f docker-compose.microservices.yml down
+```
+
+To stop and remove containers and DB volume:
+
+```bash
+docker compose -f docker-compose.microservices.yml down -v
+```
+
 ## Environment Configuration
 
 Create server/.env and configure values for your setup.
