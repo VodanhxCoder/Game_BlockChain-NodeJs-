@@ -44,8 +44,8 @@ services:
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
       MYSQL_DATABASE: game_blockchain
-    ports:
-      - "127.0.0.1:3306:3306"
+    expose:
+      - "3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
@@ -84,7 +84,7 @@ services:
       BLOCKCHAIN_RPC_URL: http://hardhat:8545
       CONTRACT_ADDRESS: 0x5FbDB2315678afecb367f032d93F642f64180aa3
       BLOCKCHAIN_CONTRACT_ADDRESS: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-    command: npx hardhat run scripts/deploy-contract.js --network localhost
+    command: npx hardhat run --no-compile scripts/deploy-contract.js --network localhost
     depends_on:
       hardhat:
         condition: service_healthy
