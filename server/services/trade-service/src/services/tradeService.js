@@ -66,6 +66,24 @@ const prepareTrade = async ({ listingId, buyer, buyerInventoryItemId, buyerWalle
     throw createHttpError(400, 'Buyer wallet address not found. Please link your wallet first.');
   }
 
+  // If seller signature for buyer-initiated execution was already consumed on-chain,
+  // this listing is stale and should not proceed to avoid guaranteed revert + gas loss.
+  if (listing.sellerSignature && listing.sellerSignatureTimestamp) {
+    const signatureUsed = await HardhatBlockchainService.isSellerSignatureUsed(
+      listing.itemHash,
+      listing.listingId,
+      listing.sellerSignatureTimestamp
+    );
+
+    if (signatureUsed) {
+      throw createHttpError(
+        409,
+        'Listing signature already used on-chain. Please refresh marketplace.',
+        'This listing has likely been traded already and is stale in the current view.'
+      );
+    }
+  }
+
   const sellerMinted = await HardhatBlockchainService.isItemMinted(listing.itemHash);
   if (!sellerMinted) {
     try {

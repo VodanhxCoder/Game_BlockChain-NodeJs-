@@ -17,16 +17,45 @@ class BlockchainService {
   constructor() {
     this.provider = null;
     this.wallet = null;
+    this.baseWallet = null;
     this.contract = null;
+    this.contractAbi = null;
+    this.rpcUrl = null;
+    this.privateKey = null;
+    this.contractAddress = null;
     this.initialized = false;
+  }
+
+  isInvalidBlockTagError(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return message.includes('invalid block tag') || message.includes('latest block number is');
+  }
+
+  isNonceTooLowError(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return error?.code === 'NONCE_EXPIRED' || message.includes('nonce too low');
+  }
+
+  async withRpcRecovery(operationName, operation) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!this.isInvalidBlockTagError(error) && !this.isNonceTooLowError(error)) {
+        throw error;
+      }
+
+      console.warn(`⚠️  ${operationName} failed due to chain state mismatch, reinitializing provider and retrying...`);
+      await this.initialize(true);
+      return await operation();
+    }
   }
 
   /**
    * Initialize blockchain connection
    * Reads configuration from environment variables
    */
-  async initialize() {
-    if (this.initialized) return;
+  async initialize(force = false) {
+    if (this.initialized && !force) return;
 
     try {
       const rpcUrl = process.env.BLOCKCHAIN_RPC_URL;
@@ -40,7 +69,8 @@ class BlockchainService {
 
       // Connect to blockchain network
       this.provider = new ethers.JsonRpcProvider(rpcUrl);
-      this.wallet = new ethers.Wallet(privateKey, this.provider);
+      this.baseWallet = new ethers.Wallet(privateKey, this.provider);
+      this.wallet = new ethers.NonceManager(this.baseWallet);
 
       // Load contract ABI
       const artifactPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'ItemTradingNFT.sol', 'ItemTradingNFT.json');
@@ -51,7 +81,11 @@ class BlockchainService {
       }
 
       const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
-      this.contract = new ethers.Contract(contractAddress, artifact.abi, this.wallet);
+      this.contractAbi = artifact.abi;
+      this.rpcUrl = rpcUrl;
+      this.privateKey = privateKey;
+      this.contractAddress = contractAddress;
+      this.contract = new ethers.Contract(contractAddress, this.contractAbi, this.wallet);
 
       // Test connection
       const network = await this.provider.getNetwork();
@@ -101,31 +135,39 @@ class BlockchainService {
       const itemHashBytes = this.hashToBytes32(itemHash);
 
       // Check if already minted
-      const isMinted = await this.contract.isItemMinted(itemHashBytes);
+      const isMinted = await this.withRpcRecovery('mintItem.isItemMinted', async () => {
+        return await this.contract.isItemMinted(itemHashBytes);
+      });
       if (isMinted) {
         console.log(`ℹ️  Item ${itemHash} already minted`);
-        const tokenId = await this.contract.getTokenId(itemHashBytes);
+        const tokenId = await this.withRpcRecovery('mintItem.getTokenId', async () => {
+          return await this.contract.getTokenId(itemHashBytes);
+        });
         return { tokenId: tokenId.toString(), transactionHash: null, alreadyMinted: true };
       }
 
       // Estimate gas
-      const gasEstimate = await this.contract.mintItem.estimateGas(
-        ownerAddress,
-        itemHashBytes,
-        itemName,
-        tier,
-        tokenURI
-      );
+      const gasEstimate = await this.withRpcRecovery('mintItem.estimateGas', async () => {
+        return await this.contract.mintItem.estimateGas(
+          ownerAddress,
+          itemHashBytes,
+          itemName,
+          tier,
+          tokenURI
+        );
+      });
 
       // Mint the NFT
-      const tx = await this.contract.mintItem(
-        ownerAddress,
-        itemHashBytes,
-        itemName,
-        tier,
-        tokenURI,
-        { gasLimit: gasEstimate * 120n / 100n } // Add 20% buffer
-      );
+      const tx = await this.withRpcRecovery('mintItem.send', async () => {
+        return await this.contract.mintItem(
+          ownerAddress,
+          itemHashBytes,
+          itemName,
+          tier,
+          tokenURI,
+          { gasLimit: gasEstimate * 120n / 100n } // Add 20% buffer
+        );
+      });
 
       console.log(`🔄 Minting item ${itemName} (${tier})... tx: ${tx.hash}`);
       const receipt = await tx.wait();
@@ -176,29 +218,37 @@ class BlockchainService {
       const buyerHashBytes = this.hashToBytes32(buyerItemHash);
 
       // Verify both items are minted
-      const sellerMinted = await this.contract.isItemMinted(sellerHashBytes);
-      const buyerMinted = await this.contract.isItemMinted(buyerHashBytes);
+      const sellerMinted = await this.withRpcRecovery('executeTrade.sellerMinted', async () => {
+        return await this.contract.isItemMinted(sellerHashBytes);
+      });
+      const buyerMinted = await this.withRpcRecovery('executeTrade.buyerMinted', async () => {
+        return await this.contract.isItemMinted(buyerHashBytes);
+      });
 
       if (!sellerMinted || !buyerMinted) {
         throw new Error('One or both items not minted as NFTs');
       }
 
       // Estimate gas
-      const gasEstimate = await this.contract.executeTrade.estimateGas(
-        sellerHashBytes,
-        buyerHashBytes,
-        sellerAddress,
-        buyerAddress
-      );
+      const gasEstimate = await this.withRpcRecovery('executeTrade.estimateGas', async () => {
+        return await this.contract.executeTrade.estimateGas(
+          sellerHashBytes,
+          buyerHashBytes,
+          sellerAddress,
+          buyerAddress
+        );
+      });
 
       // Execute trade
-      const tx = await this.contract.executeTrade(
-        sellerHashBytes,
-        buyerHashBytes,
-        sellerAddress,
-        buyerAddress,
-        { gasLimit: gasEstimate * 120n / 100n }
-      );
+      const tx = await this.withRpcRecovery('executeTrade.send', async () => {
+        return await this.contract.executeTrade(
+          sellerHashBytes,
+          buyerHashBytes,
+          sellerAddress,
+          buyerAddress,
+          { gasLimit: gasEstimate * 120n / 100n }
+        );
+      });
 
       console.log(`🔄 Executing trade... tx: ${tx.hash}`);
       const receipt = await tx.wait();
@@ -243,7 +293,9 @@ class BlockchainService {
     try {
       const itemHashBytes = this.hashToBytes32(itemHash);
       
-      const tx = await this.contract.recordListing(itemHashBytes, sellerAddress, listingId);
+      const tx = await this.withRpcRecovery('recordListing.send', async () => {
+        return await this.contract.recordListing(itemHashBytes, sellerAddress, listingId);
+      });
       const receipt = await tx.wait();
 
       console.log(`✅ Listing recorded on-chain. Tx: ${receipt.hash}`);
@@ -269,7 +321,9 @@ class BlockchainService {
     try {
       const itemHashBytes = this.hashToBytes32(itemHash);
       
-      const tx = await this.contract.recordUnlisting(itemHashBytes, sellerAddress);
+      const tx = await this.withRpcRecovery('recordUnlisting.send', async () => {
+        return await this.contract.recordUnlisting(itemHashBytes, sellerAddress);
+      });
       const receipt = await tx.wait();
 
       console.log(`✅ Unlisting recorded on-chain. Tx: ${receipt.hash}`);
@@ -291,7 +345,9 @@ class BlockchainService {
     
     try {
       const addr = address || this.wallet.address;
-      const balance = await this.provider.getBalance(addr);
+      const balance = await this.withRpcRecovery('getBalance', async () => {
+        return await this.provider.getBalance(addr, 'latest');
+      });
       return ethers.formatEther(balance);
     } catch (error) {
       console.error('Failed to get balance:', error.message);

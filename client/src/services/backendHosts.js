@@ -85,7 +85,7 @@ export const mapLegacyApiUrl = (url) => {
     return joinServiceUrl(SERVICE_HOSTS.marketplace, `/marketplace-service/market/${resource.slice('market/'.length)}`);
   }
 
-  if (resource === 'config' || resource.startsWith('config?')) {
+  if (resource === 'config' || resource.startsWith('config?') || resource.startsWith('config/')) {
     return joinServiceUrl(SERVICE_HOSTS.blockchain, `/blockchain-service/config${resource.slice('config'.length)}`);
   }
 

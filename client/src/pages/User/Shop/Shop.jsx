@@ -16,12 +16,6 @@ const getFullImageUrl = (imgPath) => {
   return mapLegacyApiUrl(`/${imgPath}`);
 };
 
-const activities = [
-  { player: "Raven", item: "Chrono Blade", time: "1 phút trước", tx: "#7F9D...1A9" },
-  { player: "Kaito", item: "Nebula Phantom", time: "12 phút trước", tx: "#1BC0...6E2" },
-  { player: "Mona", item: "Aurora Pack", time: "30 phút trước", tx: "#5E21...A92" },
-];
-
 export default function Shop() {
   usePageTitle('Marketplace');
   const { user } = useAuth();
@@ -32,6 +26,94 @@ export default function Shop() {
   const [viewModal, setViewModal] = useState({ open: false, itemHash: '', itemName: '' });
   const [copySuccess, setCopySuccess] = useState(false);
   const [tradeModal, setTradeModal] = useState({ open: false, listing: null, buyerItems: [], selectedItemId: null, loading: false });
+  const [activities, setActivities] = useState([]);
+
+  const formatRelativeTime = (dateValue) => {
+    const then = new Date(dateValue).getTime();
+    const now = Date.now();
+    const seconds = Math.max(1, Math.floor((now - then) / 1000));
+
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  const shortTx = (txHash) => {
+    if (!txHash || typeof txHash !== 'string') return 'pending';
+    if (txHash.length < 14) return txHash;
+    return `#${txHash.slice(2, 6)}...${txHash.slice(-4)}`;
+  };
+
+  const pushActivity = ({ player, item, txHash }) => {
+    const createdAt = new Date().toISOString();
+    setActivities((prev) => [
+      {
+        id: `${txHash || 'pending'}-${createdAt}`,
+        player: player || 'Unknown',
+        item: item || 'Trade item',
+        time: formatRelativeTime(createdAt),
+        tx: shortTx(txHash),
+      },
+      ...prev,
+    ].slice(0, 20));
+  };
+
+  const waitForTxReceipt = async (txHash, timeoutMs = 120000, pollMs = 1200) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const receipt = await window.ethereum.request({
+        method: 'eth_getTransactionReceipt',
+        params: [txHash],
+      });
+      if (receipt) return receipt;
+      await new Promise((resolve) => setTimeout(resolve, pollMs));
+    }
+    throw new Error('Timed out waiting for transaction confirmation');
+  };
+
+  const extractRpcErrorMessage = (error) => {
+    const candidates = [
+      error?.reason,
+      error?.shortMessage,
+      error?.message,
+      error?.error?.message,
+      error?.data?.message,
+      error?.error?.data?.message,
+    ].filter(Boolean);
+
+    const raw = String(candidates[0] || 'Transaction failed');
+    const revertMatch = raw.match(/reverted with reason string\s+'([^']+)'/i);
+    if (revertMatch && revertMatch[1]) return revertMatch[1];
+    const executionMatch = raw.match(/execution reverted:?\s*(.*)/i);
+    if (executionMatch && executionMatch[1]) return executionMatch[1].trim();
+    return raw;
+  };
+
+  const notifyTradeSuccess = (txHash) => {
+    const short = txHash && typeof txHash === 'string' ? `${txHash.slice(0, 10)}...` : 'pending';
+    // Browser notification complements MetaMask's own tx notification UX.
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('Trade confirmed on-chain', {
+          body: `Transaction ${short} was confirmed successfully.`,
+        });
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            new Notification('Trade confirmed on-chain', {
+              body: `Transaction ${short} was confirmed successfully.`,
+            });
+          }
+        }).catch(() => {
+          // ignore notification permission errors
+        });
+      }
+    }
+  };
 
   const fetchListings = async () => {
     setLoading(true);
@@ -100,9 +182,16 @@ export default function Shop() {
         hasMetaMask: !!window.ethereum
       });
 
-      // If seller provided an off-chain signature that allows buyer-initiated on-chain execution,
-      // call the contract method `executeTradeByParticipants` from the buyer's wallet so buyer pays gas.
-      if (sellerSignature && contractAddress && window.ethereum && sellerWallet && sellerSignatureTimestamp) {
+      // Enforce MetaMask-buyer transaction flow so successful trades always appear in
+      // the buyer's MetaMask Activity tab.
+      if (!sellerSignature || !sellerSignatureTimestamp || !sellerWallet) {
+        alert('Seller has not provided on-chain trade approval signature yet. Ask seller to relist/sign so trade can be executed via MetaMask.');
+        closeTradeModal();
+        return;
+      }
+
+      // Buyer-initiated on-chain execution via MetaMask.
+      if (contractAddress && window.ethereum) {
         console.log('✅ All conditions met for buyer-initiated on-chain trade');
         try {
           console.log('⛓️  Seller signature present — invoking on-chain trade via MetaMask');
@@ -150,50 +239,95 @@ export default function Shop() {
             throw new Error('Invalid seller signature: ' + verifyErr.message);
           }
           
-          // Minimal ABI for the buyer-executed function
-          const abi = [
-            'function executeTradeByParticipants(bytes32,bytes32,address,address,bytes,uint256,uint256)'
-          ];
+          // Ask blockchain-service to build canonical calldata for this trade.
+          const payloadResp = await axios.post('/api/config/trade-payload', {
+            sellerItemHash,
+            buyerItemHash,
+            sellerWallet: sellerAddr,
+            buyerWallet: buyerAddr,
+            sellerSignature,
+            listingId: listingId || tradeModal.listing.listingId,
+            sellerSignatureTimestamp,
+            mode: 'participants'
+          });
 
-          const provider = new ethers.BrowserProvider(window.ethereum);
-          const signerLocal = await provider.getSigner();
-          const contract = new ethers.Contract(contractAddress, abi, signerLocal);
+          const payload = payloadResp.data || {};
+          const txTo = payload.contractAddress || contractAddress;
+          if (!txTo || !payload.data) {
+            throw new Error('Trade payload missing contractAddress or data');
+          }
 
           console.log('📤 Sending transaction to contract...');
-          const tx = await contract.executeTradeByParticipants(
-            sellerHashBytes,
-            buyerHashBytes,
-            sellerAddr,
-            buyerAddr,
-            sellerSignature,
-            listingId || tradeModal.listing.listingId,
-            sellerSignatureTimestamp,
-            { gasLimit: 800000 }
-          );
 
-          console.log('🔄 Waiting for MetaMask tx to be mined...', tx.hash);
-          const receipt = await tx.wait();
+          // Force Hardhat local chain for this flow to avoid stale provider state.
+          const hardhatChainIdHex = '0x7a69'; // 31337
+          const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+          if ((currentChainId || '').toLowerCase() !== hardhatChainIdHex) {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hardhatChainIdHex }],
+            });
+          }
 
-          console.log('✅ On-chain trade mined:', receipt.transactionHash || receipt.hash);
+          const txRequest = {
+            from: account,
+            to: txTo,
+            data: payload.data,
+            value: payload.value || '0x0',
+            gas: '0xC3500',
+          };
+
+          // Simulate first to surface clear revert reasons instead of generic
+          // Internal JSON-RPC errors from wallet send flow.
+          try {
+            await window.ethereum.request({
+              method: 'eth_call',
+              params: [txRequest, 'latest'],
+            });
+          } catch (callErr) {
+            const reason = extractRpcErrorMessage(callErr);
+            throw new Error(reason || 'Transaction simulation failed');
+          }
+
+          const txHash = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [txRequest],
+          });
+
+          console.log('🔄 Waiting for MetaMask tx to be mined...', txHash);
+          const receipt = await waitForTxReceipt(txHash);
+          if ((receipt?.status || '').toLowerCase() !== '0x1') {
+            throw new Error('On-chain transaction failed');
+          }
+
+          console.log('✅ On-chain trade mined:', receipt.transactionHash || txHash);
           
           // Calculate gas fee paid by buyer
-          const gasUsed = receipt.gasUsed;
-          const effectiveGasPrice = receipt.gasPrice || receipt.effectiveGasPrice;
+          const gasUsed = receipt.gasUsed ? BigInt(receipt.gasUsed) : 0n;
+          const effectiveGasPrice = receipt.effectiveGasPrice ? BigInt(receipt.effectiveGasPrice) : (receipt.gasPrice ? BigInt(receipt.gasPrice) : 0n);
           let gasFeeEth = '0';
-          if (gasUsed && effectiveGasPrice) {
+          if (gasUsed > 0n && effectiveGasPrice > 0n) {
             const gasFeeWei = gasUsed * effectiveGasPrice;
             gasFeeEth = ethers.formatEther(gasFeeWei);
           }
 
           // Notify backend to finalize DB swap and record gas usage
           await axios.post('/api/market/confirm-trade', {
-            txHash: receipt.transactionHash || receipt.hash,
+            txHash: receipt.transactionHash || txHash,
             listingId: tradeModal.listing.listingId,
             buyer: user.username,
             buyerInventoryItemId: tradeModal.selectedItemId
           });
 
-          alert(`✅ Trade successful!\n\nTransaction: ${(receipt.transactionHash || receipt.hash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
+          pushActivity({
+            player: user?.username,
+            item: tradeModal.listing?.inventoryItem?.item?.itemName || tradeModal.listing?.itemHash,
+            txHash: receipt.transactionHash || txHash,
+          });
+
+          notifyTradeSuccess(receipt.transactionHash || txHash);
+
+          alert(`✅ Trade successful!\n\nTransaction: ${(receipt.transactionHash || txHash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
           window.dispatchEvent(new Event('market:updated'));
           fetchListings();
           closeTradeModal();
@@ -202,48 +336,32 @@ export default function Shop() {
           console.error('❌ On-chain execution failed:', onchainErr);
           console.error('   Error code:', onchainErr.code);
           console.error('   Error message:', onchainErr.message);
-          console.error('   Falling back to server-executed trade...');
-          // fall through to server fallback below
+
+          const humanError = extractRpcErrorMessage(onchainErr);
+          const msg = String(humanError || '').toLowerCase();
+          if (msg.includes('signature already used')) {
+            alert('This listing signature was already used on-chain. Refreshing marketplace...');
+            window.dispatchEvent(new Event('market:updated'));
+            fetchListings();
+            closeTradeModal();
+            return;
+          }
+
+          if (msg.includes("seller doesn't own item") || msg.includes("buyer doesn't own item")) {
+            alert('Ownership check failed on-chain. Please refresh listings and inventory, then try again.');
+            window.dispatchEvent(new Event('market:updated'));
+            fetchListings();
+            closeTradeModal();
+            return;
+          }
+
+          // Do not auto-fallback after a participants-flow failure, because it can
+          // cause duplicate submissions and nonce drift. Let user retry explicitly.
+          throw new Error(humanError || 'On-chain execution failed');
         }
       } else {
-        console.log('⚠️ Seller signature not available - will use server-executed trade');
-        console.log('   Conditions check:', {
-          hasSellerSignature: !!sellerSignature,
-          hasContractAddress: !!contractAddress,
-          hasMetaMask: !!window.ethereum,
-          hasSellerWallet: !!sellerWallet,
-          hasTimestamp: !!sellerSignatureTimestamp
-        });
+        throw new Error('MetaMask or contract configuration not available for buyer-initiated on-chain trade.');
       }
-
-      // Fallback: ask buyer to sign a small approval message and POST to server so backend (owner) executes the trade
-      console.log('🦊 Requesting user signature for server-executed trade approval...');
-      if (!window.ethereum) throw new Error('MetaMask not installed');
-
-      const sellerName = typeof tradeModal.listing.seller === 'string'
-        ? tradeModal.listing.seller
-        : (tradeModal.listing.seller?.username || tradeModal.listing.seller?.playername || 'Unknown');
-
-      const message = `Approve trade:\nListing ID: ${tradeModal.listing.listingId}\nSeller: ${sellerName}\nBuyer: ${user.username}\nTimestamp: ${Date.now()}`;
-      const signature = await window.ethereum.request({ method: 'personal_sign', params: [message, account] });
-
-      console.log('📡 Submitting trade to backend for execution (backend pays gas)');
-      const tradeResp = await axios.post('/api/market/execute-trade', {
-        listingId: tradeModal.listing.listingId,
-        buyer: user.username,
-        buyerInventoryItemId: tradeModal.selectedItemId,
-        buyerWallet: account,
-        signature,
-        message
-      });
-
-      const { txHash } = tradeResp.data || {};
-      console.log('✅ Server-executed trade response:', txHash);
-
-      alert(`Trade successful!\nTransaction: ${txHash ? (txHash.substring ? txHash.substring(0,10)+'...' : txHash) : 'pending'}`);
-      window.dispatchEvent(new Event('market:updated'));
-      fetchListings();
-      closeTradeModal();
       
     } catch (e) {
       console.error('❌ Trade failed:', e);
@@ -253,6 +371,11 @@ export default function Shop() {
         alert('Transaction rejected by user');
       } else if (e.message?.includes('MetaMask')) {
         alert('MetaMask error: ' + e.message);
+      } else if (e.response?.status === 409) {
+        alert(e.response?.data?.error || 'Listing is stale. Please refresh marketplace.');
+        window.dispatchEvent(new Event('market:updated'));
+        fetchListings();
+        closeTradeModal();
       } else {
         alert(e.response?.data?.error || e.message || 'Trade failed');
       }
@@ -335,6 +458,11 @@ export default function Shop() {
                               ⚠️ Seller wallet not connected
                             </div>
                           )}
+                          {!l.sellerSignatureAvailable && (
+                            <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              ⚠️ Seller signature missing (MetaMask trade disabled)
+                            </div>
+                          )}
                           <div style={{ fontSize: 12, color: isDark ? '#d1d5db' : '#374151', marginTop: 8 }}>
                             Wanted: {l.wantedItem?.name || 'Any'} {l.wantedItem ? `(Tier: ${l.wantedItem.rarity})` : ''}
                           </div>
@@ -353,12 +481,21 @@ export default function Shop() {
                     <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
                           <button
                             className="ui-btn ui-btn--primary"
-                            disabled={!l.seller?.walletAddress}
-                            title={!l.seller?.walletAddress ? 'Seller must connect wallet to enable blockchain trading' : 'Trade item'}
+                            disabled={!l.seller?.walletAddress || !l.sellerSignatureAvailable}
+                            title={
+                              !l.seller?.walletAddress
+                                ? 'Seller must connect wallet to enable blockchain trading'
+                                : (!l.sellerSignatureAvailable
+                                  ? 'Seller must sign listing to enable MetaMask on-chain trade'
+                                  : 'Trade item')
+                            }
                             onClick={async () => {
                               if (!user) return alert('Please sign in to trade');
                               if (!l.seller?.walletAddress) {
                                 return alert('Seller has not connected their wallet yet. Please contact seller to link their wallet for blockchain trading.');
+                              }
+                              if (!l.sellerSignatureAvailable) {
+                                return alert('Seller has not signed this listing yet. Ask seller to relist/sign to enable MetaMask on-chain trade.');
                               }
                               // open trade modal for buyer to pick an item from their inventory
                               setTradeModal({ open: true, listing: l, buyerItems: [], selectedItemId: null, loading: true });
@@ -401,16 +538,24 @@ export default function Shop() {
                 </tr>
               </thead>
               <tbody>
-                {activities.map((row) => (
-                  <tr key={row.tx}>
-                    <td>{row.player}</td>
-                    <td>{row.item}</td>
-                    <td>{row.time}</td>
-                    <td>
-                      <span className="chip chip--accent">{row.tx}</span>
+                {activities.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', opacity: 0.75 }}>
+                      No on-chain activity yet. Complete a trade to see it here.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  activities.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.player}</td>
+                      <td>{row.item}</td>
+                      <td>{row.time}</td>
+                      <td>
+                        <span className="chip chip--accent">{row.tx}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
