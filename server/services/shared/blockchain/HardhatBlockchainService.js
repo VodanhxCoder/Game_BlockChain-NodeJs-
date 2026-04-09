@@ -13,8 +13,78 @@ class HardhatBlockchainService {
     this.provider = null;
     this.contract = null;
     this.signer = null;
+    this.baseSigner = null;
+    this.contractAbi = null;
+    this.rpcUrl = process.env.BLOCKCHAIN_RPC_URL || 'http://127.0.0.1:8545';
     this.contractAddress = process.env.CONTRACT_ADDRESS || process.env.BLOCKCHAIN_CONTRACT_ADDRESS;
     this.enabled = false;
+  }
+
+  isNonceTooLowError(error) {
+    const message = (error && error.message ? error.message : '').toLowerCase();
+    return error?.code === 'NONCE_EXPIRED' || message.includes('nonce too low');
+  }
+
+  isInvalidBlockTagError(error) {
+    const message = (error && error.message ? error.message : '').toLowerCase();
+    return message.includes('invalid block tag') || message.includes('latest block number is');
+  }
+
+  async resyncProviderAndSigner() {
+    if (!this.contractAbi || !this.contractAddress) {
+      return;
+    }
+
+    // Recreate provider to clear any stale internal block tracking after node restart.
+    this.provider = new ethers.JsonRpcProvider(this.rpcUrl);
+    await this.provider.getNetwork();
+    this.baseSigner = await this.provider.getSigner(0);
+    this.signer = new ethers.NonceManager(this.baseSigner);
+    this.contract = new ethers.Contract(this.contractAddress, this.contractAbi, this.signer);
+  }
+
+  async resetNonceManager() {
+    if (!this.provider || !this.contractAbi || !this.contractAddress) {
+      return;
+    }
+
+    this.baseSigner = await this.provider.getSigner(0);
+    this.signer = new ethers.NonceManager(this.baseSigner);
+    this.contract = new ethers.Contract(this.contractAddress, this.contractAbi, this.signer);
+  }
+
+  async runWithNonceRetry(operationName, operation) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (this.isInvalidBlockTagError(error)) {
+        console.warn(`⚠️  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
+        await this.resyncProviderAndSigner();
+        return await operation();
+      }
+
+      if (!this.isNonceTooLowError(error)) {
+        throw error;
+      }
+
+      console.warn(`⚠️  ${operationName}: nonce too low, retrying with refreshed nonce manager...`);
+      await this.resetNonceManager();
+      return await operation();
+    }
+  }
+
+  async runReadWithResync(operationName, operation) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (!this.isInvalidBlockTagError(error)) {
+        throw error;
+      }
+
+      console.warn(`⚠️  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
+      await this.resyncProviderAndSigner();
+      return await operation();
+    }
   }
 
   async initialize() {
@@ -26,26 +96,29 @@ class HardhatBlockchainService {
       }
 
       // Connect to Hardhat local node
-      this.provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+      this.provider = new ethers.JsonRpcProvider(this.rpcUrl);
       
       // Test connection
       await this.provider.getNetwork();
       
-      // Use the first account as the server's wallet
-      this.signer = await this.provider.getSigner(0);
+      // Use the first account as the server's wallet and manage nonce locally
+      // to avoid nonce races across rapid/concurrent service calls.
+      this.baseSigner = await this.provider.getSigner(0);
+      this.signer = new ethers.NonceManager(this.baseSigner);
       
       // Load contract ABI
       const contractJson = require(path.resolve(__dirname, '../../../artifacts/contracts/ItemTradingNFT.sol/ItemTradingNFT.json'));
+      this.contractAbi = contractJson.abi;
       
       // Create contract instance
       this.contract = new ethers.Contract(
         this.contractAddress,
-        contractJson.abi,
+        this.contractAbi,
         this.signer
       );
 
       // Verify contract is deployed
-      const code = await this.provider.getCode(this.contractAddress);
+      const code = await this.provider.getCode(this.contractAddress, 'latest');
       if (code === '0x') {
         throw new Error('Contract not deployed at this address');
       }
@@ -89,12 +162,14 @@ class HardhatBlockchainService {
       const buyerHashBytes = buyerItemHash ? '0x' + buyerItemHash : '0x' + '0'.repeat(64);
 
       // Execute trade on smart contract
-      const tx = await this.contract.executeTrade(
-        sellerHashBytes,
-        buyerHashBytes,
-        sellerAddress,
-        buyerAddress
-      );
+      const tx = await this.runWithNonceRetry('executeTrade', async () => {
+        return await this.contract.executeTrade(
+          sellerHashBytes,
+          buyerHashBytes,
+          sellerAddress,
+          buyerAddress
+        );
+      });
 
       console.log('⏳ Transaction submitted:', tx.hash);
       console.log('   Waiting for confirmation...');
@@ -141,13 +216,15 @@ class HardhatBlockchainService {
       const tokenURI = `https://game.example.com/api/items/${itemHash}/metadata`;
 
       // Contract signature: mintItem(address to, bytes32 itemHash, string itemName, string tier, string _tokenURI)
-      const tx = await this.contract.mintItem(
-        ownerAddress,      // address to
-        itemHashBytes,     // bytes32 itemHash
-        itemName,          // string itemName
-        tier,              // string tier
-        tokenURI           // string _tokenURI
-      );
+      const tx = await this.runWithNonceRetry('mintItem', async () => {
+        return await this.contract.mintItem(
+          ownerAddress,      // address to
+          itemHashBytes,     // bytes32 itemHash
+          itemName,          // string itemName
+          tier,              // string tier
+          tokenURI           // string _tokenURI
+        );
+      });
 
       const receipt = await tx.wait();
 
@@ -179,11 +256,13 @@ class HardhatBlockchainService {
       
       const itemHashBytes = '0x' + itemHash;
 
-      const tx = await this.contract.listItem(
-        itemHashBytes,
-        sellerAddress,
-        listingId
-      );
+      const tx = await this.runWithNonceRetry('recordListing', async () => {
+        return await this.contract.listItem(
+          itemHashBytes,
+          sellerAddress,
+          listingId
+        );
+      });
 
       const receipt = await tx.wait();
 
@@ -253,6 +332,17 @@ class HardhatBlockchainService {
       const receipt = await this.provider.getTransactionReceipt(txHash);
       return { transaction: tx, receipt };
     } catch (error) {
+      if (this.isInvalidBlockTagError(error)) {
+        try {
+          await this.resyncProviderAndSigner();
+          const tx = await this.provider.getTransaction(txHash);
+          const receipt = await this.provider.getTransactionReceipt(txHash);
+          return { transaction: tx, receipt };
+        } catch (retryError) {
+          console.error('Error fetching transaction after provider resync:', retryError.message);
+          return null;
+        }
+      }
       console.error('Error fetching transaction:', error.message);
       return null;
     }
@@ -273,9 +363,28 @@ class HardhatBlockchainService {
     if (!this.enabled) return false;
     
     try {
-      const itemHashBytes = '0x' + itemHash;
-      return await this.contract.itemMinted(itemHashBytes);
+      return await this.runReadWithResync('isItemMinted', async () => {
+        const itemHashBytes = '0x' + itemHash;
+        return await this.contract.itemMinted(itemHashBytes);
+      });
     } catch (error) {
+      return false;
+    }
+  }
+
+  async isSellerSignatureUsed(sellerItemHash, listingId, timestamp) {
+    if (!this.enabled) return false;
+
+    try {
+      return await this.runReadWithResync('isSellerSignatureUsed', async () => {
+        const sellerHashBytes = sellerItemHash.startsWith('0x') ? sellerItemHash : `0x${sellerItemHash}`;
+        const message = ethers.solidityPackedKeccak256(
+          ['bytes32', 'uint256', 'uint256', 'address'],
+          [sellerHashBytes, Number(listingId), Number(timestamp), this.contractAddress]
+        );
+        return await this.contract.usedSignatures(message);
+      });
+    } catch (_) {
       return false;
     }
   }
@@ -288,23 +397,25 @@ class HardhatBlockchainService {
     }
     
     try {
-      const itemHashBytes = '0x' + itemHash;
-      
-      // Get token ID for this item
-      const tokenId = await this.contract.itemHashToTokenId(itemHashBytes);
-      
-      if (tokenId.toString() === '0') {
-        console.log(`   Item ${itemHash} not minted yet`);
-        return false;
-      }
-      
-      // Get the owner of this token
-      const owner = await this.contract.ownerOf(tokenId);
-      
-      console.log(`   Item ${itemHash}: Token #${tokenId} owned by ${owner}`);
-      console.log(`   Expected owner: ${walletAddress}`);
-      
-      return owner.toLowerCase() === walletAddress.toLowerCase();
+      return await this.runReadWithResync('verifyOwnership', async () => {
+        const itemHashBytes = '0x' + itemHash;
+        
+        // Get token ID for this item
+        const tokenId = await this.contract.itemHashToTokenId(itemHashBytes);
+        
+        if (tokenId.toString() === '0') {
+          console.log(`   Item ${itemHash} not minted yet`);
+          return false;
+        }
+        
+        // Get the owner of this token
+        const owner = await this.contract.ownerOf(tokenId);
+        
+        console.log(`   Item ${itemHash}: Token #${tokenId} owned by ${owner}`);
+        console.log(`   Expected owner: ${walletAddress}`);
+        
+        return owner.toLowerCase() === walletAddress.toLowerCase();
+      });
       
     } catch (error) {
       console.error('   Ownership verification error:', error.message);
@@ -336,7 +447,9 @@ class HardhatBlockchainService {
       console.log(`   Transferring Token #${tokenId} from ${currentOwner} to ${correctOwnerAddress}`);
       
       // Transfer from current owner to correct owner (using contract owner/signer)
-      const tx = await this.contract.transferFrom(currentOwner, correctOwnerAddress, tokenId);
+      const tx = await this.runWithNonceRetry('transferToCorrectOwner', async () => {
+        return await this.contract.transferFrom(currentOwner, correctOwnerAddress, tokenId);
+      });
       const receipt = await tx.wait();
       
       console.log(`   Transfer successful: ${receipt.hash}`);

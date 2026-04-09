@@ -15,6 +15,8 @@ const mapListing = (listing) => ({
   tier: listing.tier,
   wantedItemId: listing.wantedItemId,
   createdAt: listing.createdAt,
+  sellerSignatureAvailable: !!listing.sellerSignature,
+  sellerSignatureTimestamp: listing.sellerSignatureTimestamp || null,
   seller: listing.Seller
     ? {
         username: listing.Seller.username,
