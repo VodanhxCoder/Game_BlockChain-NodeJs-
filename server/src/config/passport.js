@@ -2,8 +2,34 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import crypto from 'crypto';
 import db from '../../services/shared/models/index.js';
 const { User } = db;
+
+const makeOauthPasswordHash = () => crypto.randomBytes(32).toString('hex');
+
+const USERNAME_MAX = 50;
+const cleanUsernameBase = (value, fallback = 'oauth_user') => {
+  const normalized = String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return normalized || fallback;
+};
+
+const buildUniqueUsername = async (rawBase) => {
+  const base = cleanUsernameBase(rawBase);
+  for (let i = 0; i < 6; i += 1) {
+    const suffix = crypto.randomBytes(4).toString('hex');
+    const maxBaseLen = USERNAME_MAX - (suffix.length + 1);
+    const trimmedBase = base.slice(0, Math.max(1, maxBaseLen));
+    const candidate = `${trimmedBase}_${suffix}`;
+    const exists = await User.findByPk(candidate);
+    if (!exists) return candidate;
+  }
+  return `oauth_${Date.now().toString().slice(-8)}`;
+};
 
 // Serialize user for session
 passport.serializeUser((user, done) => {
@@ -53,13 +79,16 @@ passport.use(new GoogleStrategy({
         return done(null, user);
       }
 
+      const generatedUsername = await buildUniqueUsername(email.split('@')[0]);
+
       // Create new user if doesn't exist
       user = await User.create({
         googleId: profile.id,
         email: email,
-        username: email.split('@')[0] + '_' + Date.now(),
+        username: generatedUsername,
         playername: profile.displayName || email.split('@')[0],
-        passwordHash: null, // OAuth users don't need password
+        // Keep compatibility with schemas where password_hash is still NOT NULL.
+        passwordHash: makeOauthPasswordHash(),
         provider: 'google'
       });
 
@@ -85,7 +114,9 @@ passport.use(new GitHubStrategy({
         } 
       });
 
-      if (user) {
+        const rawEmail = profile?.emails?.[0]?.value;
+        const fallbackEmail = `google_${profile.id}@oauth.local`;
+        const email = trimTo(String(rawEmail || fallbackEmail).trim().toLowerCase(), 100);
         return done(null, user);
       }
 
@@ -103,13 +134,15 @@ passport.use(new GitHubStrategy({
 
       // Create new user if doesn't exist
       const finalEmail = email || `${profile.username}@github.com`;
+      const generatedUsername = await buildUniqueUsername(profile.username || profile.displayName || 'github_user');
       
       user = await User.create({
         githubId: profile.id,
         email: finalEmail,
-        username: profile.username || profile.displayName || 'github_' + Date.now(),
+        username: generatedUsername,
         playername: profile.displayName || profile.username,
-        passwordHash: null, // OAuth users don't need password
+        // Keep compatibility with schemas where password_hash is still NOT NULL.
+        passwordHash: makeOauthPasswordHash(),
         provider: 'github'
       });
 

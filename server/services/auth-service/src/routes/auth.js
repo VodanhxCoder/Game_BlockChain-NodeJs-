@@ -11,6 +11,51 @@ import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
 
+const DEFAULT_CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const ALLOWED_REDIRECT_ORIGINS = new Set([
+  DEFAULT_CLIENT_URL,
+  'http://localhost:5173',
+  'https://front-end-game-blockchain.vercel.app',
+  'https://game-block-chain-node-js.vercel.app'
+]);
+
+const resolveSafeRedirectUrl = (rawUrl) => {
+  if (!rawUrl) return DEFAULT_CLIENT_URL;
+
+  try {
+    const parsed = new URL(rawUrl);
+    if (!ALLOWED_REDIRECT_ORIGINS.has(parsed.origin)) {
+      return DEFAULT_CLIENT_URL;
+    }
+    return `${parsed.origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch (_e) {
+    return DEFAULT_CLIENT_URL;
+  }
+};
+
+const encodeOauthState = (redirectUrl) =>
+  Buffer.from(JSON.stringify({ redirectUrl }), 'utf8').toString('base64url');
+
+const decodeOauthState = (state) => {
+  if (!state) return null;
+  try {
+    const json = Buffer.from(state, 'base64url').toString('utf8');
+    return JSON.parse(json);
+  } catch (_e) {
+    return null;
+  }
+};
+
+const buildClientCallbackUrl = (redirectUrl, params = {}) => {
+  const callbackUrl = new URL('/auth/callback', redirectUrl);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      callbackUrl.searchParams.set(key, String(value));
+    }
+  });
+  return callbackUrl.toString();
+};
+
 // Middleware to handle validation results
 const validate = (req, res, next) => {
   const errors = validationResult(req);
@@ -56,54 +101,71 @@ router.post('/logout', authJwt.verifyToken, (req, res) => {
 
 // Google OAuth Routes
 router.get('/google', (req, res, next) => {
-  // Store the redirect URL if provided
-  if (req.query.redirect_url) {
-    req.session.authRedirectUrl = req.query.redirect_url;
-  }
-  next();
-}, passport.authenticate('google', { 
-  scope: ['profile', 'email'],
-  session: false // Disable session for JWT flow
-}));
+  const redirectUrl = resolveSafeRedirectUrl(req.query.redirect_url);
+  const state = encodeOauthState(redirectUrl);
+  console.log('[OAuth:google] start', { redirectUrl });
+  return passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false,
+    state
+  })(req, res, next);
+});
 
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/signin', session: false }),
-  (req, res) => {
-    const user = req.user;
+router.get('/google/callback', (req, res, next) => {
+  const stateData = decodeOauthState(req.query.state);
+  const redirectUrl = resolveSafeRedirectUrl(stateData?.redirectUrl);
+
+  return passport.authenticate('google', { session: false }, (err, user, info) => {
+    if (err) {
+      console.error('[OAuth:google] callback error:', err.message || err);
+      return res.redirect(buildClientCallbackUrl(redirectUrl, { error: 'Google login failed' }));
+    }
+
+    if (!user) {
+      const detail = info?.message || info?.toString?.() || 'No user returned';
+      console.error('[OAuth:google] callback rejected:', detail);
+      return res.redirect(buildClientCallbackUrl(redirectUrl, { error: detail }));
+    }
+
     const token = signToken(user);
-    
-    const redirectUrl = req.session.authRedirectUrl || process.env.CLIENT_URL || 'http://localhost:5173';
-    delete req.session.authRedirectUrl;
-    
-    // Redirect to frontend with token
-    res.redirect(`${redirectUrl}/auth/callback?token=${token}`);
-  }
-);
+    console.log('[OAuth:google] success', { username: user.username, redirectUrl });
+    return res.redirect(buildClientCallbackUrl(redirectUrl, { token }));
+  })(req, res, next);
+});
 
 // GitHub OAuth Routes
 router.get('/github', (req, res, next) => {
-  if (req.query.redirect_url) {
-    req.session.authRedirectUrl = req.query.redirect_url;
-  }
-  next();
-}, passport.authenticate('github', { 
-  scope: ['user:email'],
-  session: false
-}));
+  const redirectUrl = resolveSafeRedirectUrl(req.query.redirect_url);
+  const state = encodeOauthState(redirectUrl);
+  console.log('[OAuth:github] start', { redirectUrl });
+  return passport.authenticate('github', {
+    scope: ['user:email'],
+    session: false,
+    state
+  })(req, res, next);
+});
 
-router.get('/github/callback',
-  passport.authenticate('github', { failureRedirect: '/signin', session: false }),
-  (req, res) => {
-    const user = req.user;
+router.get('/github/callback', (req, res, next) => {
+  const stateData = decodeOauthState(req.query.state);
+  const redirectUrl = resolveSafeRedirectUrl(stateData?.redirectUrl);
+
+  return passport.authenticate('github', { session: false }, (err, user, info) => {
+    if (err) {
+      console.error('[OAuth:github] callback error:', err.message || err);
+      return res.redirect(buildClientCallbackUrl(redirectUrl, { error: 'GitHub login failed' }));
+    }
+
+    if (!user) {
+      const detail = info?.message || info?.toString?.() || 'No user returned';
+      console.error('[OAuth:github] callback rejected:', detail);
+      return res.redirect(buildClientCallbackUrl(redirectUrl, { error: detail }));
+    }
+
     const token = signToken(user);
-    
-    const redirectUrl = req.session.authRedirectUrl || process.env.CLIENT_URL || 'http://localhost:5173';
-    delete req.session.authRedirectUrl;
-    
-    // Redirect to frontend with token
-    res.redirect(`${redirectUrl}/auth/callback?token=${token}`);
-  }
-);
+    console.log('[OAuth:github] success', { username: user.username, redirectUrl });
+    return res.redirect(buildClientCallbackUrl(redirectUrl, { token }));
+  })(req, res, next);
+});
 
 /**
  * POST /api/login

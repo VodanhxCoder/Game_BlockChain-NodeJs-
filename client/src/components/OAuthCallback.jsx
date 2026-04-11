@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import OAuthLoading from './OAuthLoading';
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -9,29 +10,36 @@ const OAuthCallback = () => {
   const { setToken } = useAuth();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) {
-      console.log('OAuth Callback: Token found, logging in...');
-      setToken(token);
+    const runOAuthCallback = async () => {
+      const token = searchParams.get('token');
+      const providerError = searchParams.get('error');
+
+      if (providerError) {
+        navigate('/signin', {
+          replace: true,
+          state: { oauthError: decodeURIComponent(providerError) }
+        });
+        return;
+      }
+
+      if (!token) {
+        navigate('/signin', {
+          replace: true,
+          state: { oauthError: 'OAuth login failed. No token returned.' }
+        });
+        return;
+      }
+
+      // Persist token and attempt hydration, but do not block home navigation on /me timing issues.
+      await setToken(token);
+
       navigate('/H', { replace: true });
-    } else {
-      console.error('OAuth Callback: No token found in URL');
-      navigate('/signin', { replace: true });
-    }
+    };
+
+    runOAuthCallback();
   }, [searchParams, navigate, setToken]);
 
-  return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh',
-      background: '#1a1a1a',
-      color: '#fff'
-    }}>
-      Processing login...
-    </div>
-  );
+  return <OAuthLoading />;
 };
 
 export default OAuthCallback;

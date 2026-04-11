@@ -39,6 +39,12 @@ export default function SignIn() {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
+  useEffect(() => {
+    if (location.state?.oauthError) {
+      setError(location.state.oauthError);
+    }
+  }, [location.state]);
+
   // Countdown timer for ban
   useEffect(() => {
     let interval;
@@ -196,8 +202,11 @@ export default function SignIn() {
   ];
 
   const handleProvider = (providerId) => {
-    // Redirect to OAuth endpoint
-    window.location.href = mapLegacyApiUrl(`/api/auth/${providerId}`);
+    // Backend appends /auth/callback, so redirect_url must be the frontend origin.
+    const oauthUrl = new URL(mapLegacyApiUrl(`/api/auth/${providerId}`));
+    const redirectTarget = window.location.origin;
+    oauthUrl.searchParams.set('redirect_url', redirectTarget);
+    window.location.href = oauthUrl.toString();
   };
 
   return (

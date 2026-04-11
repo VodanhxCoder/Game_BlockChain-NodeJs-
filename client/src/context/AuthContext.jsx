@@ -7,17 +7,21 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const hasToken = () => !!localStorage.getItem(TOKEN_KEY);
 
   // Helper to set token
-  const setToken = (token) => {
+  const setToken = async (token) => {
     if (token) {
+      setLoading(true);
       localStorage.setItem(TOKEN_KEY, token);
-      // Trigger re-fetch of user
-      fetchUser(token);
-    } else {
-      localStorage.removeItem(TOKEN_KEY);
-      setUser(null);
+      // Re-hydrate user state from token before continuing navigation flows.
+      return await fetchUser(token);
     }
+
+    localStorage.removeItem(TOKEN_KEY);
+    setUser(null);
+    setLoading(false);
+    return null;
   };
 
   const fetchUser = async (token) => {
@@ -32,15 +36,18 @@ export function AuthProvider({ children }) {
       
       if (data.authenticated) {
         setUser(data.user);
+        return data.user;
       } else {
         // Token invalid or expired
         localStorage.removeItem(TOKEN_KEY);
         setUser(null);
+        return null;
       }
     } catch (e) {
       console.error('Failed to fetch user:', e);
-      localStorage.removeItem(TOKEN_KEY);
+      // Keep token on transient network/service errors to avoid redirecting to signin during OAuth handoff.
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -111,8 +118,8 @@ export function AuthProvider({ children }) {
       const data = await response.json();
       
       if (data.token) {
-        setToken(data.token);
-        return data.user;
+        const hydratedUser = await setToken(data.token);
+        return hydratedUser || data.user;
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -172,8 +179,8 @@ export function AuthProvider({ children }) {
       const responseData = await response.json();
       
       if (responseData.token) {
-        setToken(responseData.token);
-        return responseData.user;
+        const hydratedUser = await setToken(responseData.token);
+        return hydratedUser || responseData.user;
       }
     } catch (error) {
       // Error will be displayed to user via UI
@@ -264,7 +271,8 @@ export function AuthProvider({ children }) {
       user, 
       setUser,
       loading, 
-      isAuthenticated: !!user, 
+      // Keep auth guards stable right after OAuth while user profile is hydrating.
+      isAuthenticated: !!user || hasToken(), 
       login, 
       logout, 
       register,
