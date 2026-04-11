@@ -77,7 +77,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
     // Handle game over
     socket.on('game:over', (data) => {
-      console.log(`💀 Game Over - Score: ${data.score}`);
+      console.log(` Game Over - Score: ${data.score}`);
       setGameOver(true);
     });
 
@@ -93,7 +93,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
     // Handle errors
     socket.on('game:error', (error) => {
-      console.error('❌ Game error:', error.message);
+      console.error('[ERROR] Game error:', error.message);
     });
 
     // Cleanup on unmount

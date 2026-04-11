@@ -46,7 +46,7 @@ export default function WalletConnect({ compact = false }) {
     return (
       <div className="wallet-connect-error">
         <p style={{ color: '#ef4444', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-          ⚠️ MetaMask not detected
+          [WARN] MetaMask not detected
         </p>
         <a
           href="https://metamask.io/download/"
@@ -73,7 +73,7 @@ export default function WalletConnect({ compact = false }) {
             disabled={connecting}
             style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
           >
-            {connecting ? '🔄 Connecting...' : '🦊 Connect Wallet'}
+            {connecting ? 'Connecting...' : 'Connect Wallet'}
           </button>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -123,7 +123,7 @@ export default function WalletConnect({ compact = false }) {
             textAlign: 'center'
           }}
         >
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🦊</div>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>MM</div>
           <h3 style={{ marginBottom: '0.5rem', fontSize: '1.25rem' }}>
             Connect Your MetaMask Wallet
           </h3>
@@ -132,12 +132,12 @@ export default function WalletConnect({ compact = false }) {
           </p>
           {user && !user.walletAddress && (
             <p style={{ color: '#8b5cf6', marginBottom: '1.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
-              💡 Your wallet will be automatically linked to your account ({user.username})
+              Your wallet will be automatically linked to your account ({user.username})
             </p>
           )}
           {!user && (
             <p style={{ color: '#f59e0b', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-              ⚠️ Please login first to link your wallet
+              [WARN] Please login first to link your wallet
             </p>
           )}
           <button
@@ -147,7 +147,7 @@ export default function WalletConnect({ compact = false }) {
             disabled={connecting || !user}
             style={{ minWidth: '200px' }}
           >
-            {connecting ? '🔄 Connecting...' : 'Connect MetaMask'}
+            {connecting ? 'Connecting...' : 'Connect MetaMask'}
           </button>
           {error && (
             <p style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.875rem' }}>
@@ -231,7 +231,7 @@ export default function WalletConnect({ compact = false }) {
           {chainId && chainId !== 31337 && chainId !== 97 && (
             <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(234, 179, 8, 0.1)', borderRadius: '0.5rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#eab308', marginBottom: '0.5rem' }}>
-                ⚠️ Wrong Network
+                [WARN] Wrong Network
               </p>
               <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.75rem' }}>
                 Please switch to Hardhat Local (31337) or BSC Testnet (97)

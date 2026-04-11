@@ -58,7 +58,7 @@ class HardhatBlockchainService {
       return await operation();
     } catch (error) {
       if (this.isInvalidBlockTagError(error)) {
-        console.warn(`⚠️  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
+        console.warn(`[WARN]  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
         await this.resyncProviderAndSigner();
         return await operation();
       }
@@ -67,7 +67,7 @@ class HardhatBlockchainService {
         throw error;
       }
 
-      console.warn(`⚠️  ${operationName}: nonce too low, retrying with refreshed nonce manager...`);
+      console.warn(`[WARN]  ${operationName}: nonce too low, retrying with refreshed nonce manager...`);
       await this.resetNonceManager();
       return await operation();
     }
@@ -81,7 +81,7 @@ class HardhatBlockchainService {
         throw error;
       }
 
-      console.warn(`⚠️  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
+      console.warn(`[WARN]  ${operationName}: invalid block tag after chain reset, resyncing provider...`);
       await this.resyncProviderAndSigner();
       return await operation();
     }
@@ -90,7 +90,7 @@ class HardhatBlockchainService {
   async initialize() {
     try {
       if (!this.contractAddress) {
-        console.log('⚠️  CONTRACT_ADDRESS not set in .env - blockchain features disabled');
+        console.log('[WARN]  CONTRACT_ADDRESS not set in .env - blockchain features disabled');
         console.log('   To enable: Deploy contract and add CONTRACT_ADDRESS=0x... to .env');
         return;
       }
@@ -124,13 +124,13 @@ class HardhatBlockchainService {
       }
 
       this.enabled = true;
-      console.log('✅ Hardhat blockchain service initialized');
+      console.log('[OK] Hardhat blockchain service initialized');
       console.log('   Network: Hardhat Local (chainId: 31337)');
       console.log('   Contract:', this.contractAddress);
       console.log('   Signer:', await this.signer.getAddress());
       
     } catch (error) {
-      console.error('❌ Blockchain initialization failed:', error.message);
+      console.error('[ERROR] Blockchain initialization failed:', error.message);
       console.log('   Make sure:');
       console.log('   1. Hardhat node is running: npx hardhat node');
       console.log('   2. Contract is deployed: npx hardhat run scripts/deploy-contract.js --network localhost');
@@ -148,14 +148,14 @@ class HardhatBlockchainService {
    */
   async executeTrade(sellerItemHash, buyerItemHash, sellerAddress, buyerAddress, listingId, sellerUsername, buyerUsername) {
     if (!this.enabled) {
-      console.log('⚠️  Blockchain disabled - skipping on-chain trade');
+      console.log('[WARN]  Blockchain disabled - skipping on-chain trade');
       return null;
     }
 
     try {
       console.log('🔗 Executing blockchain trade...');
-      console.log('   Seller:', sellerAddress, '→ Item:', sellerItemHash.substring(0, 10) + '...');
-      console.log('   Buyer:', buyerAddress, '→ Item:', buyerItemHash ? buyerItemHash.substring(0, 10) + '...' : 'none');
+      console.log('   Seller:', sellerAddress, '-> Item:', sellerItemHash.substring(0, 10) + '...');
+      console.log('   Buyer:', buyerAddress, '-> Item:', buyerItemHash ? buyerItemHash.substring(0, 10) + '...' : 'none');
       
       // Convert item hashes to bytes32
       const sellerHashBytes = '0x' + sellerItemHash;
@@ -176,7 +176,7 @@ class HardhatBlockchainService {
       
       const receipt = await tx.wait();
 
-      console.log('✅ Trade confirmed on blockchain!');
+      console.log('[OK] Trade confirmed on blockchain!');
       console.log('   TX Hash:', receipt.hash);
       console.log('   Block:', receipt.blockNumber);
       console.log('   Gas Used:', receipt.gasUsed.toString());
@@ -193,7 +193,7 @@ class HardhatBlockchainService {
       };
 
     } catch (error) {
-      console.error('❌ Blockchain trade failed:', error.message);
+      console.error('[ERROR] Blockchain trade failed:', error.message);
       throw error;
     }
   }
@@ -203,7 +203,7 @@ class HardhatBlockchainService {
    */
   async mintItem(itemHash, ownerAddress, itemName, tier, ownerUsername) {
     if (!this.enabled) {
-      console.log('⚠️  Blockchain disabled - skipping NFT mint');
+      console.log('[WARN]  Blockchain disabled - skipping NFT mint');
       return null;
     }
 
@@ -228,7 +228,7 @@ class HardhatBlockchainService {
 
       const receipt = await tx.wait();
 
-      console.log('✅ Item minted:', itemName);
+      console.log('[OK] Item minted:', itemName);
       console.log('   TX Hash:', receipt.hash);
       console.log('   Block:', receipt.blockNumber);
 
@@ -237,7 +237,7 @@ class HardhatBlockchainService {
       return receipt.hash;
 
     } catch (error) {
-      console.error('❌ Mint failed:', error.message);
+      console.error('[ERROR] Mint failed:', error.message);
       throw error;
     }
   }
@@ -247,7 +247,7 @@ class HardhatBlockchainService {
    */
   async recordListing(itemHash, sellerAddress, listingId, sellerUsername) {
     if (!this.enabled) {
-      console.log('⚠️  Blockchain disabled - skipping listing record');
+      console.log('[WARN]  Blockchain disabled - skipping listing record');
       return null;
     }
 
@@ -266,7 +266,7 @@ class HardhatBlockchainService {
 
       const receipt = await tx.wait();
 
-      console.log('✅ Listing recorded:', receipt.hash);
+      console.log('[OK] Listing recorded:', receipt.hash);
 
       // compute gas fee
       const effectiveGasPrice = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
@@ -305,7 +305,7 @@ class HardhatBlockchainService {
       return receipt.hash;
 
     } catch (error) {
-      console.error('❌ List recording failed:', error.message);
+      console.error('[ERROR] List recording failed:', error.message);
       
       await db.TradeLog.create({
         itemHash: itemHash,

@@ -58,10 +58,10 @@ async function testSignature() {
     console.log('Contract-style recovery:', recovered);
     console.log('Matches seller?', recovered.toLowerCase() === sellerWallet.address.toLowerCase());
     
-    console.log('\n✅ Test completed successfully!');
+    console.log('\n[OK] Test completed successfully!');
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('[ERROR] Error:', error.message);
     console.error(error);
   }
 }

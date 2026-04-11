@@ -40,7 +40,7 @@ class GameSessionManager {
     
     this.userSessions.set(username, sessionId);
     
-    console.log(`🎮 Created game session: ${sessionId} for user: ${username}`);
+    console.log(` Created game session: ${sessionId} for user: ${username}`);
     return { sessionId, gameEngine };
   }
 

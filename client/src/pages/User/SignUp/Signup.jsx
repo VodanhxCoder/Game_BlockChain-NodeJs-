@@ -172,7 +172,7 @@ export default function SignUp() {
                 data-mode={isDark ? "dark" : "light"}
               >
                 <span className="auth-theme-toggle__icon" aria-hidden="true">
-                  {isDark ? "🌙" : "☀️"}
+                  {isDark ? "Dark" : "Light"}
                 </span>
                 <span className="sr-only">{isDark ? "Dark mode" : "Light mode"}</span>
               </button>

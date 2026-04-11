@@ -105,7 +105,7 @@ async function saveCollectedItem(username, itemId) {
       inventory = await Inventory.create({
         username: username
       });
-      console.log(`✅ Created new inventory for user: ${username}`);
+      console.log(`[OK] Created new inventory for user: ${username}`);
     }
 
     // Generate item hash manually since DB trigger might be missing
@@ -126,7 +126,7 @@ async function saveCollectedItem(username, itemId) {
     // Reload to get trigger-populated fields
     await newItem.reload();
 
-    console.log(`✅ Item saved to inventory with hash: ${newItem.itemHash}`);
+    console.log(`[OK] Item saved to inventory with hash: ${newItem.itemHash}`);
 
     return newItem;
   } catch (error) {
@@ -202,7 +202,7 @@ async function simulateDrop(username, forcedItemId = null) {
       inventory = await Inventory.create({
         username: username
       });
-      console.log(`✅ Created new inventory for user: ${username}`);
+      console.log(`[OK] Created new inventory for user: ${username}`);
     }
 
     // Generate item hash manually since DB trigger might be missing
@@ -223,7 +223,7 @@ async function simulateDrop(username, forcedItemId = null) {
     // Reload the instance so trigger-populated fields (item_hash) are present
     await newItem.reload();
 
-    console.log(`✅ Item added to inventory with hash (from DB): ${newItem.itemHash}`);
+    console.log(`[OK] Item added to inventory with hash (from DB): ${newItem.itemHash}`);
 
     return newItem;
   } catch (error) {

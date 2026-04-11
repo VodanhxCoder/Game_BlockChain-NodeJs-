@@ -10,12 +10,12 @@ class MockBlockchainService {
     this.enabled = true;
     
     console.log('🎭 Mock Blockchain Service initialized (Simulation Mode)');
-    console.log('💡 All transactions are simulated - no actual blockchain required');
+    console.log('All transactions are simulated - no actual blockchain required');
   }
 
   async initialize() {
     this.enabled = true;
-    console.log('✅ Mock blockchain ready');
+    console.log('[OK] Mock blockchain ready');
     return true;
   }
 
@@ -63,7 +63,7 @@ class MockBlockchainService {
       timestamp: new Date()
     });
 
-    console.log(`✅ [MOCK] Item minted: ${itemName} (${tier})`);
+    console.log(`[OK] [MOCK] Item minted: ${itemName} (${tier})`);
     console.log(`   TokenId: ${tokenId}, Tx: ${txHash.substring(0, 10)}...`);
 
     return {
@@ -99,8 +99,8 @@ class MockBlockchainService {
       timestamp: new Date()
     });
 
-    console.log(`✅ [MOCK] Trade executed successfully`);
-    console.log(`   Seller: ${sellerAddress.substring(0, 8)}... → Buyer: ${buyerAddress.substring(0, 8)}...`);
+    console.log(`[OK] [MOCK] Trade executed successfully`);
+    console.log(`   Seller: ${sellerAddress.substring(0, 8)}... -> Buyer: ${buyerAddress.substring(0, 8)}...`);
     console.log(`   Tx: ${txHash.substring(0, 10)}...`);
 
     return {
@@ -124,7 +124,7 @@ class MockBlockchainService {
       timestamp: new Date()
     });
 
-    console.log(`✅ [MOCK] Listing recorded: ListingId ${listingId}, Tx: ${txHash.substring(0, 10)}...`);
+    console.log(`[OK] [MOCK] Listing recorded: ListingId ${listingId}, Tx: ${txHash.substring(0, 10)}...`);
 
     return {
       transactionHash: txHash,
@@ -145,7 +145,7 @@ class MockBlockchainService {
       timestamp: new Date()
     });
 
-    console.log(`✅ [MOCK] Unlisting recorded: Tx: ${txHash.substring(0, 10)}...`);
+    console.log(`[OK] [MOCK] Unlisting recorded: Tx: ${txHash.substring(0, 10)}...`);
 
     return {
       transactionHash: txHash,
@@ -181,7 +181,7 @@ class MockBlockchainService {
     this.mockTransactions.clear();
     this.mockTokenIds.clear();
     this.nextTokenId = 1;
-    console.log('🔄 Mock blockchain state reset');
+    console.log('Mock blockchain state reset');
   }
 }
 

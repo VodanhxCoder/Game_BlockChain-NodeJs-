@@ -84,10 +84,10 @@ async function seedDropPool() {
     // Clear existing drop pool and items
     console.log('🗑️  Clearing existing data...');
     await DropPool.destroy({ where: {}, truncate: true });
-    console.log('   ✅ Cleared drop_pool table');
+    console.log('   [OK] Cleared drop_pool table');
     
     await Item.destroy({ where: {}, truncate: true });
-    console.log('   ✅ Cleared items table\n');
+    console.log('   [OK] Cleared items table\n');
 
     let createdCount = 0;
     let totalDropRate = 0;
@@ -99,7 +99,7 @@ async function seedDropPool() {
 
       // Create the item
       const item = await Item.create(itemAttributes);
-      console.log(`   ✅ Created: ${item.name.padEnd(20)} (${item.rarity.padEnd(10)}) - ID: ${item.itemId}`);
+      console.log(`   [OK] Created: ${item.name.padEnd(20)} (${item.rarity.padEnd(10)}) - ID: ${item.itemId}`);
 
       // Add to drop pool
       await DropPool.create({
@@ -108,7 +108,7 @@ async function seedDropPool() {
         active: true
       });
       
-      console.log(`      💎 Drop rate: ${dropRate.toFixed(2)}%\n`);
+      console.log(`      Drop rate: ${dropRate.toFixed(2)}%\n`);
       createdCount++;
       totalDropRate += dropRate;
     }
@@ -124,17 +124,17 @@ async function seedDropPool() {
     console.log(`   Total drop rate: ${totalDropRate.toFixed(2)}%`);
     
     if (Math.abs(totalDropRate - 100) < 0.01) {
-      console.log('   ✅ Drop rates sum to 100%');
+      console.log('   [OK] Drop rates sum to 100%');
     } else {
-      console.log(`   ⚠️  Warning: Drop rates sum to ${totalDropRate.toFixed(2)}% (should be 100%)`);
+      console.log(`   [WARN]  Warning: Drop rates sum to ${totalDropRate.toFixed(2)}% (should be 100%)`);
     }
     console.log('═'.repeat(60));
-    console.log('\n✨ Drop pool seeding completed successfully!\n');
+    console.log('\n Drop pool seeding completed successfully!\n');
 
     await db.sequelize.close();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding drop pool:', error);
+    console.error('[ERROR] Error seeding drop pool:', error);
     await db.sequelize.close();
     process.exit(1);
   }

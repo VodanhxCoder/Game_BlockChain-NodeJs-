@@ -12,7 +12,7 @@ async function fetchLootFromBackend(level, username) {
     if (response.data && response.data.dropped) {
       // Transform backend response to match expected format and include hash
       const item = response.data.item || {};
-      console.log("✅ Item dropped:", item.itemName || item.name || response.data);
+      console.log("[OK] Item dropped:", item.itemName || item.name || response.data);
       return {
         itemId: item.itemId || item.id,
         // keep backwards-compatible 'name' keys for older UI code and add canonical keys
@@ -30,10 +30,10 @@ async function fetchLootFromBackend(level, username) {
         dropped: true,
       };
     }
-    console.log("❌ No drop this time");
+    console.log("[ERROR] No drop this time");
     return null;
   } catch (error) {
-    console.error("❌ Failed to fetch loot from backend:", error);
+    console.error("[ERROR] Failed to fetch loot from backend:", error);
     console.error("Error details:", error.response?.data || error.message);
     return null;
   }
@@ -368,10 +368,10 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
                   size: 28,
                 });
               } else {
-                console.log("🚫 No drop received from backend");
+                console.log("[BLOCK] No drop received from backend");
               }
             }).catch(err => {
-              console.error("❌ Drop request failed:", err);
+              console.error("[ERROR] Drop request failed:", err);
             });
             break;
           }
@@ -603,7 +603,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange, o
                 const r = await axios.post('/api/user/highscore', { username: user.username, score });
                 console.log('📤 Highscore submission result:', r.data);
               } catch (err) {
-                console.error('❌ Failed to submit highscore:', err.response?.data || err.message);
+                console.error('[ERROR] Failed to submit highscore:', err.response?.data || err.message);
               }
             })();
           }

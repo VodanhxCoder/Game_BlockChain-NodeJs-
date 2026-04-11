@@ -266,7 +266,7 @@ const EmailVerificationPopup = ({
               fontSize: '14px',
               marginBottom: '20px'
             }}>
-              ⚠️ {error}
+              [WARN] {error}
             </div>
           )}
 
@@ -280,7 +280,7 @@ const EmailVerificationPopup = ({
               fontSize: '14px',
               marginBottom: '20px'
             }}>
-              ✅ {success}
+              [OK] {success}
             </div>
           )}
 

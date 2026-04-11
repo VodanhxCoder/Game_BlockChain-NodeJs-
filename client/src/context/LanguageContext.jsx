@@ -190,7 +190,7 @@ const dictionaries = {
       overlayShow: "Hiện",
       overlayShowHint: "Nhấn T để hiện/ẩn",
       controls: {
-        move: "Di chuyển: ← / → hoặc A / D",
+        move: "Di chuyển: ← / -> hoặc A / D",
         shoot: "Bắn: Space (đồng thời bắt đầu)",
         pause: "Tạm dừng / Tiếp tục: P",
         defense: "Địch bắn trả — ẩn sau tường chắn",
@@ -244,8 +244,8 @@ const dictionaries = {
       sort: {
         newest: "Mới nhất",
         oldest: "Cũ nhất",
-        tierHighLow: "Phẩm chất: Cao → Thấp",
-        tierLowHigh: "Phẩm chất: Thấp → Cao"
+        tierHighLow: "Phẩm chất: Cao -> Thấp",
+        tierLowHigh: "Phẩm chất: Thấp -> Cao"
       }
     },
     leaderboard: {
@@ -453,7 +453,7 @@ const dictionaries = {
       overlayShow: "Show",
       overlayShowHint: "Press T to show/hide",
       controls: {
-        move: "Move: ← / → or A / D",
+        move: "Move: ← / -> or A / D",
         shoot: "Shoot: Space (also starts)",
         pause: "Pause / Resume: P",
         defense: "Enemies shoot back — use blockades",
@@ -507,8 +507,8 @@ const dictionaries = {
       sort: {
         newest: "Newest first",
         oldest: "Oldest first",
-        tierHighLow: "Tier: High → Low",
-        tierLowHigh: "Tier: Low → High"
+        tierHighLow: "Tier: High -> Low",
+        tierLowHigh: "Tier: Low -> High"
       }
     },
     leaderboard: {

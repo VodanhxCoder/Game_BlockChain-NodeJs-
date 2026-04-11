@@ -10,27 +10,27 @@ async function testBlockchainIntegration() {
     // 1. Connect to database
     console.log('1️⃣  Connecting to database...');
     await db.sequelize.authenticate();
-    console.log('   ✅ Database connected\n');
+    console.log('   [OK] Database connected\n');
 
     // 2. Initialize blockchain
     console.log('2️⃣  Initializing blockchain service...');
     await blockchainService.initialize();
     
     if (!blockchainService.isEnabled()) {
-      console.log('\n❌ Blockchain not enabled. Make sure:');
+      console.log('\n[ERROR] Blockchain not enabled. Make sure:');
       console.log('   • Hardhat node is running: npx hardhat node');
       console.log('   • Contract is deployed: npx hardhat run scripts/deploy-contract.js --network localhost');
       console.log('   • CONTRACT_ADDRESS is in .env file');
       process.exit(1);
     }
-    console.log('   ✅ Blockchain service enabled\n');
+    console.log('   [OK] Blockchain service enabled\n');
 
     // 3. Get test accounts
     console.log('3️⃣  Getting test accounts from database...');
     const users = await db.User.findAll({ limit: 2 });
     
     if (users.length < 2) {
-      console.log('   ❌ Need at least 2 users in database');
+      console.log('   [ERROR] Need at least 2 users in database');
       process.exit(1);
     }
 
@@ -41,13 +41,13 @@ async function testBlockchainIntegration() {
     console.log('   Buyer:', buyer.username, '- Wallet:', buyer.walletAddress || 'NOT SET');
 
     if (!seller.walletAddress || !buyer.walletAddress) {
-      console.log('\n   ⚠️  Users need wallet addresses!');
+      console.log('\n   [WARN]  Users need wallet addresses!');
       console.log('   Update manually:');
       console.log(`   UPDATE users SET walletAddress='0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266' WHERE username='${seller.username}';`);
       console.log(`   UPDATE users SET walletAddress='0x70997970C51812dc3A010C7d01b50e0d17dc79C8' WHERE username='${buyer.username}';`);
       process.exit(1);
     }
-    console.log('   ✅ Users have wallet addresses\n');
+    console.log('   [OK] Users have wallet addresses\n');
 
     // 4. Get test items
     console.log('4️⃣  Getting inventory items...');
@@ -59,12 +59,12 @@ async function testBlockchainIntegration() {
     });
 
     if (!sellerItem) {
-      console.log('   ❌ Seller has no items to trade');
+      console.log('   [ERROR] Seller has no items to trade');
       process.exit(1);
     }
 
     console.log('   Item Hash:', sellerItem.itemHash);
-    console.log('   ✅ Found item to trade\n');
+    console.log('   [OK] Found item to trade\n');
 
     // 5. Check if item is minted
     console.log('5️⃣  Checking if item is minted as NFT...');
@@ -82,9 +82,9 @@ async function testBlockchainIntegration() {
         itemDetails.tier,
         seller.username
       );
-      console.log('   ✅ Item minted successfully\n');
+      console.log('   [OK] Item minted successfully\n');
     } else {
-      console.log('   ✅ Item already minted\n');
+      console.log('   [OK] Item already minted\n');
     }
 
     // 6. Create a test listing
@@ -103,7 +103,7 @@ async function testBlockchainIntegration() {
       listing.listingId,
       seller.username
     );
-    console.log('   ✅ Listing created (ID:', listing.listingId + ')\n');
+    console.log('   [OK] Listing created (ID:', listing.listingId + ')\n');
 
     // 7. Execute a test trade
     console.log('7️⃣  Executing blockchain trade...');
@@ -118,7 +118,7 @@ async function testBlockchainIntegration() {
       buyer.username
     );
 
-    console.log('\n   ✅ Trade executed successfully!');
+    console.log('\n   [OK] Trade executed successfully!');
     console.log('   Transaction Hash:', result.transactionHash);
     console.log('   Block Number:', result.blockNumber);
     console.log('   Gas Used:', result.gasUsed);
@@ -136,19 +136,19 @@ async function testBlockchainIntegration() {
     console.log('   - TX Hash:', tradeLog.transactionHash);
     console.log('   - Status:', tradeLog.status);
     console.log('   - Block:', tradeLog.blockNumber);
-    console.log('   ✅ Trade logged successfully\n');
+    console.log('   [OK] Trade logged successfully\n');
 
     // 9. Clean up test data
     console.log('9️⃣  Cleaning up test data...');
     await listing.destroy();
-    console.log('   ✅ Test listing removed\n');
+    console.log('   [OK] Test listing removed\n');
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('✅ All tests passed!');
+    console.log('[OK] All tests passed!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   } catch (error) {
-    console.error('\n❌ Test failed:', error.message);
+    console.error('\n[ERROR] Test failed:', error.message);
     console.error(error);
   } finally {
     await db.sequelize.close();

@@ -192,7 +192,7 @@ export default function GameLayoutEditor() {
 
           <div className="admin-card">
             <div className="admin-card__header">
-              <h3 className="admin-card__title">🎮 Cơ chế game</h3>
+              <h3 className="admin-card__title"> Cơ chế game</h3>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="admin-form-group">

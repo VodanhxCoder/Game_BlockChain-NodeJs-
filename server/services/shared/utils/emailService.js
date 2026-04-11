@@ -105,7 +105,7 @@ const sendVerificationEmail = async (to, verificationCode, username) => {
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">🎮 Game BlockChain</div>
+          <div class="logo"> Game BlockChain</div>
           <div>Xác nhận tài khoản của bạn</div>
         </div>
         <div class="content">
@@ -120,7 +120,7 @@ const sendVerificationEmail = async (to, verificationCode, username) => {
             Nếu bạn không yêu cầu tạo tài khoản, hãy bỏ qua email này.
           </p>
           <div class="warning">
-            ⚠️ Không chia sẻ mã này với bất kỳ ai khác để bảo mật tài khoản.
+            [WARN] Không chia sẻ mã này với bất kỳ ai khác để bảo mật tài khoản.
           </div>
         </div>
         <div class="footer">
@@ -135,7 +135,7 @@ const sendVerificationEmail = async (to, verificationCode, username) => {
   const mailOptions = {
     from: process.env.EMAIL_FROM,
     to: to,
-    subject: '🎮 Mã xác nhận tài khoản Game BlockChain',
+    subject: ' Mã xác nhận tài khoản Game BlockChain',
     html: htmlTemplate,
     text: `Xin chào ${username}!\n\nMã xác nhận của bạn là: ${verificationCode}\n\nMã này sẽ hết hạn sau 10 phút.\n\nGame BlockChain Team`
   };

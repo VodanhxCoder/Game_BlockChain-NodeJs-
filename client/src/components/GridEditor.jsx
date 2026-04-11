@@ -360,7 +360,7 @@ export default function GridEditor({ rows, cols, onChange, initialPattern }) {
           color: "var(--text-muted)",
         }}
       >
-        💡 <strong>Hướng dẫn:</strong> Click hoặc kéo chuột trên các ô để tạo pattern cho kẻ địch. Các ô màu xanh
+        <strong>Hướng dẫn:</strong> Click hoặc kéo chuột trên các ô để tạo pattern cho kẻ địch. Các ô màu xanh
         đại diện cho vị trí sẽ xuất hiện kẻ địch.
       </div>
     </div>

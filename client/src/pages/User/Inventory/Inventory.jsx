@@ -176,7 +176,7 @@ export default function Inventory() {
       });
       
       const listingId = createResp.data.listingId;
-      console.log('✅ Listing created with ID:', listingId);
+      console.log('[OK] Listing created with ID:', listingId);
       
       // Step 2: If wallet connected, create and save the contract-compatible signature
       if (isConnected && account && listingId) {
@@ -188,7 +188,7 @@ export default function Inventory() {
           const contractAddress = configResp.data.contractAddress;
           
           if (!contractAddress) {
-            console.warn('⚠️  Contract address not available, listing created without signature');
+            console.warn('[WARN]  Contract address not available, listing created without signature');
             return;
           }
           
@@ -211,7 +211,7 @@ export default function Inventory() {
           const signer = await provider.getSigner();
           const sellerSignature = await signer.signMessage(ethers.getBytes(messageHash));
           
-          console.log('✅ Signature obtained:', sellerSignature.substring(0, 20) + '...');
+          console.log('[OK] Signature obtained:', sellerSignature.substring(0, 20) + '...');
           
           // Update the listing with the signature
           await axios.patch('/api/market/update-signature', {
@@ -220,7 +220,7 @@ export default function Inventory() {
             sellerSignatureTimestamp
           });
           
-          console.log('✅ Listing updated with seller signature');
+          console.log('[OK] Listing updated with seller signature');
         } catch (signErr) {
           console.warn('Seller signature failed or rejected:', signErr);
           alert('Signature rejected. Your item is listed but buyer-initiated trades won\'t work until you provide a signature.');
@@ -373,8 +373,8 @@ export default function Inventory() {
             <select className="sort-select" value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
               <option value="time-desc">Newest first</option>
               <option value="time-asc">Oldest first</option>
-              <option value="tier-desc">Tier: High → Low</option>
-              <option value="tier-asc">Tier: Low → High</option>
+              <option value="tier-desc">Tier: High -> Low</option>
+              <option value="tier-asc">Tier: Low -> High</option>
             </select>
           </div>
           <button 
@@ -382,7 +382,7 @@ export default function Inventory() {
             className="ui-btn ui-btn--ghost"
             onClick={fetchInventory}
           >
-            🔄 {t("inventory.refresh")}
+            {t("inventory.refresh")}
           </button>
         </div>
 

@@ -40,11 +40,11 @@ async function main() {
   if (contractAddressRegex.test(envContent)) {
     // Update existing
     envContent = envContent.replace(contractAddressRegex, `CONTRACT_ADDRESS=${contractAddress}`);
-    console.log('\n✅ Updated CONTRACT_ADDRESS in .env');
+    console.log('\n[OK] Updated CONTRACT_ADDRESS in .env');
   } else {
     // Add new entry
     envContent += `\n# Auto-generated contract address\nCONTRACT_ADDRESS=${contractAddress}\n`;
-    console.log('\n✅ Added CONTRACT_ADDRESS to .env');
+    console.log('\n[OK] Added CONTRACT_ADDRESS to .env');
   }
 
   fs.writeFileSync(envPath, envContent);

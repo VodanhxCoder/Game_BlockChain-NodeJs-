@@ -27,7 +27,7 @@ class GameController {
     socket.on('game:start', async (data) => {
       try {
         const { username, level = 1, width, height } = data;
-        console.log(`🎮 Starting game for ${username}, level ${level}, size: ${width}x${height}`);
+        console.log(` Starting game for ${username}, level ${level}, size: ${width}x${height}`);
 
         // Create new game session
         const { sessionId, gameEngine } = gameSessionManager.createSession(username, level, width, height);
@@ -44,9 +44,9 @@ class GameController {
         // Send initial state
         socket.emit('game:state', gameEngine.getState());
         
-        console.log(`✅ Game started: ${sessionId}`);
+        console.log(`[OK] Game started: ${sessionId}`);
       } catch (error) {
-        console.error('❌ Error starting game:', error);
+        console.error('[ERROR] Error starting game:', error);
         socket.emit('game:error', { message: 'Failed to start game' });
       }
     });
@@ -200,12 +200,12 @@ class GameController {
               event.item.obtainedAt = savedItem.obtainedAt;
             }
           } catch (error) {
-            console.error('❌ Error saving collected item:', error);
+            console.error('[ERROR] Error saving collected item:', error);
           }
           
           // Notify client about collected item
           this.io.to(sessionId).emit('game:item_collected', event.item);
-          console.log(`✨ Item collected and saved: ${event.item.itemName} by ${engine.username}`);
+          console.log(` Item collected and saved: ${event.item.itemName} by ${engine.username}`);
           break;
 
         case 'game_over':
@@ -215,7 +215,7 @@ class GameController {
           }
           this.io.to(sessionId).emit('game:over', { score: event.score });
           this.stopGameLoop(sessionId);
-          console.log(`💀 Game over for ${engine.username}, score: ${event.score}`);
+          console.log(` Game over for ${engine.username}, score: ${event.score}`);
           break;
 
         case 'level_complete':
@@ -231,7 +231,7 @@ class GameController {
           break;
       }
     } catch (error) {
-      console.error('❌ Error handling game event:', error);
+      console.error('[ERROR] Error handling game event:', error);
     }
   }
 
@@ -265,7 +265,7 @@ class GameController {
       }
       return null;
     } catch (error) {
-      console.error('❌ Failed to determine drop:', error);
+      console.error('[ERROR] Failed to determine drop:', error);
       return null;
     }
   }
@@ -276,9 +276,9 @@ class GameController {
   async submitHighScore(username, score) {
     try {
       const result = await updateUserHighScore(username, score);
-      console.log('📤 High score updated:', result);
+      console.log('High score updated:', result);
     } catch (error) {
-      console.error('❌ Failed to submit high score:', error.message);
+      console.error('[ERROR] Failed to submit high score:', error.message);
     }
   }
 }

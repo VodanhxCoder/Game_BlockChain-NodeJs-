@@ -11,7 +11,7 @@ async function populateDropPool() {
     });
 
     if (items.length === 0) {
-      console.log('❌ No items found in items table!');
+      console.log('[ERROR] No items found in items table!');
       console.log('Please add items to the items table first.\n');
       process.exit(1);
     }
@@ -64,7 +64,7 @@ async function populateDropPool() {
       totalRate += rate;
       
       const source = existingRate ? 'from existing drop_pool' : `based on ${item.rarity} rarity`;
-      console.log(`✅ Added ${item.name} (${item.rarity}) with ${rate.toFixed(2)}% drop chance (${source})`);
+      console.log(`[OK] Added ${item.name} (${item.rarity}) with ${rate.toFixed(2)}% drop chance (${source})`);
     }
 
     console.log('\n' + '═'.repeat(50));
@@ -73,7 +73,7 @@ async function populateDropPool() {
     console.log(`   Note: Each item has INDEPENDENT drop chance`);
     console.log(`   (Multiple items can drop from same enemy)`);
     console.log('═'.repeat(50));
-    console.log('\n✨ Drop pool populated successfully!\n');
+    console.log('\n Drop pool populated successfully!\n');
 
     // Show final drop pool
     console.log('📋 Current drop pool:');
@@ -93,7 +93,7 @@ async function populateDropPool() {
     await db.sequelize.close();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error populating drop pool:', error);
+    console.error('[ERROR] Error populating drop pool:', error);
     process.exit(1);
   }
 }

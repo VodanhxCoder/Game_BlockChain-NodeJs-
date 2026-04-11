@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('🎮 Game Blockchain - Simulation Setup\n');
+console.log(' Game Blockchain - Simulation Setup\n');
 console.log('This script will set up a local blockchain simulation environment.\n');
 
 // Check if .env file exists
@@ -17,9 +17,9 @@ let envContent = '';
 
 if (fs.existsSync(envPath)) {
   envContent = fs.readFileSync(envPath, 'utf8');
-  console.log('✅ Found existing .env file\n');
+  console.log('[OK] Found existing .env file\n');
 } else {
-  console.log('⚠️  No .env file found, will create one\n');
+  console.log('[WARN]  No .env file found, will create one\n');
 }
 
 // Blockchain configuration for simulation
@@ -49,14 +49,14 @@ if (!envContent.includes('BLOCKCHAIN_USE_MOCK')) {
   console.log('📝 Adding blockchain configuration to .env...');
   envContent += blockchainConfig;
   fs.writeFileSync(envPath, envContent);
-  console.log('✅ Configuration added\n');
+  console.log('[OK] Configuration added\n');
 } else {
   console.log('ℹ️  Blockchain configuration already exists in .env\n');
 }
 
 // Display next steps
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('✅ Setup Complete!\n');
+console.log('[OK] Setup Complete!\n');
 console.log('📋 Next Steps:\n');
 console.log('1️⃣  Run migrations to create blockchain tables:');
 console.log('   npx sequelize-cli db:migrate\n');
@@ -71,7 +71,7 @@ console.log('   - All blockchain operations are simulated');
 console.log('   - No actual blockchain network required');
 console.log('   - Instant transactions (no waiting)');
 console.log('   - Perfect for development and testing\n');
-console.log('⛓️  To use REAL blockchain (Hardhat):');
+console.log('To use REAL blockchain (Hardhat):');
 console.log('   1. Set BLOCKCHAIN_USE_MOCK=false in .env');
 console.log('   2. Run: npm run node (in separate terminal)');
 console.log('   3. Run: npm run deploy:localhost');

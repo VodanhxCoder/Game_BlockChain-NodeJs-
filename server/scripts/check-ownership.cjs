@@ -24,11 +24,11 @@ async function checkOwnership() {
     const buyer = '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc';
     
     if (owner.toLowerCase() === seller.toLowerCase()) {
-      console.log('✅ Owner matches Seller (Trade NOT executed on chain)');
+      console.log('[OK] Owner matches Seller (Trade NOT executed on chain)');
     } else if (owner.toLowerCase() === buyer.toLowerCase()) {
-      console.log('⚠️ Owner matches Buyer (Trade ALREADY executed on chain)');
+      console.log('[WARN] Owner matches Buyer (Trade ALREADY executed on chain)');
     } else {
-      console.log('❌ Owner is someone else:', owner);
+      console.log('[ERROR] Owner is someone else:', owner);
     }
     
   } catch (e) {

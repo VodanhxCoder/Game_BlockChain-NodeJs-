@@ -160,7 +160,7 @@ export default function Shop() {
     }
     
     try {
-      console.log('🔄 Starting trade flow — preparing calldata from backend...');
+      console.log('Starting trade flow - preparing calldata from backend...');
 
       // Call backend to prepare calldata and get seller signature (if seller provided one)
       const prep = await axios.post('/api/market/prepare-trade', {
@@ -192,9 +192,9 @@ export default function Shop() {
 
       // Buyer-initiated on-chain execution via MetaMask.
       if (contractAddress && window.ethereum) {
-        console.log('✅ All conditions met for buyer-initiated on-chain trade');
+        console.log('[OK] All conditions met for buyer-initiated on-chain trade');
         try {
-          console.log('⛓️  Seller signature present — invoking on-chain trade via MetaMask');
+          console.log('Seller signature present - invoking on-chain trade via MetaMask');
 
           const sellerAddr = sellerWallet;
           const buyerAddr = account;
@@ -235,7 +235,7 @@ export default function Shop() {
               throw new Error('Signature verification failed - recovered address does not match seller');
             }
           } catch (verifyErr) {
-            console.error('❌ Signature verification failed:', verifyErr);
+            console.error('[ERROR] Signature verification failed:', verifyErr);
             throw new Error('Invalid seller signature: ' + verifyErr.message);
           }
           
@@ -294,13 +294,13 @@ export default function Shop() {
             params: [txRequest],
           });
 
-          console.log('🔄 Waiting for MetaMask tx to be mined...', txHash);
+          console.log('Waiting for MetaMask tx to be mined...', txHash);
           const receipt = await waitForTxReceipt(txHash);
           if ((receipt?.status || '').toLowerCase() !== '0x1') {
             throw new Error('On-chain transaction failed');
           }
 
-          console.log('✅ On-chain trade mined:', receipt.transactionHash || txHash);
+          console.log('[OK] On-chain trade mined:', receipt.transactionHash || txHash);
           
           // Calculate gas fee paid by buyer
           const gasUsed = receipt.gasUsed ? BigInt(receipt.gasUsed) : 0n;
@@ -327,13 +327,13 @@ export default function Shop() {
 
           notifyTradeSuccess(receipt.transactionHash || txHash);
 
-          alert(`✅ Trade successful!\n\nTransaction: ${(receipt.transactionHash || txHash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
+          alert(`[OK] Trade successful!\n\nTransaction: ${(receipt.transactionHash || txHash).substring(0, 10)}...\nGas paid: ${parseFloat(gasFeeEth).toFixed(6)} ETH\n\nCheck your inventory!`);
           window.dispatchEvent(new Event('market:updated'));
           fetchListings();
           closeTradeModal();
           return;
         } catch (onchainErr) {
-          console.error('❌ On-chain execution failed:', onchainErr);
+          console.error('[ERROR] On-chain execution failed:', onchainErr);
           console.error('   Error code:', onchainErr.code);
           console.error('   Error message:', onchainErr.message);
 
@@ -364,7 +364,7 @@ export default function Shop() {
       }
       
     } catch (e) {
-      console.error('❌ Trade failed:', e);
+      console.error('[ERROR] Trade failed:', e);
       
       // User-friendly error messages
       if (e.code === 4001) {
@@ -418,7 +418,7 @@ export default function Shop() {
           textAlign: 'center'
         }}>
           <p style={{ fontSize: '0.875rem', color: '#22c55e' }}>
-            ✅ Wallet connected! Your trades will be recorded on blockchain with address: {account?.slice(0, 6)}...{account?.slice(-4)}
+            [OK] Wallet connected! Your trades will be recorded on blockchain with address: {account?.slice(0, 6)}...{account?.slice(-4)}
           </p>
         </div>
       )}
@@ -455,12 +455,12 @@ export default function Shop() {
                           <div style={{ fontSize: 12, color: isDark ? '#9ca3af' : '#6b7280', marginTop: 6 }}>{l.seller?.playername || l.seller?.username || '—'}</div>
                           {!l.seller?.walletAddress && (
                             <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              ⚠️ Seller wallet not connected
+                              [WARN] Seller wallet not connected
                             </div>
                           )}
                           {!l.sellerSignatureAvailable && (
                             <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              ⚠️ Seller signature missing (MetaMask trade disabled)
+                              [WARN] Seller signature missing (MetaMask trade disabled)
                             </div>
                           )}
                           <div style={{ fontSize: 12, color: isDark ? '#d1d5db' : '#374151', marginTop: 8 }}>

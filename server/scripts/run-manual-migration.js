@@ -73,7 +73,7 @@ async function runMigration() {
         if (error.message.includes('Duplicate column') || 
             error.message.includes('Duplicate key') ||
             error.message.includes('already exists')) {
-          console.log('⚠ Already exists, skipping');
+          console.log('[WARN] Already exists, skipping');
         } else {
           throw error;
         }

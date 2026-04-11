@@ -26,7 +26,7 @@ async function showAccounts() {
     console.log('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
     console.log('');
     console.log('\n=== TO IMPORT INTO METAMASK ===\n');
-    console.log('1. Open MetaMask → Profile Icon → Import Account');
+    console.log('1. Open MetaMask -> Profile Icon -> Import Account');
     console.log('2. Select "Private Key"');
     console.log('3. Paste one of the private keys above');
     console.log('4. Make sure MetaMask is connected to:');

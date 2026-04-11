@@ -32,7 +32,7 @@ export function Web3Provider({ children }) {
       }
 
       // 1. Get challenge from backend
-      console.log('📡 Requesting challenge from backend...');
+      console.log('Requesting challenge from backend...');
       const challengeResp = await fetch(mapLegacyApiUrl('/api/user/wallet/challenge'), {
         method: 'POST',
         headers: { 
@@ -44,19 +44,19 @@ export function Web3Provider({ children }) {
       });
       if (!challengeResp.ok) {
         const errorText = await challengeResp.text();
-        console.error('❌ Challenge request failed:', errorText);
+        console.error('[ERROR] Challenge request failed:', errorText);
         throw new Error('Failed to get challenge');
       }
       const { message } = await challengeResp.json();
-      console.log('✅ Challenge received:', message);
+      console.log('[OK] Challenge received:', message);
 
       // 2. Sign the message using the provided signer
-      console.log('✍️ Requesting signature from user...');
+      console.log('Requesting signature from user...');
       const signature = await signerInstance.signMessage(message);
-      console.log('✅ Message signed:', signature.substring(0, 20) + '...');
+      console.log('[OK] Message signed:', signature.substring(0, 20) + '...');
 
       // 3. Verify and save on backend
-      console.log('📡 Sending signature to backend for verification...');
+      console.log('Sending signature to backend for verification...');
       const verifyResp = await fetch(mapLegacyApiUrl('/api/user/wallet/verify'), {
         method: 'POST',
         headers: { 
@@ -68,12 +68,12 @@ export function Web3Provider({ children }) {
       });
       if (!verifyResp.ok) {
         const errorData = await verifyResp.json();
-        console.error('❌ Verification failed:', errorData);
+        console.error('[ERROR] Verification failed:', errorData);
         throw new Error(errorData.error || 'Failed to verify signature');
       }
       const result = await verifyResp.json();
       
-      console.log('✅ Wallet linked to user:', username, '→', walletAddress);
+      console.log('[OK] Wallet linked to user:', username, '->', walletAddress);
       
       // Update user context with wallet address
       if (user) {
@@ -142,12 +142,12 @@ export function Web3Provider({ children }) {
         const bal = await web3Provider.getBalance(selectedAccount);
         setBalance(ethers.formatEther(bal));
       } catch (balanceErr) {
-        console.warn("⚠️ Failed to fetch balance (RPC might be busy):", balanceErr);
+        console.warn("[WARN] Failed to fetch balance (RPC might be busy):", balanceErr);
         // Don't fail the whole connection if balance fetch fails
       }
 
-      console.log('✅ Wallet connected:', selectedAccount);
-      console.log('🌐 Network:', network.name, '(chainId:', Number(network.chainId), ')');
+      console.log('[OK] Wallet connected:', selectedAccount);
+      console.log('Network:', network.name, '(chainId:', Number(network.chainId), ')');
 
       // If user is logged in but no wallet linked, link it now
       if (user && !user.walletAddress) {
@@ -164,7 +164,7 @@ export function Web3Provider({ children }) {
           );
           
           if (!shouldLink) {
-            console.log('❌ User cancelled wallet linking');
+            console.log('[ERROR] User cancelled wallet linking');
             disconnectWallet();
             setConnecting(false);
             return false;
@@ -175,9 +175,9 @@ export function Web3Provider({ children }) {
           // Use the web3Signer directly instead of state variable
           await linkWalletToUserWithSigner(selectedAccount, user.username, web3Signer);
           
-          alert(`✅ Wallet linked successfully!\n\nYour wallet ${selectedAccount.substring(0, 10)}... is now linked to ${user.username}`);
+          alert(`[OK] Wallet linked successfully!\n\nYour wallet ${selectedAccount.substring(0, 10)}... is now linked to ${user.username}`);
         } catch (err) {
-          console.error('❌ Auto-link failed:', err);
+          console.error('[ERROR] Auto-link failed:', err);
           console.error('Error details:', {
             message: err.message,
             stack: err.stack,
@@ -188,7 +188,7 @@ export function Web3Provider({ children }) {
           return false;
         }
       } else if (user && user.walletAddress) {
-        console.log('✅ Wallet already linked to user:', user.username);
+        console.log('[OK] Wallet already linked to user:', user.username);
       }
 
       return true;
@@ -246,7 +246,7 @@ export function Web3Provider({ children }) {
       // If user is logged in and has a saved wallet, only accept the saved wallet
       if (user && user.walletAddress) {
         if (newAccount.toLowerCase() !== user.walletAddress.toLowerCase()) {
-          console.warn(`⚠️ Account mismatch: User ${user.username} is linked to ${user.walletAddress.substring(0, 10)}... but MetaMask switched to ${newAccount.substring(0, 10)}...`);
+          console.warn(`[WARN] Account mismatch: User ${user.username} is linked to ${user.walletAddress.substring(0, 10)}... but MetaMask switched to ${newAccount.substring(0, 10)}...`);
           setError(`This account is linked to wallet ${user.walletAddress.substring(0, 10)}... Please switch back in MetaMask.`);
           disconnectWallet();
           return;
@@ -309,11 +309,11 @@ export function Web3Provider({ children }) {
         
         // Only auto-connect if MetaMask account matches user's saved wallet
         if (currentMetaMaskAccount.toLowerCase() === user.walletAddress.toLowerCase()) {
-          console.log(`🔄 Auto-connecting to ${user.username}'s wallet: ${currentMetaMaskAccount.substring(0, 10)}...`);
+          console.log(`Auto-connecting to ${user.username}'s wallet: ${currentMetaMaskAccount.substring(0, 10)}...`);
           await connectWallet();
         } else {
           console.warn(
-            `⚠️ Wallet mismatch detected!\n` +
+            `[WARN] Wallet mismatch detected!\n` +
             `   User ${user.username} wallet: ${user.walletAddress.substring(0, 10)}...\n` +
             `   MetaMask account: ${currentMetaMaskAccount.substring(0, 10)}...\n` +
             `   Please switch MetaMask to the correct account to auto-connect.`
@@ -321,7 +321,7 @@ export function Web3Provider({ children }) {
           setError(`MetaMask is connected to ${currentMetaMaskAccount.substring(0, 10)}... but your account uses ${user.walletAddress.substring(0, 10)}...`);
         }
       } catch (err) {
-        console.error('❌ Auto-connect error:', err.message);
+        console.error('[ERROR] Auto-connect error:', err.message);
         // Don't show error to user, just log it
       }
     };

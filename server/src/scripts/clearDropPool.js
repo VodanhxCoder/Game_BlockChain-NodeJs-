@@ -11,13 +11,13 @@ async function clearDropPool() {
       truncate: true
     });
 
-    console.log(`✅ Removed ${deleted} entries from drop_pool table`);
-    console.log('✨ Drop pool is now empty\n');
+    console.log(`[OK] Removed ${deleted} entries from drop_pool table`);
+    console.log(' Drop pool is now empty\n');
     
     await db.sequelize.close();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error clearing drop pool:', error);
+    console.error('[ERROR] Error clearing drop pool:', error);
     process.exit(1);
   }
 }

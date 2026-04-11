@@ -16,7 +16,7 @@ async function testDropPool() {
     });
 
     if (dropPool.length === 0) {
-      console.log('❌ No items in drop pool!');
+      console.log('[ERROR] No items in drop pool!');
       process.exit(1);
     }
 
@@ -50,25 +50,25 @@ async function testDropPool() {
       }
 
       if (droppedItems.length === 0) {
-        console.log(`Kill ${i.toString().padStart(2)}: 🚫 No drops`);
+        console.log(`Kill ${i.toString().padStart(2)}: [BLOCK] No drops`);
       } else if (droppedItems.length === 1) {
         const dropped = droppedItems[0];
-        const rarityColor = dropped.rarity === 'Legendary' ? '🌟' : dropped.rarity === 'Rare' ? '💎' : '⚪';
+        const rarityColor = dropped.rarity === 'Legendary' ? '*' : dropped.rarity === 'Rare' ? '+' : '-';
         console.log(`Kill ${i.toString().padStart(2)}: ${rarityColor} ${dropped.name} (${dropped.rarity})`);
       } else {
         // Multiple items dropped - pick one randomly (as backend does)
         const picked = droppedItems[Math.floor(Math.random() * droppedItems.length)];
-        const rarityColor = picked.rarity === 'Legendary' ? '🌟' : picked.rarity === 'Rare' ? '💎' : '⚪';
+        const rarityColor = picked.rarity === 'Legendary' ? '*' : picked.rarity === 'Rare' ? '+' : '-';
         console.log(`Kill ${i.toString().padStart(2)}: ${rarityColor} ${picked.name} (${picked.rarity}) [${droppedItems.length} items rolled, 1 picked]`);
       }
     }
 
-    console.log('\n✅ Drop pool is working correctly!\n');
+    console.log('\n[OK] Drop pool is working correctly!\n');
     
     await db.sequelize.close();
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error testing drop pool:', error);
+    console.error('[ERROR] Error testing drop pool:', error);
     process.exit(1);
   }
 }

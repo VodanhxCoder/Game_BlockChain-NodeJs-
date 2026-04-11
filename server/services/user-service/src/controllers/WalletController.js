@@ -11,7 +11,7 @@ const WalletController = {
       if (err.status) {
         return res.status(err.status).json({ error: err.message });
       }
-      console.error('❌ createChallenge error', err);
+      console.error('[ERROR] createChallenge error', err);
       return res.status(500).json({ error: 'internal error' });
     }
   },
@@ -26,7 +26,7 @@ const WalletController = {
       if (err.status) {
         return res.status(err.status).json({ error: err.message });
       }
-      console.error('❌ verifySignatureAndSave error', err);
+      console.error('[ERROR] verifySignatureAndSave error', err);
       return res.status(500).json({ error: 'internal error' });
     }
   }

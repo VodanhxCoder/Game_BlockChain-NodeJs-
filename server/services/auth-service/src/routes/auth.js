@@ -218,7 +218,7 @@ router.post('/login',
       if (checkResponse.data) {
         failsCount = checkResponse.data.fails_count || 0;
         if (checkResponse.data.banned) {
-          console.log(`[Fail2Ban] 🚫 Blocked login attempt from banned IP: ${nip}, remaining: ${checkResponse.data.remaining}s`);
+          console.log(`[Fail2Ban] [BLOCK] Blocked login attempt from banned IP: ${nip}, remaining: ${checkResponse.data.remaining}s`);
           return res.status(429).json({ 
             error: 'Too many failed login attempts. Please try again later.',
             remaining: checkResponse.data.remaining 
@@ -281,7 +281,7 @@ router.post('/login',
 
     if (!user) {
       // notify fail2ban about failed attempt
-      console.log(`[Fail2Ban] ❌ Failed login attempt for username: ${username} from IP: ${clientIp}`);
+      console.log(`[Fail2Ban] [ERROR] Failed login attempt for username: ${username} from IP: ${clientIp}`);
       try { await notifyFail2ban(clientIp, false); } catch (e) {}
       return res.status(401).json({ 
         error: 'Invalid username or password.',
@@ -291,7 +291,7 @@ router.post('/login',
 
     // Check if user account is banned
     if (user.status === 'banned') {
-      console.log(`[Auth] 🚫 Banned user attempted login: ${username} from IP: ${clientIp}`);
+      console.log(`[Auth] [BLOCK] Banned user attempted login: ${username} from IP: ${clientIp}`);
       return res.status(403).json({ 
         error: `Your account has been banned. Time: ${new Date().toLocaleString()}. Please contact support for assistance.`,
         isBanned: true
@@ -300,7 +300,7 @@ router.post('/login',
 
     // Check if user account is inactive
     if (user.status === 'inactive') {
-      console.log(`[Auth] ⚠️ Inactive user attempted login: ${username} from IP: ${clientIp}`);
+      console.log(`[Auth] [WARN] Inactive user attempted login: ${username} from IP: ${clientIp}`);
       return res.status(403).json({ 
         error: 'Your account is inactive. Please contact support to reactivate your account.',
         isInactive: true
@@ -311,7 +311,7 @@ router.post('/login',
     const isValid = user.validPassword(passwordHash);
 
     if (!isValid) {
-      console.log(`[Fail2Ban] ❌ Failed login attempt for username: ${username} from IP: ${clientIp}`);
+      console.log(`[Fail2Ban] [ERROR] Failed login attempt for username: ${username} from IP: ${clientIp}`);
       try { await notifyFail2ban(clientIp, false); } catch (e) {}
       return res.status(401).json({ 
         error: 'Invalid username or password.',
@@ -321,7 +321,7 @@ router.post('/login',
 
     // Successful login
     // Notify fail2ban of successful auth (clears failures)
-    console.log(`[Fail2Ban] ✅ Successful login for username: ${username} from IP: ${clientIp} - clearing ban history`);
+    console.log(`[Fail2Ban] [OK] Successful login for username: ${username} from IP: ${clientIp} - clearing ban history`);
     try { await notifyFail2ban(clientIp, true); } catch (e) {}
 
     // Generate JWT

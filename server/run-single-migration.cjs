@@ -22,19 +22,19 @@ async function runMigration() {
 
   try {
     await sequelize.authenticate();
-    console.log('✅ Database connection established');
+    console.log('[OK] Database connection established');
 
     // Load and run the specific migration
     const migrationFile = require('./src/migrations/20251123000001-add-seller-signature-timestamp.cjs');
     
     const queryInterface = sequelize.getQueryInterface();
     
-    console.log('🔄 Running migration: add-seller-signature-timestamp');
+    console.log('Running migration: add-seller-signature-timestamp');
     await migrationFile.up(queryInterface, Sequelize);
-    console.log('✅ Migration completed successfully');
+    console.log('[OK] Migration completed successfully');
 
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error('[ERROR] Migration failed:', error);
     process.exit(1);
   } finally {
     await sequelize.close();

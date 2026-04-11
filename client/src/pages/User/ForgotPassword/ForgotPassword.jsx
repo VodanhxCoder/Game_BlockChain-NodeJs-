@@ -95,7 +95,7 @@ export default function ForgotPassword() {
               data-mode={isDark ? "dark" : "light"}
             >
               <span className="auth-theme-toggle__icon" aria-hidden="true">
-                {isDark ? "🌙" : "☀️"}
+                {isDark ? "Dark" : "Light"}
               </span>
             </button>
           </div>

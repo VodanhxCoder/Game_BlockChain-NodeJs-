@@ -108,7 +108,7 @@ export default function Menu({ onToggleMenu }) {
               aria-label={t("menu.theme")}
               title={t("menu.theme")}
             >
-              {isDark ? "☾" : "☀"}
+              {isDark ? "Dark" : "Light"}
             </button>
             <button
               type="button"

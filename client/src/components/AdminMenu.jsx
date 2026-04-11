@@ -87,7 +87,7 @@ export default function AdminMenu() {
             aria-label="Toggle theme"
             title="Toggle theme"
           >
-            {isDark ? "☾" : "☀"}
+            {isDark ? "Dark" : "Light"}
           </button>
         </div>
       </div>

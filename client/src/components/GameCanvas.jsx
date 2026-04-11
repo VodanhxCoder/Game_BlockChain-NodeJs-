@@ -50,7 +50,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
     });
 
     socket.on('connect_error', (error) => {
-      console.error('❌ Connection error:', error.message);
+      console.error('[ERROR] Connection error:', error.message);
     });
 
     socket.on('disconnect', (reason) => {
@@ -86,7 +86,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
     // Handle game over
     socket.on('game:over', (data) => {
-      console.log(`💀 Game Over - Score: ${data.score}`);
+      console.log(` Game Over - Score: ${data.score}`);
       setGameOver(true);
     });
 
@@ -106,7 +106,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
     // Handle errors
     socket.on('game:error', (error) => {
-      console.error('❌ Game error:', error.message);
+      console.error('[ERROR] Game error:', error.message);
     });
 
     // Cleanup on unmount
@@ -167,7 +167,7 @@ const GameCanvas = ({ onLootDrop, onScoreChange, onLivesChange, onLevelChange })
 
       if (e.code === "KeyP") {
         e.preventDefault();
-        console.log('🎮 Pause key pressed, current state:', state?.started, state?.paused);
+        console.log(' Pause key pressed, current state:', state?.started, state?.paused);
         if (state && state.started) {
           socket.emit('game:pause', { sessionId: sessionId });
         }

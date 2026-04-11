@@ -11,7 +11,7 @@ if (USE_MOCK) {
   console.log('🎭 Using Mock Blockchain Service (No real blockchain required)');
   module.exports = require('./MockBlockchainService');
 } else {
-  console.log('⛓️  Using Real Blockchain Service');
+  console.log('Using Real Blockchain Service');
 
 class BlockchainService {
   constructor() {
@@ -44,7 +44,7 @@ class BlockchainService {
         throw error;
       }
 
-      console.warn(`⚠️  ${operationName} failed due to chain state mismatch, reinitializing provider and retrying...`);
+      console.warn(`[WARN]  ${operationName} failed due to chain state mismatch, reinitializing provider and retrying...`);
       await this.initialize(true);
       return await operation();
     }
@@ -63,7 +63,7 @@ class BlockchainService {
       const contractAddress = process.env.BLOCKCHAIN_CONTRACT_ADDRESS;
 
       if (!rpcUrl || !privateKey || !contractAddress) {
-        console.warn('⚠️  Blockchain not configured. Set BLOCKCHAIN_RPC_URL, BLOCKCHAIN_PRIVATE_KEY, and BLOCKCHAIN_CONTRACT_ADDRESS in .env');
+        console.warn('[WARN]  Blockchain not configured. Set BLOCKCHAIN_RPC_URL, BLOCKCHAIN_PRIVATE_KEY, and BLOCKCHAIN_CONTRACT_ADDRESS in .env');
         return;
       }
 
@@ -76,7 +76,7 @@ class BlockchainService {
       const artifactPath = path.join(__dirname, '..', 'artifacts', 'contracts', 'ItemTradingNFT.sol', 'ItemTradingNFT.json');
       
       if (!fs.existsSync(artifactPath)) {
-        console.warn('⚠️  Contract artifact not found. Run: npx hardhat compile');
+        console.warn('[WARN]  Contract artifact not found. Run: npx hardhat compile');
         return;
       }
 
@@ -89,13 +89,13 @@ class BlockchainService {
 
       // Test connection
       const network = await this.provider.getNetwork();
-      console.log(`✅ Blockchain initialized on network: ${network.name} (chainId: ${network.chainId})`);
+      console.log(`[OK] Blockchain initialized on network: ${network.name} (chainId: ${network.chainId})`);
       console.log(`📝 Contract address: ${contractAddress}`);
       console.log(`💼 Wallet address: ${this.wallet.address}`);
 
       this.initialized = true;
     } catch (error) {
-      console.error('❌ Failed to initialize blockchain service:', error.message);
+      console.error('[ERROR] Failed to initialize blockchain service:', error.message);
       this.initialized = false;
     }
   }
@@ -169,7 +169,7 @@ class BlockchainService {
         );
       });
 
-      console.log(`🔄 Minting item ${itemName} (${tier})... tx: ${tx.hash}`);
+      console.log(`Minting item ${itemName} (${tier})... tx: ${tx.hash}`);
       const receipt = await tx.wait();
 
       // Extract tokenId from event
@@ -186,7 +186,7 @@ class BlockchainService {
         tokenId = parsed.args.tokenId.toString();
       }
 
-      console.log(`✅ Item minted successfully. TokenId: ${tokenId}, Gas used: ${receipt.gasUsed.toString()}`);
+      console.log(`[OK] Item minted successfully. TokenId: ${tokenId}, Gas used: ${receipt.gasUsed.toString()}`);
 
       return {
         tokenId,
@@ -196,7 +196,7 @@ class BlockchainService {
         alreadyMinted: false
       };
     } catch (error) {
-      console.error('❌ Failed to mint item:', error.message);
+      console.error('[ERROR] Failed to mint item:', error.message);
       throw error;
     }
   }
@@ -250,10 +250,10 @@ class BlockchainService {
         );
       });
 
-      console.log(`🔄 Executing trade... tx: ${tx.hash}`);
+      console.log(`Executing trade... tx: ${tx.hash}`);
       const receipt = await tx.wait();
 
-      console.log(`✅ Trade executed successfully. Gas used: ${receipt.gasUsed.toString()}`);
+      console.log(`[OK] Trade executed successfully. Gas used: ${receipt.gasUsed.toString()}`);
 
       const effectiveGasPrice = receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : (receipt.gasPrice ? receipt.gasPrice.toString() : null);
       let gasFeeWei = null;
@@ -276,7 +276,7 @@ class BlockchainService {
         gasFeeEth
       };
     } catch (error) {
-      console.error('❌ Failed to execute trade:', error.message);
+      console.error('[ERROR] Failed to execute trade:', error.message);
       throw error;
     }
   }
@@ -298,13 +298,13 @@ class BlockchainService {
       });
       const receipt = await tx.wait();
 
-      console.log(`✅ Listing recorded on-chain. Tx: ${receipt.hash}`);
+      console.log(`[OK] Listing recorded on-chain. Tx: ${receipt.hash}`);
       return {
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber
       };
     } catch (error) {
-      console.error('⚠️  Failed to record listing on-chain:', error.message);
+      console.error('[WARN]  Failed to record listing on-chain:', error.message);
       return null; // Don't fail the whole operation
     }
   }
@@ -326,13 +326,13 @@ class BlockchainService {
       });
       const receipt = await tx.wait();
 
-      console.log(`✅ Unlisting recorded on-chain. Tx: ${receipt.hash}`);
+      console.log(`[OK] Unlisting recorded on-chain. Tx: ${receipt.hash}`);
       return {
         transactionHash: receipt.hash,
         blockNumber: receipt.blockNumber
       };
     } catch (error) {
-      console.error('⚠️  Failed to record unlisting on-chain:', error.message);
+      console.error('[WARN]  Failed to record unlisting on-chain:', error.message);
       return null;
     }
   }

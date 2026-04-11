@@ -28,7 +28,7 @@ async function verifyTable() {
     console.table(results);
     
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('[ERROR] Error:', error.message);
   } finally {
     await sequelize.close();
   }

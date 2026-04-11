@@ -23,18 +23,18 @@ node services/wallet-service/run-wallet-migration.cjs
 ```
 
 **What this does:**
-- ✅ Checks if `walletAddress` column exists
-- ✅ Adds the column if missing (VARCHAR(66), NULL, UNIQUE)
-- ✅ Shows database statistics (total users, linked wallets)
-- ✅ Provides next steps
+- [OK] Checks if `walletAddress` column exists
+- [OK] Adds the column if missing (VARCHAR(66), NULL, UNIQUE)
+- [OK] Shows database statistics (total users, linked wallets)
+- [OK] Provides next steps
 
 **Expected output:**
 ```
 🔧 Running migration: add-wallet-address-to-users...
 
-✅ Database connection established
+[OK] Database connection established
 
-✅ walletAddress column added successfully!
+[OK] walletAddress column added successfully!
    Type: VARCHAR(66)
    Null: YES
    Unique: YES
@@ -44,7 +44,7 @@ node services/wallet-service/run-wallet-migration.cjs
    Linked wallets: 0
    Unlinked: 10
 
-✅ Migration completed successfully!
+[OK] Migration completed successfully!
 ```
 
 ---
@@ -70,7 +70,7 @@ node services/wallet-service/manage-wallets.cjs link alice 0xf39Fd6e51aad88F6F4c
 ```
 🔗 Linking wallet to user...
 
-✅ Successfully linked wallet!
+[OK] Successfully linked wallet!
    Username: alice
    Wallet:   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
@@ -126,7 +126,7 @@ node services/wallet-service/manage-wallets.cjs verify alice
    ├─ Created:     2025-11-01 10:30:00
    └─ Wallet:      0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
-✅ Wallet is linked!
+[OK] Wallet is linked!
 ```
 
 #### Bulk Link Wallets
@@ -152,18 +152,18 @@ node services/wallet-service/manage-wallets.cjs bulk wallets.json
 📦 Bulk linking wallets from wallets.json...
 
 🔗 Linking wallet to user...
-✅ Successfully linked wallet!
+[OK] Successfully linked wallet!
    Username: alice
    Wallet:   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 🔗 Linking wallet to user...
-✅ Successfully linked wallet!
+[OK] Successfully linked wallet!
    Username: bob
    Wallet:   0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 
 📊 Bulk link completed:
-   ✅ Success: 2
-   ❌ Failed:  0
+   [OK] Success: 2
+   [ERROR] Failed:  0
 ```
 
 ---
@@ -458,5 +458,5 @@ node services/wallet-service/manage-wallets.cjs list
 
 ---
 
-**✅ You're all set!** Your database now supports wallet linking with full Sequelize integration.
+**[OK] You're all set!** Your database now supports wallet linking with full Sequelize integration.
 
