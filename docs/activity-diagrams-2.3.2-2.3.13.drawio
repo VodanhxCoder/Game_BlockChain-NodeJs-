@@ -1,0 +1,788 @@
+<mxfile host="65bd71144e">
+    <diagram id="p232" name="2.3.2 Dang nhap">
+        <mxGraphModel dx="402" dy="228" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p232_title" value="2.3.2 Login Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_u_lane" value="User or Admin" style="swimlane;html=1;startSize=30;horizontal=1;rounded=0;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;rounded=0;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_start" value="" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="140" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_u1" value="Nhap username/password" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="210" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_s1" value="Validate credentials + status" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="210" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_dec" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="830" y="330" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_uerr" value="Show login error" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="440" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_s2" value="Issue JWT + profile" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="460" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_u2" value="Redirect by role" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="560" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_end" value="" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="700" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e1" style="endArrow=block;html=1;" parent="1" source="p232_start" target="p232_u1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e2" value="POST /api/auth/login" style="endArrow=block;html=1;" parent="1" source="p232_u1" target="p232_s1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e3" style="endArrow=block;html=1;" parent="1" source="p232_s1" target="p232_dec" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e4" value="No" style="endArrow=block;html=1;" parent="1" source="p232_dec" target="p232_uerr" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e5" value="Retry" style="endArrow=block;html=1;" parent="1" source="p232_uerr" target="p232_u1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e6" value="Yes" style="endArrow=block;html=1;" parent="1" source="p232_dec" target="p232_s2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e7" style="endArrow=block;html=1;" parent="1" source="p232_s2" target="p232_u2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p232_e8" style="endArrow=block;html=1;" parent="1" source="p232_u2" target="p232_end" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p233" name="2.3.3 Dang ky">
+        <mxGraphModel dx="402" dy="485" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p233_title" value="2.3.3 Register Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_u1" value="Fill form + CAPTCHA" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="200" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_s1" value="Check availability" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="770" y="200" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_dec1" value="Available?" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="830" y="310" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_uerr" value="Edit input" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="420" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_s2" value="Send verify email" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="770" y="430" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_u2" value="Enter verify code" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="530" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_s3" value="Verify code + create account" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="530" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_u3" value="Login success" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="640" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="740" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e1" style="endArrow=block;html=1;" parent="1" source="p233_start" target="p233_u1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e2" value="Submit" style="endArrow=block;html=1;" parent="1" source="p233_u1" target="p233_s1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e3" style="endArrow=block;html=1;" parent="1" source="p233_s1" target="p233_dec1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e4" value="No" style="endArrow=block;html=1;" parent="1" source="p233_dec1" target="p233_uerr" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e5" value="Retry" style="endArrow=block;html=1;" parent="1" source="p233_uerr" target="p233_u1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e6" value="Yes" style="endArrow=block;html=1;" parent="1" source="p233_dec1" target="p233_s2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e7" style="endArrow=block;html=1;" parent="1" source="p233_s2" target="p233_u2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e8" style="endArrow=block;html=1;" parent="1" source="p233_u2" target="p233_s3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e9" style="endArrow=block;html=1;" parent="1" source="p233_s3" target="p233_u3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p233_e10" style="endArrow=block;html=1;" parent="1" source="p233_u3" target="p233_end" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p234" name="2.3.4 QL tai khoan admin">
+        <mxGraphModel dx="402" dy="485" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p234_title" value="2.3.4 Admin User Management Activity" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_u_lane" value="Admin" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_u1" value="Open user management" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="200" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_s1" value="Fetch users + stats" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="200" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_u2" value="Select action" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="300" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_dec" value="View inv or ban?" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="410" width="100" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_s2" value="Get inventory" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="420" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_s3" value="Ban or unban user" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="780" y="540" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_u3" value="Show updated result" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="640" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="740" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e1" style="endArrow=block;html=1;" parent="1" source="p234_start" target="p234_u1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e2" style="endArrow=block;html=1;" parent="1" source="p234_u1" target="p234_s1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e3" style="endArrow=block;html=1;" parent="1" source="p234_s1" target="p234_u2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e4" style="endArrow=block;html=1;" parent="1" source="p234_u2" target="p234_dec" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e5" value="Inventory" style="endArrow=block;html=1;" parent="1" source="p234_dec" target="p234_s2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e6" value="Ban/Unban" style="endArrow=block;html=1;" parent="1" source="p234_dec" target="p234_s3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e7" style="endArrow=block;html=1;" parent="1" source="p234_s2" target="p234_u3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e8" style="endArrow=block;html=1;" parent="1" source="p234_s3" target="p234_u3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p234_e9" style="endArrow=block;html=1;" parent="1" source="p234_u3" target="p234_end" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p235" name="2.3.5 QL vat pham admin">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p235_title" value="2.3.5 Admin Item Management Activity" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_u_lane" value="Admin" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_u1" value="Open item management" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="200" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_s1" value="Load item list + drop rate" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="740" y="200" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_u2" value="Choose action" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="300" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_dec" value="Add / Edit / Populate" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="240" y="410" width="120" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_s2" value="Validate and save item" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="430" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_u3" value="Refresh and view result" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="560" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="700" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_start" target="p235_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_u1" target="p235_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_s1" target="p235_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e4" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_u2" target="p235_dec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e5" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_dec" target="p235_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_s2" target="p235_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p235_e7" style="endArrow=block;html=1;" edge="1" parent="1" source="p235_u3" target="p235_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p236" name="2.3.6 Lich su giao dich admin">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p236_title" value="2.3.6 Admin Transaction History Activity" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_u_lane" value="Admin" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_u1" value="Open history dashboard" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="200" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_s1" value="Query TradeLog" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="790" y="210" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_dec" value="Has records?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="330" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_uno" value="Show empty state" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="430" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_u2" value="Filter and view detail" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="550" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="700" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_start" target="p236_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_u1" target="p236_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_s1" target="p236_dec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e4" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_dec" target="p236_uno">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e5" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_dec" target="p236_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_uno" target="p236_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p236_e7" style="endArrow=block;html=1;" edge="1" parent="1" source="p236_u2" target="p236_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p237" name="2.3.7 Dang xuat">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p237_title" value="2.3.7 Logout Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_u_lane" value="User or Admin" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="150" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_u1" value="Click logout" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="230" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_s1" value="Clear token + reset auth state" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="740" y="230" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_u2" value="Back to sign in" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="350" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="470" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p237_start" target="p237_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p237_u1" target="p237_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p237_s1" target="p237_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p237_e4" style="endArrow=block;html=1;" edge="1" parent="1" source="p237_u2" target="p237_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p238" name="2.3.8 Choi game">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p238_title" value="2.3.8 Play Game Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_u1" value="Start game" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="200" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_s1" value="Init socket session" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="790" y="200" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_s2" value="Send realtime state" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="300" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_u2" value="Control and collect loot" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="300" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_dec" value="Game over?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="420" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_s3" value="Save high score" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="790" y="530" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_u3" value="Show game result" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="530" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="680" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_start" target="p238_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_u1" target="p238_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_s1" target="p238_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e4" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_s2" target="p238_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e5" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_u2" target="p238_dec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e6" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_dec" target="p238_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e7" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_dec" target="p238_s3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e8" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_s3" target="p238_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p238_e9" style="endArrow=block;html=1;" edge="1" parent="1" source="p238_u3" target="p238_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p239" name="2.3.9 Xem vat pham">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p239_title" value="2.3.9 View Item Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="150" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_u1" value="Open inventory or shop" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="230" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_s1" value="Fetch item list" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="790" y="230" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_u2" value="Select item" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="340" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_s2" value="Return item detail" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="770" y="340" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_u3" value="Show detail modal" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="450" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="580" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_start" target="p239_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_u1" target="p239_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_s1" target="p239_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e4" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_u2" target="p239_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e5" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_s2" target="p239_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p239_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p239_u3" target="p239_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p2310" name="2.3.10 Tim kiem vat pham">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2310_title" value="2.3.10 Search Item Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="150" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_u1" value="Enter keyword + filter" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="230" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_s1" value="Run search local/API" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="770" y="230" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_dec" value="Found?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="340" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_u2" value="Show no result" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="450" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_u3" value="Show filtered list" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="560" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="700" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_start" target="p2310_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_u1" target="p2310_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_s1" target="p2310_dec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e4" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_dec" target="p2310_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e5" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_dec" target="p2310_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_u2" target="p2310_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2310_e7" style="endArrow=block;html=1;" edge="1" parent="1" source="p2310_u3" target="p2310_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p2311" name="2.3.11 Dang ban vat pham">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2311_title" value="2.3.11 List Item Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_u1" value="Choose item + wanted item" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="180" y="200" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_s1" value="Check ownership + inMarket" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="750" y="200" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_dec1" value="Valid?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="310" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_uerr" value="Show listing error" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="420" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_s2" value="Create listing" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="790" y="430" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_dec2" value="Wallet connected?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="820" y="530" width="100" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_u2" value="Sign with MetaMask" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="560" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_s3" value="Save seller signature" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="650" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_u3" value="Show listed result" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="730" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="810" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_start" target="p2311_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_u1" target="p2311_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_s1" target="p2311_dec1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e4" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_dec1" target="p2311_uerr">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e5" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_dec1" target="p2311_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_s2" target="p2311_dec2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e7" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_dec2" target="p2311_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e8" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_u2" target="p2311_s3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e9" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_dec2" target="p2311_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e10" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_s3" target="p2311_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e11" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_uerr" target="p2311_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2311_e12" style="endArrow=block;html=1;" edge="1" parent="1" source="p2311_u3" target="p2311_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p2312" name="2.3.12 Trao doi">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2312_title" value="2.3.12 Trade Activity Map" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_u_lane" value="User Buyer" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="130" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_u1" value="Select listing + own item" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="200" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_s1" value="Prepare trade + check ownership" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="740" y="200" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_s2" value="Return calldata" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="780" y="300" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_u2" value="Sign and send MetaMask tx" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="180" y="300" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_sdec" value="Tx success?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="410" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_uerr" value="Show trade fail" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="220" y="500" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_s3" value="Swap DB + write TradeLog" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="530" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_u3" value="Refresh inventory + market" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="190" y="620" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="740" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_start" target="p2312_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_u1" target="p2312_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_s1" target="p2312_s2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e4" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_s2" target="p2312_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e5" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_u2" target="p2312_sdec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e6" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_sdec" target="p2312_uerr">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e7" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_sdec" target="p2312_s3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e8" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_s3" target="p2312_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e9" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_uerr" target="p2312_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2312_e10" style="endArrow=block;html=1;" edge="1" parent="1" source="p2312_u3" target="p2312_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="p2313" name="2.3.13 Lich su giao dich user">
+        <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="p2313_title" value="2.3.13 User Transaction History Activity" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="20" width="1140" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_u_lane" value="User" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_s_lane" value="System" style="swimlane;html=1;startSize=30;horizontal=1;strokeColor=#666666;fillColor=#f8f9fa;" vertex="1" parent="1">
+                    <mxGeometry x="600" y="80" width="560" height="760" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_start" style="ellipse;html=1;aspect=fixed;fillColor=#111111;strokeColor=#111111;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="140" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_u1" value="Open history page" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="220" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_s1" value="Verify JWT + query TradeLog" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="760" y="220" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_dec" value="Has records?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="340" width="80" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_u2" value="Show empty state" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="210" y="450" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_u3" value="View timeline + detail" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="200" y="560" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_end" style="ellipse;html=1;aspect=fixed;fillColor=#ffffff;strokeColor=#111111;strokeWidth=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="700" width="36" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e1" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_start" target="p2313_u1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e2" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_u1" target="p2313_s1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e3" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_s1" target="p2313_dec">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e4" value="No" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_dec" target="p2313_u2">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e5" value="Yes" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_dec" target="p2313_u3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e6" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_u2" target="p2313_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="p2313_e7" style="endArrow=block;html=1;" edge="1" parent="1" source="p2313_u3" target="p2313_end">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
