@@ -1,4 +1,6 @@
-# ARCHETYPE: Microservice Redesign Blueprint
+# ARCHITECTURE: Microservice Redesign Blueprint
+
+This file is the canonical architecture reference for the repository. Keep it synchronized with README service mapping and operational runbooks.
 
 ## 1. Purpose
 
@@ -14,6 +16,28 @@ Target outcome:
 - independently deployable services,
 - RESTful API contracts,
 - compatibility with existing gameplay and blockchain features.
+
+## 1.1 Current Implementation Baseline (Repository Snapshot)
+
+The repository already runs split backend services under `server/services`.
+
+Implemented service names currently used in code/runtime:
+
+- auth-service
+- user-service
+- inventory-service
+- marketplace-service
+- trade-service
+- blockchain-service
+- admin-service
+- game-service
+- fail2ban_service
+
+Target naming in this archetype keeps domain clarity and may differ from runtime folder names during migration:
+
+- user-service -> user-profile-service
+- game-service -> game-session-service
+- fail2ban_service -> security-intel-service
 
 ## 2. Target System Topology
 
@@ -34,9 +58,11 @@ Target outcome:
 
 4. user-profile-service
 - User profile data, settings, wallet linkage metadata.
+- Current repository name: user-service.
 
 5. game-session-service
 - Authoritative game loop, player state, match/session events.
+- Current repository name: game-service.
 
 6. inventory-service
 - Inventory ownership, item instances, collect/consume operations.
@@ -60,6 +86,7 @@ Target outcome:
 
 12. security-intel-service
 - fail2ban-like IP checks, ban windows, abuse telemetry.
+- Current repository name: fail2ban_service.
 
 13. notification-service
 - Email delivery for verification and operational notifications.
@@ -373,6 +400,16 @@ Additional controls:
 7. Introduce event bus + outbox for cross-service consistency.
 8. Decommission monolithic route coupling.
 
+### 12.1 Current Progress Snapshot
+
+- Completed (current implementation): auth, user, inventory, marketplace, trade, blockchain, admin, and game services are already executable as separate service processes.
+- Partially complete: monolith compatibility remains for selected flows; some cross-domain logic still needs stronger service ownership boundaries.
+- Planned next focus:
+  - introduce/strengthen API gateway and websocket gateway,
+  - align runtime naming to target bounded contexts,
+  - add outbox/event bus for eventual consistency,
+  - complete repository-level ownership isolation per datastore.
+
 ## 13. Acceptance Criteria for the Redesign
 
 - Every endpoint maps to handler -> service -> repository.
@@ -385,3 +422,15 @@ Additional controls:
 ## 14. Final Summary
 
 This project can evolve from a feature-rich monolith into a microservice platform by enforcing layered boundaries (handler/service/repository) and RESTful resource contracts per domain. The highest-value extraction sequence is auth/user first, then marketplace/trade/blockchain, followed by real-time gameplay and economy services with event-driven consistency.
+
+## 15. Naming and Contract Alignment Rules
+
+- Public docs should reference target domain names (for example, user-profile-service).
+- Runtime startup scripts may keep legacy names temporarily (for example, user-service).
+- API contracts must remain stable even when service folder/runtime names are transitioning.
+- Keep this file and `README.md` aligned whenever service names, boundaries, or contracts change.
+- When renaming runtime services, apply the same change in:
+  - `README.md`
+  - service startup scripts/runbooks
+  - docker compose service labels
+  - internal service client configuration

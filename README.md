@@ -4,6 +4,8 @@ Full-stack game platform with blockchain-enabled trading.
 
 The system uses a React + Vite client and a Node.js backend that has been split into microservices. Smart contract workflows are supported through Hardhat and OpenZeppelin.
 
+Architecture target and migration rules are defined in `ARCHETYPE.md`. This README reflects the current runnable setup and its mapping to the target service domains.
+
 ## System Architecture
 
 ### Frontend
@@ -26,6 +28,22 @@ Services are started from server/services and currently run on these default por
 - game-service (Socket.IO): 4008
 
 Current decomposition follows handler/controller/service separation and is intended to evolve toward fully isolated service ownership.
+
+### Service Mapping (Current Runtime -> Target Domain)
+
+| Current runtime service | Target domain name in ARCHETYPE | Default port |
+| --- | --- | --- |
+| auth-service | auth-service | 4001 |
+| user-service | user-profile-service | 4002 |
+| inventory-service | inventory-service | 4003 |
+| marketplace-service | marketplace-service | 4004 |
+| trade-service | trade-service | 4005 |
+| blockchain-service | blockchain-service | 4006 |
+| admin-service | admin-service | 4007 |
+| game-service | game-session-service | 4008 |
+| fail2ban_service | security-intel-service | 5000 |
+
+Note: naming is intentionally transitional during migration; runtime names may differ from final bounded-context names.
 
 ### Blockchain Layer
 
@@ -177,6 +195,16 @@ Feature-specific references:
 - monolith compatibility is still partially preserved during migration
 - several routes are already split by service, while some flows still need deeper extraction
 - next phase: stronger per-service data ownership and event-driven integration where needed
+
+## Migration Roadmap Alignment
+
+Aligned with `ARCHETYPE.md` priorities:
+
+1. keep auth/profile boundaries stable while removing residual monolith coupling
+2. harden marketplace/trade/blockchain contracts and idempotency behavior
+3. evolve game-service toward game-session-service + websocket-gateway topology
+4. introduce outbox/event bus patterns for cross-service consistency
+5. converge runtime service names to target bounded-context naming when operationally safe
 
 ## License
 
