@@ -1,0 +1,36 @@
+id,title,preconditions,steps,expected,priority,automation
+HOME-001,Homepage loads,"User is authenticated","Navigate to /H.","Homepage main container is visible.",High,selenium
+HOME-002,Game dashboard exists,"User is on /H.","Locate the game dashboard container.","Game dashboard is visible.",Medium,selenium
+HOME-003,HUD section is visible,"User is on /H.","Locate the HUD section.","HUD section is visible.",High,selenium
+HOME-004,Game title text,"User is on /H.","Read the HUD title.","Title shows Space Raiders.",Medium,selenium
+HOME-005,Overlay visible by default,"User is on /H.","Check the overlay panel.","Overlay panel is visible.",High,selenium
+HOME-006,Overlay list items,"User is on /H.","Count control list items in overlay.","At least four list items are shown.",Low,selenium
+HOME-007,Overlay hide button,"User is on /H.","Click the overlay hide button.","Overlay panel is hidden.",Medium,selenium
+HOME-008,Overlay show button,"User is on /H.","Hide overlay, then click the header toggle.","Overlay panel is visible again.",Medium,selenium
+HOME-009,Overlay toggle key,"User is on /H.","Press T twice.","Overlay toggles and returns visible.",Low,selenium
+HOME-010,Game frame exists,"User is on /H.","Locate the game frame container.","Game frame is visible.",Medium,selenium
+HOME-011,Game area aria label,"User is on /H.","Locate the game canvas area.","Canvas area has aria-label Game area.",Low,selenium
+HOME-012,Canvas element exists,"User is on /H.","Locate the canvas element.","Canvas element is visible.",High,selenium
+HOME-013,HUD metrics container,"User is on /H.","Locate the HUD metrics container.","Metrics container is visible.",Medium,selenium
+HOME-014,Stat cards count,"User is on /H.","Count metric cards.","At least four metric cards are visible.",High,selenium
+HOME-015,Stat cards label and value,"User is on /H.","Inspect label and value in metric cards.","Each card shows a label and value.",Medium,selenium
+HOME-016,Recent drops header exists,"User is on /H.","Locate the recent drops card header.","Recent drops header is visible.",Low,selenium
+HOME-017,Recent drops total chip,"User is on /H.","Locate the total drops chip.","Chip is visible.",Low,selenium
+HOME-018,Empty drops message,"User is on /H.","Check the drops card when list is empty.","Empty drops message is visible.",Low,selenium
+HOME-019,Overlay header exists,"User is on /H.","Locate the overlay header.","Overlay header is visible.",Low,selenium
+HOME-020,Overlay hint text,"User is on /H.","Locate the overlay hint text.","Hint text is visible.",Low,selenium
+HOME-021,Header toggle button exists,"User is on /H.","Locate the HUD toggle button.","Toggle button is visible.",Medium,selenium
+HOME-022,Overlay dialog role,"User is on /H.","Inspect overlay role attribute.","Overlay role equals dialog.",Low,selenium
+HOME-023,Canvas area main role,"User is on /H.","Inspect game area role.","Role equals main.",Low,selenium
+HOME-024,HUD eyebrow text exists,"User is on /H.","Locate the HUD eyebrow text.","HUD eyebrow is visible.",Low,selenium
+HOME-025,Ghost buttons present,"User is on /H.","Count ghost style buttons.","At least two ghost buttons are visible.",Low,selenium
+HOME-026,Game frame header exists,"User is on /H.","Locate the game frame header.","Game frame header is visible.",Low,selenium
+HOME-027,Dashboard layout sections,"User is on /H.","Count top level sections in dashboard.","At least two sections are visible.",Low,selenium
+HOME-028,Title uses h2,"User is on /H.","Check the title element tag.","Title is an h2 element.",Low,selenium
+HOME-029,Overlay list text,"User is on /H.","Read overlay list item text.","All list items contain text.",Low,selenium
+HOME-030,No drops list when empty,"User is on /H.","Check for list and empty text.","List is absent or empty text is present.",Low,selenium
+HOME-031,Overlay re-show works,"User is on /H.","Hide overlay then show it again.","Overlay panel is visible.",Medium,selenium
+HOME-032,Header toggle is button element,"User is on /H.","Inspect the header toggle element tag.","Element tag is button.",Low,selenium
+HOME-033,Overlay toggle is button element,"User is on /H.","Inspect the overlay toggle element tag.","Element tag is button.",Low,selenium
+HOME-034,Main element tag,"User is on /H.","Inspect the main container tag.","Element tag is main.",Low,selenium
+HOME-035,Homepage path persists,"User is on /H.","Read the current URL path.","Path equals /H.",Low,selenium

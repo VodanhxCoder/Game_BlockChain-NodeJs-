@@ -1,0 +1,36 @@
+id,title,preconditions,steps,expected,priority,automation
+AUTH-001,Sign-in page loads,"User is not authenticated","Navigate to /signin.","Sign-in shell is visible.",High,selenium
+AUTH-002,Sign-in logo text,"User is on /signin.","Observe the logo.","Logo text equals BLK.",Low,selenium
+AUTH-003,Sign-in header visible,"User is on /signin.","Check the page header.","Header is visible.",Medium,selenium
+AUTH-004,Sign-in email input visible,"User is on /signin.","Locate the email field.","Email input is visible.",High,selenium
+AUTH-005,Sign-in email maxLength,"User is on /signin.","Inspect the email input maxLength.","maxLength is 100.",Low,selenium
+AUTH-006,Sign-in password input visible,"User is on /signin.","Locate the password field.","Password input is visible.",High,selenium
+AUTH-007,Sign-in password maxLength,"User is on /signin.","Inspect the password input maxLength.","maxLength is 50.",Low,selenium
+AUTH-008,Remember me default checked,"User is on /signin.","Inspect the Remember me checkbox.","Checkbox is checked by default.",Low,selenium
+AUTH-009,Forgot password link exists,"User is on /signin.","Find the Forgot password link.","Link targets /forgot-password.",Medium,selenium
+AUTH-010,Theme toggle flips mode,"User is on /signin.","Click the theme toggle.","Data-mode changes between light and dark.",Low,selenium
+AUTH-011,Show password toggle,"User is on /signin.","Click the show password icon.","Password input type switches between password and text.",Medium,selenium
+AUTH-012,Empty submit shows error,"User is on /signin.","Click Sign in with empty fields.","Error banner is shown.",High,selenium
+AUTH-013,Create account button navigation,"User is on /signin.","Click Create account button.","Navigates to /signup.",High,selenium
+AUTH-014,Preview panel navigation,"User is on /signin.","Click the preview panel button.","Navigates to /signup.",Medium,selenium
+AUTH-015,Social login buttons present,"User is on /signin.","Count the social login buttons.","At least two social buttons are visible.",Medium,selenium
+AUTH-016,Social login labels present,"User is on /signin.","Read social login button labels.","Labels are not empty.",Low,selenium
+AUTH-017,Sign-in shell aria-labelledby,"User is on /signin.","Inspect auth shell aria-labelledby.","aria-labelledby equals signin-title.",Low,selenium
+AUTH-018,Sign-in form noValidate,"User is on /signin.","Inspect sign-in form attributes.","Form contains noValidate.",Low,selenium
+AUTH-019,Sign-up page loads,"User is not authenticated.","Navigate to /signup.","Sign-up shell is visible.",High,selenium
+AUTH-020,Display name input visible,"User is on /signup.","Locate display name input.","Display name input is visible.",High,selenium
+AUTH-021,Display name maxLength,"User is on /signup.","Inspect display name input maxLength.","maxLength is 30.",Low,selenium
+AUTH-022,Sign-up email input visible,"User is on /signup.","Locate the email field.","Email input is visible.",High,selenium
+AUTH-023,Sign-up email maxLength,"User is on /signup.","Inspect the email input maxLength.","maxLength is 100.",Low,selenium
+AUTH-024,Sign-up password input visible,"User is on /signup.","Locate the password field.","Password input is visible.",High,selenium
+AUTH-025,Confirm password input visible,"User is on /signup.","Locate the confirm password field.","Confirm password input is visible.",High,selenium
+AUTH-026,Sign-up show password toggle,"User is on /signup.","Click the show password icon.","Password input type switches between password and text.",Medium,selenium
+AUTH-027,Empty submit shows error,"User is on /signup.","Click Create account with empty fields.","Error banner is shown (captcha required).",High,selenium
+AUTH-028,Already have account navigation,"User is on /signup.","Click Already have account button.","Navigates to /signin.",High,selenium
+AUTH-029,Sign-up preview navigation,"User is on /signup.","Click the preview panel button.","Navigates to /signin.",Medium,selenium
+AUTH-030,Sign-up theme toggle flips mode,"User is on /signup.","Click the theme toggle.","Data-mode changes between light and dark.",Low,selenium
+AUTH-031,Support mailto link exists,"User is on /signup.","Locate the support email link.","Link uses mailto.",Low,selenium
+AUTH-032,Sign-up shell aria-labelledby,"User is on /signup.","Inspect auth shell aria-labelledby.","aria-labelledby equals signup-title.",Low,selenium
+AUTH-033,Create account button exists,"User is on /signup.","Locate the Create account button.","Create account button is visible.",Medium,selenium
+AUTH-034,Recaptcha container present,"User is on /signup.","Locate recaptcha container.","Recaptcha container is visible.",Medium,selenium
+AUTH-035,Sign-up form noValidate,"User is on /signup.","Inspect sign-up form attributes.","Form contains noValidate.",Low,selenium

@@ -1,0 +1,36 @@
+id,title,preconditions,steps,expected,priority,automation
+ADMIN-001,Admin dashboard loads,"User is authenticated as admin","Navigate to /admin.","Admin dashboard header is visible.",High,selenium
+ADMIN-002,Dashboard title text visible,"User is on /admin.","Read the dashboard title.","Title text is not empty.",Medium,selenium
+ADMIN-003,Export data button exists,"User is on /admin.","Locate the Export Data button.","Export Data button is visible.",Medium,selenium
+ADMIN-004,Admin page header exists,"User is on /admin.","Locate the page header container.","Page header is visible.",Low,selenium
+ADMIN-005,Stats grid exists,"User is on /admin.","Locate the stats grid.","Stats grid is visible.",High,selenium
+ADMIN-006,Admin card exists,"User is on /admin.","Locate any admin card.","At least one admin card is visible.",Medium,selenium
+ADMIN-007,Recent users table exists,"User is on /admin.","Locate the recent users table.","Table is visible.",High,selenium
+ADMIN-008,Table header count,"User is on /admin.","Count table header columns.","Header has four columns.",Medium,selenium
+ADMIN-009,Table body exists,"User is on /admin.","Locate the table body.","Table body exists.",Low,selenium
+ADMIN-010,Header actions exist,"User is on /admin.","Locate the header actions container.","Header actions are visible.",Low,selenium
+ADMIN-011,Stat cards render when data exists,"User is on /admin.","Check for stat cards.","Stat cards display if data exists.",Low,selenium
+ADMIN-012,Stat card labels present when data exists,"User is on /admin.","Inspect stat card labels.","Labels contain text.",Low,selenium
+ADMIN-013,Stat card values present when data exists,"User is on /admin.","Inspect stat card values.","Values contain text.",Low,selenium
+ADMIN-014,Table rows render when data exists,"User is on /admin.","Inspect table rows.","Rows display if data exists.",Low,selenium
+ADMIN-015,Table cells have data-label when rows present,"User is on /admin.","Inspect table cells for data-label attributes.","Cells include data-label attributes.",Low,selenium
+ADMIN-016,User name text present when rows present,"User is on /admin.","Inspect user name text.","User name text is not empty.",Low,selenium
+ADMIN-017,Status badge uses modifier class when rows present,"User is on /admin.","Inspect status badge classes.","Status badges use modifier classes.",Low,selenium
+ADMIN-018,Row columns contain text when rows present,"User is on /admin.","Inspect the first row columns.","Each column has text.",Low,selenium
+ADMIN-019,User info block when rows present,"User is on /admin.","Inspect user info block.","User info block is visible.",Low,selenium
+ADMIN-020,User avatar when rows present,"User is on /admin.","Inspect user avatar.","User avatar is visible.",Low,selenium
+ADMIN-021,Admin badge when rows present,"User is on /admin.","Inspect status badge.","Status badge is visible.",Low,selenium
+ADMIN-022,Dashboard title uses h1,"User is on /admin.","Inspect the dashboard title element.","Title element is h1.",Low,selenium
+ADMIN-023,Admin page has buttons,"User is on /admin.","Count admin buttons.","At least one button is visible.",Low,selenium
+ADMIN-024,Recent users header exists,"User is on /admin.","Locate the recent users card header.","Card header is visible.",Low,selenium
+ADMIN-025,Recent users title text present,"User is on /admin.","Read the recent users title.","Title text is not empty.",Low,selenium
+ADMIN-026,View all button exists,"User is on /admin.","Locate the view all button.","View all button is visible.",Low,selenium
+ADMIN-027,Stat card icon class when data exists,"User is on /admin.","Inspect stat card icons.","Icon elements are present.",Low,selenium
+ADMIN-028,Stat card color modifier when data exists,"User is on /admin.","Inspect stat card icon modifier class.","Icon elements include color modifiers.",Low,selenium
+ADMIN-029,Table header row exists,"User is on /admin.","Locate the table header row.","Header row is visible.",Low,selenium
+ADMIN-030,Row column count when data exists,"User is on /admin.","Inspect the first table row column count.","Row contains four columns.",Low,selenium
+ADMIN-031,Admin path persists,"User is on /admin.","Read the current URL path.","Path equals /admin.",Low,selenium
+ADMIN-032,Stats grid visible,"User is on /admin.","Check stats grid visibility.","Stats grid is visible.",Low,selenium
+ADMIN-033,Table visible,"User is on /admin.","Check table visibility.","Table is visible.",Low,selenium
+ADMIN-034,Header visible,"User is on /admin.","Check header visibility.","Header is visible.",Low,selenium
+ADMIN-035,Header title and actions present,"User is on /admin.","Check title and actions sections.","Title and actions sections are visible.",Low,selenium
