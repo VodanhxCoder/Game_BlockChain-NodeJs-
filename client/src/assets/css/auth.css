@@ -417,6 +417,24 @@
   font-size:1.2rem;
   transition:transform 0.4s ease, opacity 0.4s ease;
 }
+.auth-theme-toggle--icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.auth-theme-toggle--icon .auth-theme-toggle__icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:18px;
+  height:18px;
+  font-size:0;
+}
+.auth-theme-toggle--icon .auth-theme-toggle__icon svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
 .auth-theme-toggle[data-mode="dark"] .auth-theme-toggle__icon{
   transform:rotate(-20deg) scale(0.95);
 }

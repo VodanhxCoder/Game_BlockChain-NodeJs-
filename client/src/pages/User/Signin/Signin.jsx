@@ -209,6 +209,17 @@ export default function SignIn() {
     window.location.href = oauthUrl.toString();
   };
 
+  const themeIcon = isDark ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 2v2.5M12 19.5V22M4.5 4.5 6.3 6.3M17.7 17.7 19.5 19.5M2 12h2.5M19.5 12H22M4.5 19.5 6.3 17.7M17.7 6.3 19.5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+
   return (
     <div className={`auth-page auth-split ${isSwapping ? "is-exiting" : ""}`}>
       <div className="auth-shell is-signin" role="main" aria-labelledby="signin-title">
@@ -223,13 +234,13 @@ export default function SignIn() {
             </div>
             <button
               type="button"
-              className="auth-theme-toggle"
+              className="auth-theme-toggle auth-theme-toggle--icon"
               onClick={toggleTheme}
               aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
               data-mode={isDark ? "dark" : "light"}
             >
               <span className="auth-theme-toggle__icon" aria-hidden="true">
-                {isDark ? "Dark" : "Light"}
+                {themeIcon}
               </span>
               <span className="sr-only">{isDark ? "Dark mode" : "Light mode"}</span>
             </button>

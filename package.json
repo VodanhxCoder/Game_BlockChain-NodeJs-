@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "test:unit": "npm --prefix server run test:auth && npm --prefix server run test:admin && npm --prefix server run test:game",
+    "test:gui": "node client/tests/selenium/run-all.tests.cjs",
+    "test:all": "npm run test:unit && npm run test:gui"
+  },
   "devDependencies": {
     "selenium-webdriver": "^4.43.0"
   }

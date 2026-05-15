@@ -125,6 +125,81 @@ npm run start:admin
 npm run start:game
 ```
 
+## Tests
+
+### Unit Tests (Jest, backend services)
+
+Run unit tests from the repo root:
+
+```bash
+# auth service
+npm --prefix server run test:auth
+
+# admin service
+npm --prefix server run test:admin
+
+# game service
+npm --prefix server run test:game
+```
+
+Or run all backend unit tests in one command:
+
+```bash
+npm run test:unit
+```
+
+Optional watch/coverage modes:
+
+```bash
+npm --prefix server run test:auth:watch
+npm --prefix server run test:admin:coverage
+```
+
+### GUI Tests (Selenium)
+
+Prereqs:
+
+- Client app running at http://localhost:5173
+- Backend services running (auth/admin/game endpoints)
+- `msedgedriver` available on PATH (Edge WebDriver)
+- Test credentials set in client/.env (TEST_USER_EMAIL, TEST_USER_PASSWORD, TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD)
+- Captcha disabled or test keys configured for E2E
+
+Set the browser (choose one command for your shell):
+
+```bash
+# PowerShell
+$env:SELENIUM_BROWSER='edge'
+
+# CMD
+set SELENIUM_BROWSER=edge
+
+# bash
+export SELENIUM_BROWSER=edge
+```
+
+Run the GUI tests:
+
+```bash
+node client/tests/selenium/auth.tests.cjs
+node client/tests/selenium/homepage.tests.cjs
+node client/tests/selenium/admin-dashboard.tests.cjs
+```
+
+Or run all GUI tests in one command:
+
+```bash
+npm run test:gui
+```
+
+### Run All Tests
+
+Run unit tests and then GUI tests (make sure the GUI test prereqs are running first):
+
+```bash
+npm run test:all
+```
+
 ### Run Split Microservices With Docker
 
 This repository now includes a compose setup that runs each backend service in its own container,
