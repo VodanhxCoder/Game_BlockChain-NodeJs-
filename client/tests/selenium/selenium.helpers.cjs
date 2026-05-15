@@ -1,5 +1,6 @@
 const assert = require("assert");
 const { Builder, By, Key, until } = require("selenium-webdriver");
+const edge = require("selenium-webdriver/edge");
 const { BASE_URL, BROWSER, CREDS } = require("./selenium.config.cjs");
 
 const DEFAULT_TIMEOUT = 10000;
@@ -28,6 +29,13 @@ function formatErrorMessage(message) {
 }
 
 async function buildDriver() {
+  const browser = (BROWSER || "").toLowerCase().trim();
+  if (browser.includes("edge")) {
+    const service = new edge.ServiceBuilder().build();
+    const options = new edge.Options();
+    return edge.Driver.createSession(options, service);
+  }
+
   return new Builder().forBrowser(BROWSER).build();
 }
 

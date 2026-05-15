@@ -14,7 +14,7 @@ if (fs.existsSync(clientEnvPath)) {
 }
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:5173";
-const BROWSER = process.env.SELENIUM_BROWSER || "chrome";
+const BROWSER = process.env.SELENIUM_BROWSER || (process.platform === "win32" ? "edge" : "chrome");
 
 const CREDS = {
   user: {

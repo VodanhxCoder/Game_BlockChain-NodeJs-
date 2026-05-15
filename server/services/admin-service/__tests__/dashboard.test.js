@@ -336,10 +336,11 @@ describe('DashboardService', () => {
 // ============================================================================
 
 describe('DashboardController', () => {
-  let controller, mockDashboardService, mockReq, mockRes;
+  let controller, mockDashboardService, mockReq, mockRes, consoleErrorSpy;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     mockDashboardService = {
       getDashboardStats: jest.fn(),
     };
@@ -349,6 +350,10 @@ describe('DashboardController', () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     };
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('should return 200 with stats', async () => {
